@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+
+@theme {
+  --background-image-hero: linear-gradient(
+      to bottom, 
+      rgba(2, 0, 54, 0.7), /* Sua cor #020036 com 80% de opacidade */
+      rgba(2, 0, 54, 0.8)
+    ), 
+    url('/src/assets/Background.avif');
+}
+
+.bg-hero {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.bg-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image: linear-gradient(
+      to bottom,
+      rgba(2, 0, 54, 0.7),
+      rgba(2, 0, 54, 0.8)
+    ),
+    url('/src/assets/Background.avif');
+
+  background-size: cover;
+  background-position: center;
+
+  filter: blur(4px); /* 👈 aqui o blur */
+  transform: scale(1.05); /* evita bordas cortadas */
+  z-index: 0;
+}
+
+.bg-hero::before {
+  background-position: center right;
+}
