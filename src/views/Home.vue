@@ -14,14 +14,17 @@ const movies = ref(movies_json.movie);
 const filterRating = ref(0)
 
 const filterShow = computed(() => {
-  return Number(filterRating.value).toFixed(1);
+  // Arredonda para a primeira casa decimal de forma mais estável
+  return (Math.round(filterRating.value * 10) / 10).toFixed(1);
 });
+
+const loggedIn = ref(false); 
 
 </script>
 
 <template>
     <div class="bg-zinc-50 dark:bg-zinc-900">
-        <Navbar />
+        <Navbar :loggedIn="loggedIn"/>
         <div class="bg-hero">
 
             <div class="relative z-10 w-full h-auto">
