@@ -10,11 +10,8 @@ import movies_json from '../assets/movies.json'
 import SearchBar from '@/components/SearchBar.vue';
 import SearchBar2 from '@/components/SearchBar2.vue';
 
-let movies: any = ref([])
-let filterRating = ref([])
-movies = movies_json.movie
-console.log(movies)
-
+const movies = ref(movies_json.movie);
+const filterRating = ref(0)
 
 </script>
 
@@ -155,25 +152,30 @@ console.log(movies)
 </template>
 
 <style>
-/* 1. Animação de entrada e saída (Fade + Scale) */
+/* 1. Transição de Entrada e Saída */
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.5s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 2. Estado de "Sumir" (Fade + Encolher levemente) */
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
-  transform: scale(0.9) translateY(20px);
+  /* Reduzimos o movimento para quase zero */
+  transform: translateY(5px); 
 }
 
-/* 2. Animação de reordenamento (Move) */
-.list-move {
-  transition: transform 0.5s ease;
-}
-
-/* Garante que o item saindo não "trave" o layout durante a animação */
+/* 3. O Ajuste Crítico para a Saída */
 .list-leave-active {
   position: absolute;
+  /* Forçamos a largura para não quebrar o flexbox/grid no mobile */
+  width: 40%; /* Aproximadamente o tamanho de uma coluna no mobile */
+  pointer-events: none;
+}
+
+/* 4. Suavização do movimento dos que ficam */
+.list-move {
+  transition: transform 0.4s ease;
 }
 </style>

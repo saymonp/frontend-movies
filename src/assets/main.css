@@ -1,41 +1,50 @@
 @import 'tailwindcss';
 
 @theme {
-  --background-image-hero: linear-gradient(
-      to bottom, 
-      rgba(2, 0, 54, 0.7), /* Sua cor #020036 com 80% de opacidade */
-      rgba(2, 0, 54, 0.8)
-    ), 
+  --background-image-hero: linear-gradient(to bottom,
+      rgba(2, 0, 54, 0.7),
+      /* Sua cor #020036 com 80% de opacidade */
+      rgba(2, 0, 54, 0.8)),
     url('/src/assets/Background.avif');
 }
 
 .bg-hero {
   position: relative;
-  height: 100%;
+  min-height: 100vh; /* Garante que cubra a tela toda */
   width: 100%;
-  overflow: hidden;
+  z-index: 0; /* Cria um novo contexto para o ::before não fugir */
+  background-attachment: fixed;
 }
 
 .bg-hero::before {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
-
+  height: 100svh;
+  
+  /* Use o caminho relativo correto para o seu projeto */
   background-image: linear-gradient(
       to bottom,
       rgba(2, 0, 54, 0.7),
-      rgba(2, 0, 54, 0.8)
+      rgba(2, 0, 54, 0.9)
     ),
-    url('/src/assets/Background.avif');
+    url('@/assets/Background.avif'); /* @ costuma apontar para /src */
 
   background-size: cover;
-  background-position: center;
-
-  filter: blur(4px); /* 👈 aqui o blur */
-  transform: scale(1.05); /* evita bordas cortadas */
-  z-index: 0;
+  background-position: 85% center !important; /* !important para garantir que vença o cover padrão */
+  background-repeat: no-repeat;
+  
+  filter: blur(4px);
+  transform: scale(1.1); /* Aumentei um pouco para cobrir o blur nas bordas */
+  
+  /* z-index negativo relativo ao .bg-hero, mas dentro do contexto dele */
+  z-index: -1; 
+  pointer-events: none; /* Garante que não atrapalhe cliques nos filmes */
 }
 
-.bg-hero::before {
-  background-position: center right;
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden; /* Impede o arrasto lateral */
+  position: relative;
 }
