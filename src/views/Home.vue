@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import IconAddReview from '@/components/icons/IconAddReview.vue'
 import IconAddToList from '@/components/icons/IconAddToList.vue'
 import IconFilter from '@/components/icons/IconFilter.vue'
@@ -12,6 +12,10 @@ import SearchBar2 from '@/components/SearchBar2.vue';
 
 const movies = ref(movies_json.movie);
 const filterRating = ref(0)
+
+const filterShow = computed(() => {
+  return Number(filterRating.value).toFixed(1);
+});
 
 </script>
 
@@ -96,9 +100,9 @@ const filterRating = ref(0)
                                 <div class="px-1">
                                     <div class="flex justify-between items-center text-[9px] mb-1">
                                         <span class="text-zinc-500 uppercase font-bold">Nota</span>
-                                        <span class="text-[#00FCFF] font-black">{{ filterRating }}</span>
+                                        <span class="text-[#00FCFF] font-black">{{ filterShow }}</span>
                                     </div>
-                                    <input type="range" min="0" max="10" step="0.1" v-model="filterRating"
+                                    <input type="range" min="0" max="10" step="0.001" v-model="filterRating"
                                         class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00FCFF]">
                                 </div>
                             </div>
@@ -169,8 +173,6 @@ const filterRating = ref(0)
 /* 3. O Ajuste Crítico para a Saída */
 .list-leave-active {
   position: absolute;
-  /* Forçamos a largura para não quebrar o flexbox/grid no mobile */
-  width: 40%; /* Aproximadamente o tamanho de uma coluna no mobile */
   pointer-events: none;
 }
 
