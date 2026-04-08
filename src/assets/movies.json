@@ -5,139 +5,179 @@
 		"id" : 1,
 		"rating" : 7.3,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg",
-		"diretor" : "Patrick Hughes"
+		"diretor" : "Patrick Hughes",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Missão Refúgio",
 		"id" : 2,
 		"rating" : 6.7,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg",
-		"diretor" : "Ric Roman Waugh"
+		"diretor" : "Ric Roman Waugh",
+		"slug_br": "pecadores1",
+		"slug_en": "sinners1"
 	},
 	{
 		"titulo" : "Your Heart Will Be Broken",
 		"id" : 3,
 		"rating" : 7.8,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg",
-		"diretor" : "Михаил Вайнберг"
+		"diretor" : "Михаил Вайнберг",
+		"slug_br": "pecadores2",
+		"slug_en": "sinners2"
 	},
 	{
 		"titulo" : "O Refúgio",
 		"id" : 4,
 		"rating" : 6.3,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg",
-		"diretor" : "Frank E. Flowers"
+		"diretor" : "Frank E. Flowers",
+		"slug_br": "pecadores3",
+		"slug_en": "sinners3"
 	},
 	{
 		"titulo" : "Uma Batalha Após a Outra",
 		"id" : 5,
 		"rating" : 7.4,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_a1a2JYoBTchMy1stqpSHxS5MMle.jpg",
-		"diretor" : "Paul Thomas Anderson"
+		"diretor" : "Paul Thomas Anderson",
+		"slug_br": "pecadores4",
+		"slug_en": "sinners4"
 	},
 	{
 		"titulo" : "Devoradores de Estrelas",
 		"id" : 6,
 		"rating" : 8.2,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_bOzG3SG6gBxHGGHYiq7xXeNb1bG.jpg",
-		"diretor" : "Phil Lord"
+		"diretor" : "Phil Lord",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Cara de Um, Focinho de Outro",
 		"id" : 7,
 		"rating" : 7.6,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_ftPFJBGbldoWiiPrmesW96zBzdH.jpg",
-		"diretor" : "Daniel Chong"
+		"diretor" : "Daniel Chong",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Caminhos do Crime",
 		"id" : 8,
 		"rating" : 7.0,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_hHnEDdzdmK8ZyTfkvWz2BI64YXY.jpg",
-		"diretor" : "Bart Layton"
+		"diretor" : "Bart Layton",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Justiça Artificial",
 		"id" : 9,
 		"rating" : 7.1,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_vI7bNC07BaSEvZ9ATzV57wpAYwQ.jpg",
-		"diretor" : "Тимур Бекмамбетов"
+		"diretor" : "Тимур Бекмамбетов",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Pecadores",
 		"id" : 10,
 		"rating" : 7.5,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_v0Ljeti537c6cNKweuEN0iaU3x4.jpg",
-		"diretor" : "Ryan Coogler"
+		"diretor" : "Ryan Coogler",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Hellfire",
 		"id" : 11,
 		"rating" : 6.9,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_tQti9QTf13MfzNpXguijgNh7ojE.jpg",
-		"diretor" : "Isaac Florentine"
+		"diretor" : "Isaac Florentine",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Dupla Perigosa",
 		"id" : 12,
 		"rating" : 6.9,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_jYpk5Zun4VTWrplO3m9BHANi4S5.jpg",
-		"diretor" : "Ángel Manuel Soto"
+		"diretor" : "Ángel Manuel Soto",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "“O Morro dos Ventos Uivantes”",
 		"id" : 13,
 		"rating" : 6.4,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_762vOiAWzosAH95sKLzUqYaAoHR.jpg",
-		"diretor" : "Emerald Fennell"
+		"diretor" : "Emerald Fennell",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Assassino de Sangue",
 		"id" : 14,
 		"rating" : 5.7,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_6IhsMY5Ud5WJxtEX9gpGuvHP7nl.jpg",
-		"diretor" : "Ante Novakovic"
+		"diretor" : "Ante Novakovic",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "O Som da Morte",
 		"id" : 15,
 		"rating" : 6.0,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_1tX11KQzujSDXdszFNRvQbbNi72.jpg",
-		"diretor" : "Corin Hardy"
+		"diretor" : "Corin Hardy",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Peaky Blinders: O Homem Imortal",
 		"id" : 19,
 		"rating" : 7.4,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_8XLNDeumvz0cXa6sntZJ6p4zfLb.jpg",
-		"diretor" : "Tom Harper"
+		"diretor" : "Tom Harper",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "A Sombra do Perigo",
 		"id" : 32,
 		"rating" : 7.2,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_wqdHjQ1UpfQgS9jN9So5PLNTwoX.jpg",
-		"diretor" : "杨子"
+		"diretor" : "杨子",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "A Guerra dos Mundos",
 		"id" : 33,
 		"rating" : 4.2,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_yY5CbfXBxsPvYi0TzmaCP7uunnn.jpg",
-		"diretor" : "Rich Lee"
+		"diretor" : "Rich Lee",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Alpha",
 		"id" : 35,
 		"rating" : 6.4,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_89rX9774vG6GzE128Varjy6rKOl.jpg",
-		"diretor" : "Julia Ducournau"
+		"diretor" : "Julia Ducournau",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Anaconda",
 		"id" : 36,
 		"rating" : 5.9,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_hRzpf8QELtzJnMt4SiDoFUmZ9KM.jpg",
-		"diretor" : "Tom Gormican"
+		"diretor" : "Tom Gormican",
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	}
 ]}

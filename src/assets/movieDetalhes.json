@@ -1,0 +1,51 @@
+[
+    {
+        "id": 1,
+        "slug_br": "pecadores",
+        "slug_en": "sinners",
+        "nome_br": "Máquina Mortífera",
+        "nome_en": "Death Machine",
+        "rating": "8",
+        "poster_br": "http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg",
+        "backdrop_path_br": "http://192.168.2.137:9000/posters/backdrops_br/original_nAxGnGHOsfzufThz20zgmRwKur3.jpg",
+        "sinopse_br": "BRASILEIRO Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+        "sinopse_en": "INGLÊS Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+    },
+    {
+        "id": 2,
+        "slug_br": "pecadores1",
+        "slug_en": "sinners1",
+        "nome_br": "Máquina Mortífera",
+        "nome_en": "Death Machine",
+        "rating": "8",
+        "poster_br": "http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg",
+        "backdrop_path_br": "http://192.168.2.137:9000/posters/backdrops_br/original_1x9e0qWonw634NhIsRdvnneeqvN.jpg",
+        "sinopse_br": "BRASILEIRO Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+        "sinopse_en": "INGLÊS Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+    },
+    {
+        "id": 3,
+        "slug_br": "pecadores2",
+        "slug_en": "sinners2",
+        "nome_br": "Máquina Mortífera",
+        "nome_en": "Death Machine",
+        "rating": "8",
+        "poster_br": "http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg",
+        "backdrop_path_br": "http://192.168.2.137:9000/posters/backdrops_br/original_zpEWFNqoN8Qg1SzMMHmaGyOBTdW.jpg",
+        "sinopse_br": "BRASILEIRO Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+        "sinopse_en": "INGLÊS Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+    },
+    {
+        "id": 3,
+        "slug_br": "pecadores3",
+        "slug_en": "sinners3",
+        "nome_br": "Máquina Mortífera",
+        "nome_en": "Death Machine",
+        "rating": "8",
+        "poster_br": "http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg",
+        "backdrop_path_br": "http://192.168.2.137:9000/posters/backdrops_br/original_8Tfys3mDZVp4tNoH2ktm06a0Tau.jpg",
+        "sinopse_br": "BRASILEIRO Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+        "sinopse_en": "INGLÊS Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+    }
+
+]

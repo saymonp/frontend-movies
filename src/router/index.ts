@@ -29,9 +29,10 @@ const router = createRouter({
       component: () => import('../views/Home.vue'),
     },
     {
-      path: '/home2',
-      name: 'home2',
-      component: () => import('../views/Home2.vue'),
+      path: '/:lang/filme/:slug', // O :lang vira um parâmetro (br ou en)
+      name: 'MovieView',
+      component: () => import('../views/MovieView.vue'),
+      props: true
     }
   ],
 })
