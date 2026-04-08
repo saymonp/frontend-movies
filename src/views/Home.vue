@@ -12,19 +12,20 @@ import SearchBar2 from '@/components/SearchBar2.vue';
 
 const movies = ref(movies_json.movie);
 const filterRating = ref(0)
+const showFilter = ref(false)
 
 const filterShow = computed(() => {
-  // Arredonda para a primeira casa decimal de forma mais estável
-  return (Math.round(filterRating.value * 10) / 10).toFixed(1);
+    // Arredonda para a primeira casa decimal de forma mais estável
+    return (Math.round(filterRating.value * 10) / 10).toFixed(1);
 });
 
-const loggedIn = ref(false); 
+const loggedIn = ref(false);
 
 </script>
 
 <template>
     <div class="bg-zinc-50 dark:bg-zinc-900">
-        <Navbar :loggedIn="loggedIn"/>
+        <Navbar :loggedIn="loggedIn" />
         <div class="bg-hero">
 
             <div class="relative z-10 w-full h-auto">
@@ -81,8 +82,6 @@ const loggedIn = ref(false);
                     </div>
                 </div>
 
-
-
                 <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
                     <div
                         class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10">
@@ -95,9 +94,50 @@ const loggedIn = ref(false);
                                     class="flex items-center bg-white/5 border border-white/20 rounded-xl px-2 py-1.5 ring-[#00FCFF] shadow-[0_0_10px_rgba(0,252,255,0.2)]">
                                     <input type="text" placeholder="Busca..."
                                         class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-[11px] font-bold min-w-0">
-                                    <button class="flex-none ml-2 hover:scale-110 transition-transform">
-                                        <IconFilter class="w-4 text-[#2adde0]" />
-                                    </button>
+                                    <div clas="relative">
+                                        <button @click="showFilter = !showFilter" :showFilter="showFilter"
+                                            class="flex-none ml-2 hover:scale-110 transition-transform">
+                                            <IconFilter class="w-4 text-[#2adde0]" />
+                                        </button>
+                                        <div v-if="showFilter" @click="showFilter = false" class="absolute inset-0 z-10 bg-transparent cursor-default"></div>
+                                        <div v-show="showFilter"
+                                            class="absolute left-1/5 mt-2 z-50 bg-[#020036]/90 backdrop-blur-xl border shadow-2xl border-white/20 rounded-xl p-4 shadow-2xl w-[200px]">
+                                            <div class="flex flex-col gap-3">
+                                                <p
+                                                    class="text-[#00FCFF] text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2">
+                                                    Filtros Avançados
+                                                </p>
+
+                                                <div class="space-y-3">
+                                                    <div class="flex flex-col gap-1">
+                                                        <label
+                                                            class="text-[9px] text-zinc-500 uppercase font-bold">Diretor</label>
+                                                        <select
+                                                            class="w-full bg-white/5 border border-white/10 p-1.5 rounded text-[10px] text-white outline-none focus:border-[#00FCFF]">
+                                                            <option class="bg-zinc-900">Todos</option>
+                                                            <option class="bg-zinc-900">Guillermo del Toro</option>
+                                                            <option class="bg-zinc-900">Tim Burton</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="flex flex-col gap-1">
+                                                        <label
+                                                            class="text-[9px] text-zinc-500 uppercase font-bold">Estúdio</label>
+                                                        <select
+                                                            class="w-full bg-white/5 border border-white/10 p-1.5 rounded text-[10px] text-white outline-none focus:border-[#00FCFF]">
+                                                            <option class="bg-zinc-900">Disney</option>
+                                                            <option class="bg-zinc-900">Warner Bros</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <button @click="showFilter = false"
+                                                    class="mt-2 text-[9px] text-zinc-400 hover:text-white transition-colors uppercase font-bold">
+                                                    Aplicar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="px-1">
@@ -129,29 +169,30 @@ const loggedIn = ref(false);
                         </div>
                     </div>
                 </div>
-                <TransitionGroup tag="section" name="list" class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
-                        <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterRating })"
-                            :key="movie.id" :movie="movie" :filterRating="filterRating" class="movie-card">
-                            <div class="flex flex-col items-center w-fit mx-auto">
-                                <img :src="movie.poster_thumb_br"
-                                    class="max-w-full ring-2 ring-[#7075AB] rounded-sm mb-2">
 
-                                <div class="w-full">
-                                    <p class="text-center text-base font-semibold text-zinc-100">{{ movie.titulo }}</p>
-                                    <div class="flex items-center justify-between px-2.5">
-                                        <IconAddReview
-                                            class="w-8 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
-                                        <p class="text-center text-xs font-semibold text-zinc-100">IMDb {{ movie.rating
-                                            }}
-                                        </p>
-                                        <IconAddToList
-                                            class="w-6 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
-                                    </div>
+                <TransitionGroup tag="section" name="list"
+                    class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
+                    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterRating })"
+                        :key="movie.id" :movie="movie" :filterRating="filterRating" class="movie-card">
+                        <div class="flex flex-col items-center w-fit mx-auto">
+                            <img :src="movie.poster_thumb_br" class="max-w-full ring-2 ring-[#7075AB] rounded-sm mb-2">
+
+                            <div class="w-full">
+                                <p class="text-center text-base font-semibold text-zinc-100">{{ movie.titulo }}</p>
+                                <div class="flex items-center justify-between px-2.5">
+                                    <IconAddReview
+                                        class="w-8 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
+                                    <p class="text-center text-xs font-semibold text-zinc-100">IMDb {{ movie.rating
+                                        }}
+                                    </p>
+                                    <IconAddToList
+                                        class="w-6 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
                                 </div>
                             </div>
                         </div>
-                  
-                    </TransitionGroup>
+                    </div>
+
+                </TransitionGroup>
             </div>
         </div>
         <TheFooter />
@@ -162,25 +203,25 @@ const loggedIn = ref(false);
 /* 1. Transição de Entrada e Saída */
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 2. Estado de "Sumir" (Fade + Encolher levemente) */
 .list-enter-from,
 .list-leave-to {
-  opacity: 0;
-  /* Reduzimos o movimento para quase zero */
-  transform: translateY(5px); 
+    opacity: 0;
+    /* Reduzimos o movimento para quase zero */
+    transform: translateY(5px);
 }
 
 /* 3. O Ajuste Crítico para a Saída */
 .list-leave-active {
-  position: absolute;
-  pointer-events: none;
+    position: absolute;
+    pointer-events: none;
 }
 
 /* 4. Suavização do movimento dos que ficam */
 .list-move {
-  transition: transform 0.4s ease;
+    transition: transform 0.4s ease;
 }
 </style>
