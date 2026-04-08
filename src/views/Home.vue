@@ -125,6 +125,7 @@ const loggedIn = ref(false);
                                                             class="text-[9px] text-zinc-500 uppercase font-bold">Estúdio</label>
                                                         <select
                                                             class="w-full bg-white/5 border border-white/10 p-1.5 rounded text-[10px] text-white outline-none focus:border-[#00FCFF]">
+                                                            <option class="bg-zinc-900">Todos</option>
                                                             <option class="bg-zinc-900">Disney</option>
                                                             <option class="bg-zinc-900">Warner Bros</option>
                                                         </select>
