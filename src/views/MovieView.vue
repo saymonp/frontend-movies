@@ -3,6 +3,9 @@ import { computed, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Navbar from '@/components/Navbar.vue';
 import IconStar from '@/components/icons/IconStar.vue';
+import IconWatchLater from '@/components/icons/IconWatchLater.vue';
+import IconAddToList from '@/components/icons/IconAddToList.vue';
+import IconCheck from '@/components/icons/IconCheck.vue';
 
 import movie_json from '../assets/movieDetalhes.json';
 
@@ -27,7 +30,7 @@ const movieTitle = computed(() => {
   return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
 });
 
-const rating = ref(5); // Valor inicial
+const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
 
 const selectRating = (val: number) => {
@@ -62,16 +65,18 @@ const selectRating = (val: number) => {
         <div class="relative z-20 px-4 -mt-13 sm:-mt-18 lg:max-w-5xl  mx-auto">
 
 
-                      
+
           <div class="mt-2 flex gap-2 lg:gap-10 lg:place-content-around">
             <div
               class="flex-1 flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
               <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md">
                 {{ movieTitle }}
               </h1>
-              <p class="items-center justify-center text-zinc-300 font-bold leading-relaxed">{{ movie.release_date?.slice(0, 4) }}
+              <p class="items-center justify-center text-zinc-300 font-bold leading-relaxed">{{
+                movie.release_date?.slice(0, 4) }}
               </p>
-              <p class="text-zinc-400 leading-relaxed">Dirigido por <span class="font-bold text-zinc-300">{{ movie.diretores }}</span></p>
+              <p class="text-zinc-400 leading-relaxed">Dirigido por <span class="font-bold text-zinc-300">{{
+                movie.diretores }}</span></p>
               <p class="text-zinc-400 leading-relaxed drop-shadow-sm basis-full">{{ movie.tagline_br }}</p>
               <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
               <div class="mt-2 hidden lg:block">
@@ -98,12 +103,33 @@ const selectRating = (val: number) => {
               </div>
 
             </div>
-           
-            <div class="shrink-0 ml-auto"><img :src="movie.poster_path_br"
-              class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
+            <div class="flex flex-col ">
+              <div class="shrink-0 ml-auto"><img :src="movie.poster_path_br"
+                  class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
+              </div>
+
+
             </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mx-auto w-full max-w-md mt-9">
+
+            <div class="flex flex-col items-center gap-2">
+              <IconWatchLater class="w-7 h-7 lg:w-10 text-zinc-100" />
+              <span class="text-zinc-100 text-xs lg:text-sm text-center">Assistir mais Tarde</span>
             </div>
-            
+
+            <div class="flex flex-col items-center gap-2">
+              <IconAddToList class="w-7 h-7 lg:w-10 text-zinc-100" />
+              <span class="text-zinc-100 text-xs lg:text-sm text-center">Salvar na Lista</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <IconCheck class="w-7 h-7 lg:w-10 text-zinc-100" />
+              <span class="text-zinc-100 text-xs lg:text-sm text-center">Assistido</span>
+            </div>
+
+          </div>
 
           <div class="mt-8 block lg:hidden">
             <p class="text-zinc-400 leading-relaxed">
