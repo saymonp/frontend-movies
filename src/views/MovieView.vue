@@ -63,7 +63,7 @@ const selectRating = (val: number) => {
 
 
 
-          <div class="mt-2 flex gap-10 place-content-around">
+          <div class="basis-full mt-2 flex lg:gap-9 lg:place-content-around">
             <div
               class="flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
               <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md">
@@ -80,15 +80,15 @@ const selectRating = (val: number) => {
                 </p>
               </div>
               <button
-                class="w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
+                class="mt-2 w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 Fazer Review
               </button>
               <!-- Estrelas -->
-              <div class="flex">
+              <div class="mt-4 flex lg:basis-full lg:items-center">
                 <button v-for="star in 5" :key="star" type="button" @click="selectRating(star)"
                   @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
-                  class="relative p-1 transition-transform active:scale-90 cursor-pointer">
-                  <IconStar class="w-4 h-4 transition-colors duration-200" :class="star <= (hoverRating || rating)
+                  class="p-1 transition-transform active:scale-90 cursor-pointer">
+                  <IconStar class="w-4 h-4 lg:w-6 lg:h-6 transition-colors duration-200" :class="star <= (hoverRating || rating)
                     ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]'
                     : 'text-zinc-600'" />
                 </button>
@@ -99,9 +99,9 @@ const selectRating = (val: number) => {
 
             </div>
            
-            <img :src="movie.poster_path_br"
+            <div class="shrink-0"><img :src="movie.poster_path_br"
               class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
-            
+            </div>
             </div>
             
 
