@@ -2,6 +2,7 @@
 import { computed, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Navbar from '@/components/Navbar.vue';
+import IconStar from '@/components/icons/IconStar.vue';
 
 import movie_json from '../assets/movieDetalhes.json';
 
@@ -26,9 +27,12 @@ const movieTitle = computed(() => {
   return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
 });
 
-watchEffect(() => {
-  console.log("Caminho da imagem atual:", movie.value?.backdrop_path_br);
-});
+const rating = ref(5); // Valor inicial
+const hoverRating = ref(0); // Para efeito visual ao passar o mouse
+
+const selectRating = (val: number) => {
+  rating.value = val;
+};
 </script>
 
 <template>
@@ -60,28 +64,46 @@ watchEffect(() => {
 
 
           <div class="mt-2 flex gap-10 place-content-around">
-            <div class="flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
+            <div
+              class="flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
               <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md">
                 {{ movieTitle }}
               </h1>
-              <p class="items-center justify-center text-zinc-400 leading-relaxed">{{ movie.release_date?.slice(0, 4) }}</p>
+              <p class="items-center justify-center text-zinc-400 leading-relaxed">{{ movie.release_date?.slice(0, 4) }}
+              </p>
               <p class="text-zinc-400 leading-relaxed">Dirigido por {{ movie.diretores }}</p>
               <p class="text-zinc-400 leading-relaxed drop-shadow-sm basis-full">{{ movie.tagline_br }}</p>
               <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
               <div class="mt-2 hidden lg:block">
-            <p class="text-zinc-400 leading-relaxed">
-              {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
-            </p>
-          </div>
+                <p class="text-zinc-400 leading-relaxed">
+                  {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
+                </p>
+              </div>
               <button
                 class="w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 Fazer Review
               </button>
-            </div>
+              <!-- Estrelas -->
+              <div class="flex">
+                <button v-for="star in 5" :key="star" type="button" @click="selectRating(star)"
+                  @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
+                  class="relative p-1 transition-transform active:scale-90 cursor-pointer">
+                  <IconStar class="w-4 h-4 transition-colors duration-200" :class="star <= (hoverRating || rating)
+                    ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]'
+                    : 'text-zinc-600'" />
+                </button>
+                <span class="text-[#00FCFF] font-black text-l italic">
+                  {{ rating }}/5
+                </span>
+              </div>
 
+            </div>
+           
             <img :src="movie.poster_path_br"
               class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
-          </div>
+            
+            </div>
+            
 
           <div class="mt-8 block lg:hidden">
             <p class="text-zinc-400 leading-relaxed">
