@@ -35,36 +35,60 @@ watchEffect(() => {
   <div class="bg-zinc-50 dark:bg-zinc-900">
     <Navbar :loggedIn="loggedIn" />
     <div class="bg-hero">
-
       <div v-if="movie" class="relative z-10 w-full h-auto">
+
         <div class="relative w-full h-auto overflow-hidden">
+
+
 
           <div
             class="relative w-full h-auto mx-auto max-w-[1440px] h-auto lg:max-w-[400%] lg:max-h-[450px] object-cover object-top mask-[linear-gradient(to_bottom,black_55%,transparent_100%)] sm:mask-[linear-gradient(to_bottom,black_70%,transparent_100%)]">
+
             <div class="absolute inset-0 bg-[#CC00CC] opacity-20"></div>
+
             <div class="absolute inset-0 bg-[#CC00CC]"></div>
 
+
+
             <img :src="movie.backdrop_path_br" class="relative w-full h-full object-cover opacity-73" />
+
           </div>
-
-
         </div>
-        <div class="p-8">
-          <h1 class="text-[#00FCFF] font-black text-4xl uppercase">
-            {{ movieTitle }}
-          </h1>
 
-          <div class="mt-6 flex gap-4">
-            <img :src="movie.poster_br" class="w-64 rounded-xl shadow-2xl border border-white/10">
+        <div class="relative z-20 px-8 -mt-13 sm:-mt-18 lg:max-w-5xl  mx-auto">
 
-            <div class="flex-1">
-              <p class="text-zinc-400 leading-relaxed">
-                {{ locale === 'br' ? movie.sinopse_br : movie.sinopse_en }}
-              </p>
+
+
+          <div class="mt-2 flex gap-10 place-content-around">
+            <div class="flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
+              <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md">
+                {{ movieTitle }}
+              </h1>
+              <p class="items-center justify-center text-zinc-400 leading-relaxed">{{ movie.release_date?.slice(0, 4) }}</p>
+              <p class="text-zinc-400 leading-relaxed">Dirigido por {{ movie.diretores }}</p>
+              <p class="text-zinc-400 leading-relaxed drop-shadow-sm basis-full">{{ movie.tagline_br }}</p>
+              <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
+              <div class="mt-2 hidden lg:block">
+            <p class="text-zinc-400 leading-relaxed">
+              {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
+            </p>
+          </div>
+              <button
+                class="w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
+                Fazer Review
+              </button>
             </div>
+
+            <img :src="movie.poster_path_br"
+              class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
+          </div>
+
+          <div class="mt-8 block lg:hidden">
+            <p class="text-zinc-400 leading-relaxed">
+              {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
+            </p>
           </div>
         </div>
-
 
       </div>
       <div v-else class="text-white">
