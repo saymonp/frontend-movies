@@ -178,16 +178,18 @@ const movies = ref(movies_json.movie);
           <div class="mt-4">
             <div v-if="abaAtiva === 'generos'" class="flex flex-wrap gap-2">
               <span v-for="(genero, index) in movie.generos" :key="index"
-                class="bg-zinc-800 text-zinc-100 px-3 py-1 rounded-full text-sm border border-white/5">
-                {{ genero }}
+                class="bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit"">
+                <p class="text-white text-[10px] uppercase tracking-wider font-bold text-center"> {{ genero }}</p>
               </span>
             </div>
 
             <div v-if="abaAtiva === 'detalhes'" class="text-zinc-400 text-sm space-y-2">
-              <p><span class="text-zinc-100 font-bold">Título Original:</span> {{ movie.original_title }}</p>
-              <p><span class="text-zinc-100 font-bold">Idioma:</span> {{ movie.original_language }}</p>
-              <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{ movie.production_companies }}</p>
+              <p><span class="text-zinc-100 font-bold">Título Original:</span> {{ movie.titulo_original }}</p>
+              <p><span class="text-zinc-100 font-bold">Idioma:</span> {{ movie.lingua_origem }}</p>
+              <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{ movie.estudios }}</p>
+              <p><span class="text-zinc-100 font-bold">Nota IMDb</span> {{ movie.rating }}</p>
             </div>
+            <p class="mt-5 text-zinc-100 font-bold"><a class="underline" href="https://www.imdb.com/pt/title/tt31193180/">Mais em TMDb</a></p>
           </div>
         </div>
         <div class="lg:max-w-5xl  mx-auto">
