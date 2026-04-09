@@ -11,6 +11,7 @@
         "release_date": "2025-11-26",
         "diretores": "Ryan Coogler",
         "estudios": "Warner Bros. Pictures",
+        "generos": ["Ação", "Terror", "Drama", "Comédia", "Suspense"],
         "homepage": "https://www.pecadoresfilme.com.br/home/",
         "poster_path_br": "http://192.168.2.137:9000/posters/posters_br/original_v0Ljeti537c6cNKweuEN0iaU3x4.jpg",
         "backdrop_path_br": "http://192.168.2.137:9000/posters/backdrops_br/original_nAxGnGHOsfzufThz20zgmRwKur3.jpg",
