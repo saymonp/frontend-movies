@@ -56,9 +56,91 @@ const reviews = ref([
 const mostrarMais = () => {
   limite.value += 3; // Carrega mais 3 por vez
 };
+
+const isCardReviewVisible = ref(false)
+
+// Função para pegar a data de hoje formatada (YYYY-MM-DD)
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+// Inicializamos o estado com a data de hoje
+const dataAssistido = ref(getTodayDate());
 </script>
 
 <template>
+  <div v-show="isCardReviewVisible" 
+     class="fixed z-50 bg-[#0a0a0a]/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 sm:p-8 
+            top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+            shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_20px_rgba(0,252,255,0.1)] w-[92%] max-w-[450px]">
+  
+  <div class="flex flex-col gap-6">
+    <div class="text-center">
+      <h2 class="text-zinc-100 font-black text-2xl tracking-tighter uppercase">Minha Review</h2>
+      <p class="text-zinc-500 text-xs mt-1 italic">Compartilhe sua opinião sobre o filme</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Título da Review</label>
+        <input type="text" placeholder="Ex: Incrível!"
+               class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all">
+      </div>
+
+      <div class="flex flex-col gap-1">
+  <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Assistido em</label>
+  <input 
+    type="date"
+    v-model="dataAssistido"
+    class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all"
+  >
+</div>
+    </div>
+
+    <div class="flex flex-col items-center bg-white/5 p-4 rounded-xl border border-white/5">
+      <label class="text-zinc-400 text-[10px] uppercase font-bold mb-2">Sua Nota</label>
+      <div class="flex items-center gap-2">
+        <div class="flex">
+          <button v-for="star in 5" :key="star" type="button" @click="selectRating(star)"
+                  @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
+                  class="p-1 transition-all active:scale-125 cursor-pointer">
+            <IconStar class="w-6 h-6 transition-colors duration-200" 
+                      :class="star <= (hoverRating || rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
+          </button>
+        </div>
+        <span class="text-[#00FCFF] font-black text-xl italic ml-2 w-10">{{ rating }}<span class="text-zinc-600 text-sm">/5</span></span>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Sua Mensagem</label>
+      <textarea rows="4" placeholder="O que você achou da fotografia, roteiro e atuação?"
+                class="w-full bg-white/5 border border-white/10 p-3 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all resize-none"></textarea>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Tags <span class="lowercase font-normal opacity-50">(pressione enter)</span></label>
+      <input type="text" placeholder="Ex: Masterpiece, Terror, Favorito"
+             class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
+    </div>
+
+    <div class="flex flex-col gap-3 mt-2">
+      <button @click="isCardReviewVisible = false"
+              class="w-full bg-[#00FCFF] text-black font-black uppercase tracking-widest py-3 rounded-lg hover:bg-[#00f2f5] hover:shadow-[0_0_20px_rgba(0,252,255,0.4)] transition-all cursor-pointer active:scale-95">
+        Publicar Review
+      </button>
+      
+      <button @click="isCardReviewVisible = false"
+              class="w-full py-2 text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-widest transition-colors cursor-pointer">
+        Cancelar e Sair
+      </button>
+    </div>
+  </div>
+</div>
+  <div v-if="isCardReviewVisible" @click="isCardReviewVisible = false"
+    class="fixed inset-0 bg-black/10 backdrop-blur-xs z-40">
+  </div>
   <div class="bg-zinc-50 dark:bg-zinc-900">
     <Navbar :loggedIn="loggedIn" />
     <div class="bg-hero">
@@ -104,7 +186,7 @@ const mostrarMais = () => {
                   {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
                 </p>
               </div>
-              <button
+              <button @click="isCardReviewVisible = true"
                 class="mt-2 w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 Fazer Review
               </button>
