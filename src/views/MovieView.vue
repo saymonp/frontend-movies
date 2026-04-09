@@ -2,6 +2,7 @@
 import { computed, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Navbar from '@/components/Navbar.vue';
+import TheFooter from '@/components/TheFooter.vue';
 import IconStar from '@/components/icons/IconStar.vue';
 import IconWatchLater from '@/components/icons/IconWatchLater.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
@@ -378,4 +379,5 @@ const mostrarMais = () => {
       </div>
     </div>
   </div>
+  <TheFooter />
 </template>
