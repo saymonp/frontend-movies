@@ -59,19 +59,19 @@ const selectRating = (val: number) => {
           </div>
         </div>
 
-        <div class="relative z-20 px-8 -mt-13 sm:-mt-18 lg:max-w-5xl  mx-auto">
+        <div class="relative z-20 px-4 -mt-13 sm:-mt-18 lg:max-w-5xl  mx-auto">
 
 
-
-          <div class="basis-full mt-2 flex lg:gap-9 lg:place-content-around">
+                      
+          <div class="mt-2 flex gap-2 lg:gap-10 lg:place-content-around">
             <div
-              class="flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
+              class="flex-1 flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
               <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md">
                 {{ movieTitle }}
               </h1>
-              <p class="items-center justify-center text-zinc-400 leading-relaxed">{{ movie.release_date?.slice(0, 4) }}
+              <p class="items-center justify-center text-zinc-300 font-bold leading-relaxed">{{ movie.release_date?.slice(0, 4) }}
               </p>
-              <p class="text-zinc-400 leading-relaxed">Dirigido por {{ movie.diretores }}</p>
+              <p class="text-zinc-400 leading-relaxed">Dirigido por <span class="font-bold text-zinc-300">{{ movie.diretores }}</span></p>
               <p class="text-zinc-400 leading-relaxed drop-shadow-sm basis-full">{{ movie.tagline_br }}</p>
               <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
               <div class="mt-2 hidden lg:block">
@@ -99,7 +99,7 @@ const selectRating = (val: number) => {
 
             </div>
            
-            <div class="shrink-0"><img :src="movie.poster_path_br"
+            <div class="shrink-0 ml-auto"><img :src="movie.poster_path_br"
               class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
             </div>
             </div>
