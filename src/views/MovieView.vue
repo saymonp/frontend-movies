@@ -44,7 +44,7 @@ const selectRating = (val: number) => {
 const movies = ref(movies_json.movie);
 
 
-const limite = ref(3); // Quantas reviews aparecem inicialmente
+const limite = ref(1); // Quantas reviews aparecem inicialmente
 const reviews = ref([
   { id: 1, autor: 'Boladotron', nota: 5, texto: 'Filme muito maneiro, é de temática vampiresca com uma abordagem diferente.', avatar: '../assets/image.png' },
   { id: 2, autor: 'StarConvoy', nota: 4, texto: 'A fotografia é incrível, mas o ritmo cansa um pouco no meio.', avatar: '../assets/image.png' },
@@ -242,52 +242,134 @@ const mostrarMais = () => {
             </div>
 
           </div>
-         <div class="lg:max-w-5xl max-w-[95%] mx-auto mb-20">
-  <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
-    Reviews Populares
-  </h1>
 
-  <div class="flex flex-col gap-8">
-    <div v-for="review in reviews.slice(0, limite)" :key="review.id" 
-         class="flex gap-4 items-start group">
-      
-      <div class="shrink-0">
-        <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-zinc-700 group-hover:border-[#00FCFF] transition-colors">
-          <img class="w-full h-full object-cover" src="../assets/image.png" />
-        </div>
-      </div>
 
-      <div class="flex-1 flex flex-col gap-1">
-        <div class="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3">
-          <p class="text-zinc-100 text-md font-light">
-            Review de <span class="font-extrabold text-[#00FCFF]">{{ review.autor }}</span>
-          </p>
-          
-          <div class="flex">
-            <IconStar v-for="i in 5" :key="i" 
-              :class="i <= review.nota ? 'text-[#00FCFF]' : 'text-zinc-700'"
-              class="w-3 h-3 lg:w-4 lg:h-4" />
+
+          <div class="lg:max-w-5xl max-w-[95%] mx-auto mb-20">
+            <h1
+              class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
+              Listas Relacionadas
+            </h1>
+
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-y-12 gap-x-6">
+
+              <div class="group cursor-pointer">
+                <p
+                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
+                  Comédia Romântica
+                </p>
+
+                <div class="flex items-center justify-center pl-1">
+                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                  </div>
+
+                  <div
+                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
+                  </div>
+
+                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
+                  </div>
+
+                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
+                  </div>
+
+                </div>
+
+                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
+              </div>
+
+              <div class="group cursor-pointer">
+                <p
+                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
+                  Adrenalina pura
+                </p>
+
+                <div class="flex items-center justify-center pl-1">
+                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                  </div>
+
+                  <div
+                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
+                  </div>
+
+                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
+                  </div>
+
+                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
+                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
+                  </div>
+
+                </div>
+
+                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
+              </div>
+
+            </div>
           </div>
-        </div>
 
-        <div class="mt-1">
-          <p class="text-zinc-400 text-sm lg:text-base leading-relaxed">
-            {{ review.texto }}
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div v-if="limite < reviews.length" class="mt-10 flex justify-center">
-    <button 
-      @click="mostrarMais"
-      class="text-zinc-400 hover:text-[#00FCFF] text-sm font-bold uppercase tracking-widest transition-all border-b border-zinc-800 hover:border-[#00FCFF] pb-1"
-    >
-      Mostrar mais reviews
-    </button>
-  </div>
-</div>
+
+
+
+          <div class="lg:max-w-5xl max-w-[95%] mx-auto mb-20">
+            <h1
+              class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
+              Reviews Populares
+            </h1>
+
+            <div class="flex flex-col gap-8">
+              <div v-for="review in reviews.slice(0, limite)" :key="review.id" class="flex gap-4 items-start group">
+
+                <div class="shrink-0">
+                  <div
+                    class="w-12 h-12 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-zinc-700 group-hover:border-[#00FCFF] transition-colors">
+                    <img class="w-full h-full object-cover" src="../assets/image.png" />
+                  </div>
+                </div>
+
+                <div class="flex-1 flex flex-col gap-1">
+                  <div class="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3">
+                    <p class="text-zinc-100 text-md font-light">
+                      Review de <span class="font-extrabold text-[#00FCFF]">{{ review.autor }}</span>
+                    </p>
+
+                    <div class="flex">
+                      <IconStar v-for="i in 5" :key="i" :class="i <= review.nota ? 'text-[#00FCFF]' : 'text-zinc-700'"
+                        class="w-3 h-3 lg:w-4 lg:h-4" />
+                    </div>
+                  </div>
+
+                  <div class="mt-1">
+                    <p class="text-zinc-400 text-sm lg:text-base leading-relaxed">
+                      {{ review.texto }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="limite < reviews.length" class="mt-10 flex justify-center">
+              <button @click="mostrarMais"
+                class="text-zinc-400 hover:text-[#00FCFF] text-sm font-bold uppercase tracking-widest transition-all border-b border-zinc-800 hover:border-[#00FCFF] pb-1">
+                Mostrar mais reviews
+              </button>
+            </div>
+          </div>
         </div>
 
       </div>
