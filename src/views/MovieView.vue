@@ -42,6 +42,19 @@ const selectRating = (val: number) => {
 
 
 const movies = ref(movies_json.movie);
+
+
+const limite = ref(3); // Quantas reviews aparecem inicialmente
+const reviews = ref([
+  { id: 1, autor: 'Boladotron', nota: 5, texto: 'Filme muito maneiro, é de temática vampiresca com uma abordagem diferente.', avatar: '../assets/image.png' },
+  { id: 2, autor: 'StarConvoy', nota: 4, texto: 'A fotografia é incrível, mas o ritmo cansa um pouco no meio.', avatar: '../assets/image.png' },
+  { id: 3, autor: 'OrionPax', nota: 5, texto: 'Melhor do gênero que vi esse ano!', avatar: '../assets/image.png' },
+  { id: 4, autor: 'OptimusPrime', nota: 3, texto: 'Esperava mais do final.', avatar: '../assets/image.png' },
+]);
+
+const mostrarMais = () => {
+  limite.value += 3; // Carrega mais 3 por vez
+};
 </script>
 
 <template>
@@ -179,7 +192,7 @@ const movies = ref(movies_json.movie);
             <div v-if="abaAtiva === 'generos'" class="flex flex-wrap gap-2">
               <span v-for="(genero, index) in movie.generos" :key="index"
                 class="bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit"">
-                <p class="text-white text-[10px] uppercase tracking-wider font-bold text-center"> {{ genero }}</p>
+                <p class=" text-white text-[10px] uppercase tracking-wider font-bold text-center"> {{ genero }}</p>
               </span>
             </div>
 
@@ -189,45 +202,90 @@ const movies = ref(movies_json.movie);
               <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{ movie.estudios }}</p>
               <p><span class="text-zinc-100 font-bold">Nota IMDb</span> {{ movie.rating }}</p>
             </div>
-            <p class="mt-5 text-zinc-100 font-bold"><a class="underline" href="https://www.imdb.com/pt/title/tt31193180/">Mais em TMDb</a></p>
+            <p class="mt-5 text-zinc-100 font-bold"><a class="underline"
+                href="https://www.imdb.com/pt/title/tt31193180/">Mais em TMDb</a></p>
           </div>
         </div>
         <div class="lg:max-w-5xl  mx-auto">
-          <h1 class="mt-8 text-zinc-100 font-black text-lg uppercase drop-shadow-md">
+          <h1 class="max-w-13/14 mx-auto mt-8 text-zinc-100 font-black text-lg uppercase drop-shadow-md">
             Filmes com a mesma pegada
           </h1>
           <div tag="section" name="list"
-     class="grid grid-cols-4 sm:grid-cols-4 mt-3 gap-2 sm:gap-5 mx-auto w-full max-w-5xl px-2">
-  
-  <div v-for="movie in movies.slice(0, 4)" :key="movie.id" 
-       class="movie-card flex flex-col items-center">
+            class="grid grid-cols-4 sm:grid-cols-4 mt-3 gap-2 sm:gap-5 mx-auto w-full max-w-5xl px-2">
 
-    <RouterLink :to="{
-        name: 'MovieView',
-        params: {
-            lang: $i18n.locale,
-            slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
-        }
-    }" class="w-full">
-      <img :src="movie.poster_thumb_br"
-           class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF]">
-    </RouterLink>
+            <div v-for="movie in movies.slice(0, 4)" :key="movie.id" class="movie-card flex flex-col items-center">
 
-    <div class="w-full flex flex-col">
-      <p class="text-center text-[10px] sm:text-sm font-bold text-zinc-100 truncate leading-tight">
-        {{ movie.titulo }}
-      </p>
+              <RouterLink :to="{
+                name: 'MovieView',
+                params: {
+                  lang: $i18n.locale,
+                  slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
+                }
+              }" class="w-full">
+                <img :src="movie.poster_thumb_br"
+                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF]">
+              </RouterLink>
 
-      <div class="flex items-center justify-between mt-1 px-0.5">
-        <IconAddReview 
-          class="w-4 h-4 sm:w-6 sm:h-6 text-[#97A7CB] hover:text-[#00FCFF]" />
-        
-        <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
-          {{ movie.rating }}
-        </span>
+              <div class="w-full flex flex-col">
+                <p class="text-center text-[10px] sm:text-sm font-bold text-zinc-100 truncate leading-tight">
+                  {{ movie.titulo }}
+                </p>
+
+                <div class="flex items-center justify-between mt-1 px-0.5">
+                  <IconAddReview class="w-4 h-4 sm:w-6 sm:h-6 text-[#97A7CB] hover:text-[#00FCFF]" />
+
+                  <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
+                    {{ movie.rating }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+         <div class="lg:max-w-5xl max-w-[95%] mx-auto mb-20">
+  <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
+    Reviews Populares
+  </h1>
+
+  <div class="flex flex-col gap-8">
+    <div v-for="review in reviews.slice(0, limite)" :key="review.id" 
+         class="flex gap-4 items-start group">
+      
+      <div class="shrink-0">
+        <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-zinc-700 group-hover:border-[#00FCFF] transition-colors">
+          <img class="w-full h-full object-cover" src="../assets/image.png" />
+        </div>
+      </div>
+
+      <div class="flex-1 flex flex-col gap-1">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3">
+          <p class="text-zinc-100 text-md font-light">
+            Review de <span class="font-extrabold text-[#00FCFF]">{{ review.autor }}</span>
+          </p>
+          
+          <div class="flex">
+            <IconStar v-for="i in 5" :key="i" 
+              :class="i <= review.nota ? 'text-[#00FCFF]' : 'text-zinc-700'"
+              class="w-3 h-3 lg:w-4 lg:h-4" />
+          </div>
+        </div>
+
+        <div class="mt-1">
+          <p class="text-zinc-400 text-sm lg:text-base leading-relaxed">
+            {{ review.texto }}
+          </p>
+        </div>
       </div>
     </div>
+  </div>
 
+  <div v-if="limite < reviews.length" class="mt-10 flex justify-center">
+    <button 
+      @click="mostrarMais"
+      class="text-zinc-400 hover:text-[#00FCFF] text-sm font-bold uppercase tracking-widest transition-all border-b border-zinc-800 hover:border-[#00FCFF] pb-1"
+    >
+      Mostrar mais reviews
+    </button>
   </div>
 </div>
         </div>
