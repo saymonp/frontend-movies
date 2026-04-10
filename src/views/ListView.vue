@@ -5,6 +5,8 @@ import TheFooter from '@/components/TheFooter.vue';
 import movies_json from '../assets/movies.json';
 import IconAddReview from '@/components/icons/IconAddReview.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
+import IconNavHam from '@/components/icons/IconNavHam.vue';
+import IconDelete from '@/components/icons/IconDelete.vue';
 
 const movies = ref(movies_json.movie);
 const searchQuery = ref('');
@@ -32,9 +34,16 @@ const filteredSugestoes = computed(() => {
     <div class="bg-hero min-h-screen pt-24 pb-10">
         <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-30">
 
-            <h1 class="text-zinc-100 font-black text-3xl uppercase drop-shadow-lg text-center mb-8">
-                Comédia Romântica
-            </h1>
+            <div class="relative flex items-center justify-center mb-8">
+                <h1 class="text-zinc-100 font-black text-3xl uppercase drop-shadow-lg text-center">
+                    Comédia Romântica
+                </h1>
+
+                <button
+                    class="absolute right-0 hidden lg:block bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 ring-1 ring-[#00FCFF]/20 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
+                    <p class="text-zinc-100 text-[9px] uppercase tracking-tighter font-bold">Editar Lista</p>
+                </button>
+            </div>
 
             <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative z-50">
                 <div class="flex flex-col gap-3">
@@ -66,29 +75,45 @@ const filteredSugestoes = computed(() => {
             </div>
 
             <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-10">
-            <TransitionGroup tag="section" name="list" class="grid grid-cols-2 sm:grid-cols-4 mt-10 gap-6 relative z-10">
-                <div v-for="movie in movies.slice(0, 8)" :key="movie.id" class="movie-card group">
-                    <div class="flex flex-col items-center">
-                        <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_br } }"
-                            class="relative">
-                            <img :src="movie.poster_thumb_br"
-                                class="w-full ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg group-hover:shadow-[#00FCFF]/20">
-                        </RouterLink>
+                <div class="flex justify-end items-center gap-2 mb-1 mt-4">
 
-                        <div class="w-full mt-3 text-center">
-                            <p class="text-sm font-bold text-zinc-100 truncate px-1">{{ movie.titulo }}</p>
+                    <button
+                        class="block lg:hidden bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 ring-1 ring-[#00FCFF]/20 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
+                        <p class="text-zinc-100 text-[9px] uppercase tracking-tighter font-bold text-center">Editar
+                            Lista</p>
+                    </button>
 
-                            <div class="flex items-center justify-between mt-2 px-1">
-                                <IconAddReview
-                                    class="w-6 h-6 text-zinc-500 hover:text-[#00FCFF] cursor-pointer transition-colors" />
-                                <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating }}</span>
-                                <IconAddToList
-                                    class="w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                    <button
+                        class="bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 ring-1 ring-[#00FCFF]/20 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
+                        <p class="text-zinc-100 text-[9px] uppercase tracking-tighter font-bold text-center">Ordenar por
+                        </p>
+                    </button>
+
+                </div>
+                <TransitionGroup tag="section" name="list"
+                    class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10">
+                    <div v-for="movie in movies.slice(0, 8)" :key="movie.id" class="movie-card group">
+                        <div class="flex flex-col items-center">
+                            <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_br } }"
+                                class="relative">
+                                <img :src="movie.poster_thumb_br"
+                                    class="w-full ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg group-hover:shadow-[#00FCFF]/20">
+                            </RouterLink>
+
+                            <div class="w-full mt-3 text-center">
+                                <p class="text-sm font-bold text-zinc-100 truncate px-1">{{ movie.titulo }}</p>
+
+                                <div class="flex items-center justify-between mt-2 px-1">
+                                    <IconDelete
+                                        class="w-6 h-6 text-[#ff0077] hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                                    <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating }}</span>
+                                    <IconNavHam
+                                        class="w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </TransitionGroup>
+                </TransitionGroup>
             </div>
         </div>
     </div>
