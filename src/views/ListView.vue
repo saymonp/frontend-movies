@@ -1,107 +1,94 @@
 <script setup lang="ts">
-import Navbar from '@/components/Navbar.vue';
 import { computed, ref } from 'vue';
-import movies_json from '../assets/movies.json'
-import IconAddReview from '@/components/icons/IconAddReview.vue'
-import IconAddToList from '@/components/icons/IconAddToList.vue'
-
+import Navbar from '@/components/Navbar.vue';
 import TheFooter from '@/components/TheFooter.vue';
+import movies_json from '../assets/movies.json';
+import IconAddReview from '@/components/icons/IconAddReview.vue';
+import IconAddToList from '@/components/icons/IconAddToList.vue';
 
-const movies = ref(movies_json.movie)
+const movies = ref(movies_json.movie);
+const searchQuery = ref('');
 
-const props = defineProps<{
-    id: string
-}>();
-
-const filterRating = ref(0)
-const showFilter = ref(false)
-
-const filterShow = computed(() => {
-    // Arredonda para a primeira casa decimal de forma mais estável
-    return (Math.round(filterRating.value * 10) / 10).toFixed(1);
-});
-
-const loggedIn = ref(false);
-
-const sugestoesPesquisa = [
+// Sugestões mockadas (em um app real, viriam de uma API)
+const sugestoesLista = [
     { id: 1, movie: "Late Night with The Devil (2023)", diretor: "Cameron Cairnes" },
-    { id: 2, movie: "Breathless (1960)", diretor: "Jean-Luc Godarc" },
-    { id: 3, movie: "Bedazzled (2000)", diretor: "Harol Ramis" },
-]
+    { id: 2, movie: "Breathless (1960)", diretor: "Jean-Luc Godard" },
+    { id: 3, movie: "Bedazzled (2000)", diretor: "Harold Ramis" },
+];
 
+// Filtra as sugestões conforme o usuário digita
+const filteredSugestoes = computed(() => {
+    if (searchQuery.value.length < 2) return [];
+    console.log(sugestoesLista.filter(s =>
+        s.movie.toLowerCase().includes(searchQuery.value.toLowerCase())
+    ))
+    return sugestoesLista.filter(s =>
+        s.movie.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
+});
 </script>
 <template>
     <Navbar />
-    <div class="bg-hero">
-        <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
-            <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md text-center">
+    <div class="bg-hero min-h-screen pt-24 pb-10">
+        <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-30">
+
+            <h1 class="text-zinc-100 font-black text-3xl uppercase drop-shadow-lg text-center mb-8">
                 Comédia Romântica
             </h1>
-            <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10">
 
-                <div class="gap-4">
+            <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative">
+                <div class="flex flex-col gap-3">
+                    <label class="text-zinc-400 text-xs font-bold uppercase tracking-wider ml-1">
+                        Adicionar Filme para sua lista
+                    </label>
 
-                    <div class="flex flex-col gap-3">
-                        <p class="text-zinc-100">Adicionar Filme para sua lista</p>
+                    <div class="relative">
                         <div
-                            class="flex items-center bg-white/5 border border-white/20 rounded-xl px-2 py-1.5 ring-[#00FCFF] shadow-[0_0_10px_rgba(0,252,255,0.2)]">
+                            class="flex items-center bg-black/20 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#00FCFF] focus-within:ring-1 focus-within:ring-[#00FCFF]/30 transition-all">
+                            <input :value="searchQuery" @input="searchQuery = ($event.target as HTMLInputElement).value"
+                                type="text" placeholder="Digite o nome do filme..."
+                                class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm font-medium">
+                            <span v-if="searchQuery" @click="searchQuery = ''"
+                                class="text-zinc-500 cursor-pointer hover:text-white">✕</span>
+                        </div>
 
-                            <input type="text" placeholder="Busca..."
-                                class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-[11px] font-bold min-w-0">
-                            <div clas="relative">
-
-
-
+                        <div v-if="filteredSugestoes.length > 0"
+                            class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
+                            <div v-for="sugestao in filteredSugestoes" :key="sugestao.id"
+                                class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer transition-colors group">
+                                <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF]">{{ sugestao.movie
+                                    }}</p>
+                                <p class="text-zinc-500 text-[10px]">{{ sugestao.diretor }}</p>
                             </div>
                         </div>
-
-                        <div class="px-1">
-
-
-                        </div>
                     </div>
-
-
-
                 </div>
             </div>
 
-            <TransitionGroup tag="section" name="list"
-                class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
-                <div v-for="movie in movies.slice(0, 6)" :key="movie.id" :movie="movie" :filterRating="filterRating"
-                    class="movie-card">
-
-                    <div class="flex flex-col items-center w-fit mx-auto">
-                        <RouterLink :to="{
-                            name: 'MovieView',
-                            params: {
-                                lang: $i18n.locale,
-                                slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
-                            }
-                        }">
-                            <img :src="movie.poster_thumb_br" class="max-w-full ring-2 ring-[#7075AB] rounded-sm mb-2">
+            <TransitionGroup tag="section" name="list" class="grid grid-cols-2 sm:grid-cols-4 mt-10 gap-6 relative z-10">
+                <div v-for="movie in movies.slice(0, 8)" :key="movie.id" class="movie-card group">
+                    <div class="flex flex-col items-center">
+                        <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_br } }"
+                            class="relative">
+                            <img :src="movie.poster_thumb_br"
+                                class="w-full ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg group-hover:shadow-[#00FCFF]/20">
                         </RouterLink>
-                        <div class="w-full">
-                            <p class="text-center text-base font-semibold text-zinc-100">{{ movie.titulo }}</p>
-                            <div class="flex items-center justify-between px-2.5">
+
+                        <div class="w-full mt-3 text-center">
+                            <p class="text-sm font-bold text-zinc-100 truncate px-1">{{ movie.titulo }}</p>
+
+                            <div class="flex items-center justify-between mt-2 px-1">
                                 <IconAddReview
-                                    class="w-8 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
-                                <p class="text-center text-xs font-semibold text-zinc-100">IMDb {{ movie.rating
-                                }}
-                                </p>
+                                    class="w-6 h-6 text-zinc-500 hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                                <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating }}</span>
                                 <IconAddToList
-                                    class="w-6 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
+                                    class="w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-pointer transition-colors" />
                             </div>
                         </div>
                     </div>
                 </div>
-
             </TransitionGroup>
         </div>
-
-
-
-
     </div>
-<TheFooter />
+    <TheFooter />
 </template>
