@@ -7,6 +7,10 @@ import IconAddReview from '@/components/icons/IconAddReview.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
 import IconNavHam from '@/components/icons/IconNavHam.vue';
 import IconDelete from '@/components/icons/IconDelete.vue';
+import draggable from 'vuedraggable';
+
+
+const moviesList = ref(movies_json.movie.slice(0, 8));
 
 const movies = ref(movies_json.movie);
 const searchQuery = ref('');
@@ -90,32 +94,51 @@ const filteredSugestoes = computed(() => {
                     </button>
 
                 </div>
-                <TransitionGroup tag="section" name="list"
-                    class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10">
-                    <div v-for="movie in movies.slice(0, 8)" :key="movie.id" class="movie-card group">
-                        <div class="flex flex-col items-center">
-                            <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_br } }"
-                                class="relative">
-                                <img :src="movie.poster_thumb_br"
-                                    class="w-full ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg group-hover:shadow-[#00FCFF]/20">
-                            </RouterLink>
+                <draggable 
+    v-model="moviesList" 
+    item-key="id"
+    tag="section"
+    handle=".drag-handle" 
+    ghost-class="opacity-50"
+    class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10"
+>
+    <template #item="{ element: movie }">
+        <div class="movie-card group">
+            <div class="flex flex-col items-center">
+                <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_br } }"
+                    class="relative">
+                    <img :src="movie.poster_thumb_br"
+                        class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg">
+                </RouterLink>
 
-                            <div class="w-full mt-3 text-center">
-                                <p class="text-sm font-bold text-zinc-100 truncate px-1">{{ movie.titulo }}</p>
+                <div class="w-full mt-3 text-center">
+                    <p class="text-sm font-bold text-zinc-100 truncate px-1">{{ movie.titulo }}</p>
 
-                                <div class="flex items-center justify-between mt-2 px-1">
-                                    <IconDelete
-                                        class="w-6 h-6 text-[#ff0077] hover:text-[#00FCFF] cursor-pointer transition-colors" />
-                                    <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating }}</span>
-                                    <IconNavHam
-                                        class="w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-pointer transition-colors" />
-                                </div>
-                            </div>
-                        </div>
+                    <div class="flex items-center justify-between mt-2 px-1">
+                        <IconDelete
+                            class="w-6 h-6 text-[#ff0077] hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                        
+                        <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating }}</span>
+                        
+                        <IconNavHam
+                            class="drag-handle w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />
                     </div>
-                </TransitionGroup>
+                </div>
+            </div>
+        </div>
+    </template>
+</draggable>
             </div>
         </div>
     </div>
     <TheFooter />
 </template>
+
+<style>
+.flip-list-move {
+  transition: transform 0.5s;
+}
+.no-move {
+  transition: transform 0s;
+}
+</style>
