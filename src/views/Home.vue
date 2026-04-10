@@ -213,105 +213,83 @@ const toggleAddToList = (id: number) => {
                 </div>
 
                 <TransitionGroup tag="section" name="list"
-                    class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
-                    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterRating })"
-                        :key="movie.id" :movie="movie" :filterRating="filterRating" class="movie-card">
+    class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
+    
+    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterRating })"
+        :key="movie.id" 
+        class="relative flex flex-col items-center w-full"
+    >
+        <RouterLink :to="{
+            name: 'MovieView',
+            params: {
+                lang: $i18n.locale,
+                slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
+            }
+        }" class="w-full">
+            <img :src="movie.poster_thumb_br"
+                class="w-full aspect-[2/3] object-cover ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-lg">
+        </RouterLink>
 
-                        <div class="flex flex-col items-center w-fit mx-auto">
-                            <RouterLink :to="{
-                                name: 'MovieView',
-                                params: {
-                                    lang: $i18n.locale,
-                                    slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
-                                }
-                            }">
-                                <img :src="movie.poster_thumb_br"
-                                    class="max-w-full ring-2 ring-[#7075AB] rounded-sm mb-2">
-                            </RouterLink>
-                            <div class="movie-card group relative w-full">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-full mt-3">
-                                        <p class="text-center text-sm font-bold text-zinc-100 truncate">{{ movie.titulo
-                                            }}</p>
-                                        <div class="flex items-center justify-between px-1 mt-2">
-                                            <IconAddReview @click.stop="toggleQuickReview(movie.id)"
-                                                class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" />
-                                            <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
-                                                }}</span>
-                                            <IconAddToList @click.stop="toggleAddToList(movie.id)"
-                                                class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors"
-                                                :class="{ 'text-[#00FCFF]': activeListId === movie.id }" />
-                                        </div>
-                                    </div>
-                                </div>
+        <div class="relative w-full">
+            <div class="flex flex-col items-center">
+                <div class="w-full mt-1">
+                    <p class="text-center text-xs sm:text-sm font-bold text-zinc-100 truncate px-1">
+                        {{ movie.titulo }}
+                    </p>
+                    
+                    <div class="flex items-center justify-between px-1 mt-2">
+                        <IconAddReview @click.stop="toggleQuickReview(movie.id)"
+                            class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                        
+                        <span class="text-[9px] sm:text-[10px] font-black text-zinc-400">
+                            IMDb {{ movie.rating }}
+                        </span>
+                        
+                        <IconAddToList @click.stop="toggleAddToList(movie.id)"
+                            class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors"
+                            :class="{ 'text-[#00FCFF]': activeListId === movie.id }" />
+                    </div>
+                </div>
+            </div>
 
-                                <Transition name="fade-slide">
-                                    <div v-if="activeReviewId === movie.id"
-                                        class="absolute top-full left-0 right-0 z-[60] mt-2 bg-[#0f0f0f] border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-
-                                        <div class="flex flex-col gap-3">
-                                            <div class="flex justify-center gap-0.5">
-                                                <button v-for="star in 5" :key="star" @click="rating = star"
-                                                    class="p-0.5">
-                                                    <IconStar class="w-5 h-5 transition-colors"
-                                                        :class="star <= rating ? 'text-[#00FCFF]' : 'text-zinc-800'" />
-                                                </button>
-                                            </div>
-
-                                            <input type="text" placeholder="Review rápida..."
-                                                class="w-full bg-white/5 border border-white/10 p-2 rounded-md text-[11px] text-white outline-none focus:border-[#00FCFF]/50">
-
-                                            <div class="flex gap-2">
-                                                <button @click=toggleQuickReview(movie.id)
-                                                    class="flex-1 bg-[#00FCFF] text-black text-[10px] font-black uppercase py-2 rounded-md hover:bg-[#00f2f5]">
-                                                    OK
-                                                </button>
-                                                <button @click=toggleQuickReview(movie.id)
-                                                    class="px-2 text-zinc-500 hover:text-white text-[10px] uppercase font-bold">
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Transition>
-                                <Transition name="fade-slide">
-                                    <div v-if="activeListId === movie.id"
-                                        class="absolute top-full left-0 right-0 z-[60] mt-2 bg-[#0f0f0f] border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl w-[160px] sm:w-full mx-auto">
-
-                                        <div class="flex flex-col gap-3">
-                                            <p
-                                                class="text-[10px] text-zinc-500 uppercase font-black tracking-widest border-b border-white/5 pb-1">
-                                                Salvar em:</p>
-
-                                            <div
-                                                class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                                                <label v-for="lista in minhasListas" :key="lista.id"
-                                                    class="flex items-center gap-2 cursor-pointer group">
-                                                    <div class="relative flex items-center">
-                                                        <input type="checkbox" v-model="lista.selecionada"
-                                                            class="peer appearance-none w-4 h-4 border border-white/20 rounded bg-white/5 checked:bg-[#00FCFF] checked:border-[#00FCFF] transition-all cursor-pointer">
-                                                        <span
-                                                            class="absolute text-black opacity-0 peer-checked:opacity-100 pointer-events-none left-0.5 text-[10px] font-bold">✓</span>
-                                                    </div>
-                                                    <span
-                                                        class="text-zinc-300 text-[11px] group-hover:text-white transition-colors truncate">
-                                                        {{ lista.nome }}
-                                                    </span>
-                                                </label>
-                                            </div>
-
-                                            <button @click="activeListId = null"
-                                                class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black uppercase py-2 rounded-md transition-all">
-                                                Concluir
-                                            </button>
-                                        </div>
-                                    </div>
-                                </Transition>
-                            </div>
+            <Transition name="fade-slide">
+                <div v-if="activeReviewId === movie.id"
+                    class="absolute top-full left-0 right-0 z-[60] mt-2 bg-[#0f0f0f]/95 border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-center gap-0.5">
+                            <button v-for="star in 5" :key="star" @click="rating = star" class="p-0.5">
+                                <IconStar class="w-5 h-5 transition-colors"
+                                    :class="star <= rating ? 'text-[#00FCFF]' : 'text-zinc-800'" />
+                            </button>
+                        </div>
+                        <input type="text" placeholder="Review rápida..."
+                            class="w-full bg-white/5 border border-white/10 p-2 rounded-md text-[11px] text-white outline-none focus:border-[#00FCFF]/50">
+                        <div class="flex gap-2">
+                            <button @click="toggleQuickReview(movie.id)" class="flex-1 bg-[#00FCFF] text-black text-[10px] font-black uppercase py-2 rounded-md">OK</button>
+                            <button @click="toggleQuickReview(movie.id)" class="px-2 text-zinc-500 hover:text-white text-[10px]">✕</button>
                         </div>
                     </div>
+                </div>
+            </Transition>
 
-                </TransitionGroup>
+            <Transition name="fade-slide">
+                <div v-if="activeListId === movie.id"
+                    class="absolute top-full left-0 right-0 z-[60] mt-2 bg-[#0f0f0f]/95 border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                    <div class="flex flex-col gap-3">
+                        <p class="text-[10px] text-zinc-500 uppercase font-black border-b border-white/5 pb-1">Salvar em:</p>
+                        <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
+                            <label v-for="lista in minhasListas" :key="lista.id" class="flex items-center gap-2 cursor-pointer group">
+                                <input type="checkbox" v-model="lista.selecionada" class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
+                                <span class="text-zinc-300 text-[11px] truncate">{{ lista.nome }}</span>
+                            </label>
+                        </div>
+                        <button @click="activeListId = null" class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black py-2 rounded-md transition-all">Concluir</button>
+                    </div>
+                </div>
+            </Transition>
+        </div>
+    </div>
+</TransitionGroup>
             </div>
         </div>
         <TheFooter />
