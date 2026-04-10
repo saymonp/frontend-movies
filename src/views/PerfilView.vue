@@ -4,6 +4,11 @@ import Navbar from '@/components/Navbar.vue';
 import IconStar from '@/components/icons/IconStar.vue';
 import IconEditList from '@/components/icons/IconList.vue';
 
+const getImageUrl = (path: string) => {
+  // Isso converte o caminho relativo em um caminho que o navegador entende
+  return new URL(path, import.meta.url).href;
+};
+
 // Dados fictícios para o exemplo
 const stats = ref({ watched: 128, reviews: 42 });
 const listas = ref([
@@ -12,8 +17,8 @@ const listas = ref([
 ]);
 
 const reviews = ref([
-  { id: 101, movie: 'Blade Runner 2049', rating: 5, date: '2026-04-01', text: 'Visual estonteante...', poster: 'http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg' },
-  { id: 102, movie: 'Máquina de Guerra', rating: 3, date: '2026-02-21', text: 'legal, contudo...', poster: 'http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg' },
+  { id: 101, movie: 'Blade Runner 2049', rating: 5, date: '2026-04-01', text: 'Visual estonteante...', poster: '/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg' },
+  { id: 102, movie: 'Máquina de Guerra', rating: 3, date: '2026-02-21', text: 'legal, contudo...', poster: '/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg' },
 ]);
 
 // Controle do Modal de Edição
@@ -64,23 +69,23 @@ const abrirDetalheReview = (review: any) => {
         <h4 class="text-white font-bold text-md p-2">Adrenalina Pura</h4>
         <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
@@ -92,23 +97,23 @@ const abrirDetalheReview = (review: any) => {
         <h4 class="text-white font-bold text-md p-2">Emocionante</h4>
         <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
@@ -121,23 +126,23 @@ const abrirDetalheReview = (review: any) => {
         <h4 class="text-white font-bold text-md p-2">Chorar no Banho</h4>
         <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
@@ -150,23 +155,23 @@ const abrirDetalheReview = (review: any) => {
         <h4 class="text-white font-bold text-md p-2">Guilt Pleasure</h4>
         <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_jYpk5Zun4VTWrplO3m9BHANi4S5.jpg"
+                    <img src="/w500_jYpk5Zun4VTWrplO3m9BHANi4S5.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
@@ -178,23 +183,23 @@ const abrirDetalheReview = (review: any) => {
         <h4 class="text-white font-bold text-md p-2">Filmes de Conforto</h4>
         <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_ftPFJBGbldoWiiPrmesW96zBzdH.jpg"
+                    <img src="/w500_ftPFJBGbldoWiiPrmesW96zBzdH.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
@@ -206,23 +211,23 @@ const abrirDetalheReview = (review: any) => {
         <h4 class="text-white font-bold text-md p-2">Assistir com a Morena</h4>
         <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_bOzG3SG6gBxHGGHYiq7xXeNb1bG.jpg"
+                    <img src="/w500_bOzG3SG6gBxHGGHYiq7xXeNb1bG.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
@@ -237,7 +242,7 @@ const abrirDetalheReview = (review: any) => {
   
   <div class="flex flex-col gap-4">
     <div @click="abrirDetalheReview(reviews[0])" class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
-      <img :src="reviews[0]?.poster" class="w-12 h-18 object-cover rounded-md shadow-lg">
+      <img v-if="reviews[0]?.poster" :src="getImageUrl(reviews[0].poster)" class="w-12 h-18 object-cover rounded-md shadow-lg">
       <div class="flex-1">
         <div class="flex justify-between items-start">
           <h4 class="text-white font-bold text-sm">{{ reviews[0]?.movie }}</h4>
@@ -247,7 +252,7 @@ const abrirDetalheReview = (review: any) => {
       </div>
     </div>
     <div @click="abrirDetalheReview(reviews[1])" class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
-      <img :src="reviews[1]?.poster" class="w-12 h-18 object-cover rounded-md shadow-lg">
+      <img v-if="reviews[0]?.poster" :src="getImageUrl(reviews[0].poster)" class="w-12 h-18 object-cover rounded-md shadow-lg">
       <div class="flex-1">
         <div class="flex justify-between items-start">
           <h4 class="text-white font-bold text-sm">{{ reviews[1]?.movie }}</h4>
