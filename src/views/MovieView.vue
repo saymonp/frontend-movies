@@ -47,7 +47,7 @@ const movies = ref(movies_json.movie);
 
 const limite = ref(1); // Quantas reviews aparecem inicialmente
 const reviews = ref([
-  { id: 1, autor: 'Boladotron', nota: 5, texto: 'Filme muito maneiro, é de temática vampiresca com uma abordagem diferente.', avatar: './image.png' },
+  { id: 1, autor: 'Boladotron', nota: 5, texto: 'Filme muito maneiro, é de temática vampiresca com uma abordagem diferente.', avatar: '/image.png' },
   { id: 2, autor: 'StarConvoy', nota: 4, texto: 'A fotografia é incrível, mas o ritmo cansa um pouco no meio.', avatar: '/image.png' },
   { id: 3, autor: 'OrionPax', nota: 5, texto: 'Melhor do gênero que vi esse ano!', avatar: '/image.png' },
   { id: 4, autor: 'OptimusPrime', nota: 3, texto: 'Esperava mais do final.', avatar: '/image.png' },
@@ -426,7 +426,7 @@ const dataAssistido = ref(getTodayDate());
                 <div class="shrink-0">
                   <div
                     class="w-12 h-12 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-zinc-700 group-hover:border-[#00FCFF] transition-colors">
-                    <img class="w-full h-full object-cover" src="../assets/image.png" />
+                    <img class="w-full h-full object-cover" src="/assets/image.png" />
                   </div>
                 </div>
 

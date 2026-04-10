@@ -37,7 +37,7 @@ const abrirDetalheReview = (review: any) => {
         <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-30">
 <div class="flex items-center gap-6 p-6 bg-white/5 border border-white/10 rounded-2xl">
   <div class="w-20 h-20 rounded-full border-2 border-[#00FCFF] overflow-hidden">
-    <img src="../assets/image.png" class="object-cover w-full h-full">
+    <img src="/assets/image.png" class="object-cover w-full h-full">
   </div>
   
   <div class="flex flex-col gap-2">

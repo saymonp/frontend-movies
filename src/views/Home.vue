@@ -77,10 +77,10 @@ const toggleAddToList = (id: number) => {
                         <div class="absolute inset-0 bg-[#CC00CC] opacity-20"></div>
                         <div class="absolute inset-0 bg-[#CC00CC]"></div>
 
-                        <img src="../assets/Banner.jpg" class="relative w-full h-full object-cover opacity-73" />
+                        <img src="/Banner.jpg" class="relative w-full h-full object-cover opacity-73" />
                     </div>
 
-                    <img src="../assets/logo Filmeiro.svg" alt="Logo"
+                    <img src="/logo Filmeiro.svg" alt="Logo"
                         class="sm:hidden absolute top-4/5 left-1/2 -translate-x-1/2 -translate-y-1/2 w-65 z-10" />
 
                     <div class="hidden sm:flex absolute bottom-10 left-0 w-full flex-col items-center z-20">
