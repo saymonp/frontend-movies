@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import IconAddReview from '@/components/icons/IconAddReview.vue'
 import IconAddToList from '@/components/icons/IconAddToList.vue'
 import IconFilter from '@/components/icons/IconFilter.vue'
+import IconStar from '@/components/icons/IconStar.vue';
 import TheFooter from '@/components/TheFooter.vue';
 import Navbar from '@/components/Navbar.vue';
 import movies_json from '../assets/movies.json'
@@ -21,6 +22,29 @@ const filterShow = computed(() => {
 
 const loggedIn = ref(true);
 
+
+const isCardReviewVisible = ref(false);
+//const rating = ref(0);
+const hoverRating = ref(0);
+const selectedMovieTitle = ref(''); // Para mostrar o nome do filme no modal
+
+const openQuickReview = (movieTitle: string) => {
+    selectedMovieTitle.value = movieTitle;
+    isCardReviewVisible.value = true;
+};
+
+const selectRating = (star: number) => {
+    rating.value = star;
+};
+
+const activeReviewId = ref<number | null>(null);
+const rating = ref(0);
+
+const toggleQuickReview = (id: number) => {
+    // Se clicar no mesmo, fecha. Se clicar em outro, abre o novo.
+    activeReviewId.value = activeReviewId.value === id ? null : id;
+    rating.value = 0; // Reseta a nota ao abrir
+};
 </script>
 
 <template>
@@ -188,17 +212,51 @@ const loggedIn = ref(true);
                                 <img :src="movie.poster_thumb_br"
                                     class="max-w-full ring-2 ring-[#7075AB] rounded-sm mb-2">
                             </RouterLink>
-                            <div class="w-full">
-                                <p class="text-center text-base font-semibold text-zinc-100">{{ movie.titulo }}</p>
-                                <div class="flex items-center justify-between px-2.5">
-                                    <IconAddReview
-                                        class="w-8 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
-                                    <p class="text-center text-xs font-semibold text-zinc-100">IMDb {{ movie.rating
-                                    }}
-                                    </p>
-                                    <IconAddToList
-                                        class="w-6 text-[#97A7CB] hover:text-[#00FCFF] transition-colors duration-300" />
+                            <div class="movie-card group relative w-full">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-full mt-3">
+                                        <p class="text-center text-sm font-bold text-zinc-100 truncate">{{ movie.titulo
+                                            }}</p>
+                                        <div class="flex items-center justify-between px-1 mt-2">
+                                            <IconAddReview @click.stop="toggleQuickReview(movie.id)"
+                                                class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                                            <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
+                                                }}</span>
+                                            <IconAddToList
+                                                class="w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-pointer" />
+                                        </div>
+                                    </div>
                                 </div>
+
+                                <Transition name="fade-slide">
+                                    <div v-if="activeReviewId === movie.id"
+                                        class="absolute top-full left-0 right-0 z-[60] mt-2 bg-[#0f0f0f] border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+
+                                        <div class="flex flex-col gap-3">
+                                            <div class="flex justify-center gap-0.5">
+                                                <button v-for="star in 5" :key="star" @click="rating = star"
+                                                    class="p-0.5">
+                                                    <IconStar class="w-5 h-5 transition-colors"
+                                                        :class="star <= rating ? 'text-[#00FCFF]' : 'text-zinc-800'" />
+                                                </button>
+                                            </div>
+
+                                            <input type="text" placeholder="Review rápida..."
+                                                class="w-full bg-white/5 border border-white/10 p-2 rounded-md text-[11px] text-white outline-none focus:border-[#00FCFF]/50">
+
+                                            <div class="flex gap-2">
+                                                <button @click=toggleQuickReview(movie.id)
+                                                    class="flex-1 bg-[#00FCFF] text-black text-[10px] font-black uppercase py-2 rounded-md hover:bg-[#00f2f5]">
+                                                    OK
+                                                </button>
+                                                <button @click=toggleQuickReview(movie.id)
+                                                    class="px-2 text-zinc-500 hover:text-white text-[10px] uppercase font-bold">
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Transition>
                             </div>
                         </div>
                     </div>
@@ -207,6 +265,56 @@ const loggedIn = ref(true);
             </div>
         </div>
         <TheFooter />
+    </div>
+    <div v-show="isCardReviewVisible" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="isCardReviewVisible = false"></div>
+
+        <div class="relative bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 w-full max-w-[380px] shadow-2xl">
+            <div class="flex flex-col gap-5">
+                <div class="text-center">
+                    <h2 class="text-[#00FCFF] font-black text-xl tracking-tighter uppercase leading-none">Review Rápida
+                    </h2>
+                    <p class="text-zinc-400 text-[11px] mt-2 font-bold">{{ selectedMovieTitle }}</p>
+                </div>
+
+                <div class="flex flex-col items-center bg-white/5 py-4 rounded-xl border border-white/5">
+                    <div class="flex items-center gap-1">
+                        <button v-for="star in 5" :key="star" type="button" @click="selectRating(star)"
+                            @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
+                            class="p-1 transition-all active:scale-125">
+                            <IconStar class="w-7 h-7 transition-colors duration-200"
+                                :class="star <= (hoverRating || rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
+                        </button>
+                        <span class="text-[#00FCFF] font-black text-lg ml-2">{{ rating }}</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-zinc-500 text-[9px] uppercase font-bold ml-1">Título da Review</label>
+                        <input type="text" placeholder="Ex: Masterpiece!"
+                            class="w-full bg-black/40 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label class="text-zinc-500 text-[9px] uppercase font-bold ml-1">Tags</label>
+                        <input type="text" placeholder="Terror, Clássico..."
+                            class="w-full bg-black/40 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2 pt-2">
+                    <button @click="isCardReviewVisible = false"
+                        class="w-full bg-[#00FCFF] text-black font-black uppercase text-xs py-3 rounded-lg hover:shadow-[0_0_20px_rgba(0,252,255,0.4)] transition-all active:scale-95">
+                        Publicar Agora
+                    </button>
+                    <button @click="isCardReviewVisible = false"
+                        class="w-full py-1 text-[9px] font-bold text-zinc-600 hover:text-white uppercase tracking-widest transition-colors">
+                        Descartar
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -234,5 +342,16 @@ const loggedIn = ref(true);
 /* 4. Suavização do movimento dos que ficam */
 .list-move {
     transition: transform 0.4s ease;
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+    transition: all 0.2s ease-out;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
 }
 </style>
