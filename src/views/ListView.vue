@@ -12,8 +12,8 @@ const searchQuery = ref('');
 // Sugestões mockadas (em um app real, viriam de uma API)
 const sugestoesLista = [
     { id: 1, movie: "Late Night with The Devil (2023)", diretor: "Cameron Cairnes" },
-    { id: 2, movie: "Breathless (1960)", diretor: "Jean-Luc Godard" },
-    { id: 3, movie: "Bedazzled (2000)", diretor: "Harold Ramis" },
+    { id: 2, movie: "LaBreathless (1960)", diretor: "Jean-Luc Godard" },
+    { id: 3, movie: "LaBedazzled (2000)", diretor: "Harold Ramis" },
 ];
 
 // Filtra as sugestões conforme o usuário digita
@@ -36,7 +36,7 @@ const filteredSugestoes = computed(() => {
                 Comédia Romântica
             </h1>
 
-            <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative">
+            <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl relative z-50">
                 <div class="flex flex-col gap-3">
                     <label class="text-zinc-400 text-xs font-bold uppercase tracking-wider ml-1">
                         Adicionar Filme para sua lista
@@ -65,6 +65,7 @@ const filteredSugestoes = computed(() => {
                 </div>
             </div>
 
+            <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-10">
             <TransitionGroup tag="section" name="list" class="grid grid-cols-2 sm:grid-cols-4 mt-10 gap-6 relative z-10">
                 <div v-for="movie in movies.slice(0, 8)" :key="movie.id" class="movie-card group">
                     <div class="flex flex-col items-center">
@@ -88,6 +89,7 @@ const filteredSugestoes = computed(() => {
                     </div>
                 </div>
             </TransitionGroup>
+            </div>
         </div>
     </div>
     <TheFooter />
