@@ -12,6 +12,11 @@ import draggable from 'vuedraggable';
 
 const moviesList = ref(movies_json.movie.slice(0, 8));
 
+const removerFilmeDaLista = (id: number) => {
+    // Filtramos o array para manter apenas os filmes que NÃO têm o ID clicado
+    moviesList.value = moviesList.value.filter(movie => movie.id !== id);
+};
+
 const movies = ref(movies_json.movie);
 const searchQuery = ref('');
 
@@ -70,7 +75,7 @@ const filteredSugestoes = computed(() => {
                             <div v-for="sugestao in filteredSugestoes" :key="sugestao.id"
                                 class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer transition-colors group">
                                 <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF]">{{ sugestao.movie
-                                    }}</p>
+                                }}</p>
                                 <p class="text-zinc-500 text-[10px]">{{ sugestao.diretor }}</p>
                             </div>
                         </div>
@@ -94,40 +99,35 @@ const filteredSugestoes = computed(() => {
                     </button>
 
                 </div>
-                <draggable 
-    v-model="moviesList" 
-    item-key="id"
-    tag="section"
-    handle=".drag-handle" 
-    ghost-class="opacity-50"
-    class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10"
->
-    <template #item="{ element: movie }">
-        <div class="movie-card group">
-            <div class="flex flex-col items-center">
-                <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_br } }"
-                    class="relative">
-                    <img :src="movie.poster_thumb_br"
-                        class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg">
-                </RouterLink>
+                <draggable v-model="moviesList" item-key="id" tag="section" handle=".drag-handle"
+                    ghost-class="opacity-50" class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10">
+                    <template #item="{ element: movie }">
+                        <div class="movie-card group">
+                            <div class="flex flex-col items-center">
+                                <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_br } }"
+                                    class="relative">
+                                    <img :src="movie.poster_thumb_br"
+                                        class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg">
+                                </RouterLink>
 
-                <div class="w-full mt-3 text-center">
-                    <p class="text-sm font-bold text-zinc-100 truncate px-1">{{ movie.titulo }}</p>
+                                <div class="w-full mt-3 text-center">
+                                    <p class="text-sm font-bold text-zinc-100 truncate px-1">{{ movie.titulo }}</p>
 
-                    <div class="flex items-center justify-between mt-2 px-1">
-                        <IconDelete
-                            class="w-6 h-6 text-[#ff0077] hover:text-[#00FCFF] cursor-pointer transition-colors" />
-                        
-                        <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating }}</span>
-                        
-                        <IconNavHam
-                            class="drag-handle w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-</draggable>
+                                    <div class="flex items-center justify-between mt-2 px-1">
+                                        <IconDelete @click.stop="removerFilmeDaLista(movie.id)"
+                                            class="w-6 h-6 text-[#ff0077] hover:scale-110 active:scale-90 cursor-pointer transition-all" />
+
+                                        <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
+                                            }}</span>
+
+                                        <IconNavHam
+                                            class="drag-handle w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </draggable>
             </div>
         </div>
     </div>
@@ -136,9 +136,10 @@ const filteredSugestoes = computed(() => {
 
 <style>
 .flip-list-move {
-  transition: transform 0.5s;
+    transition: transform 0.5s;
 }
+
 .no-move {
-  transition: transform 0s;
+    transition: transform 0s;
 }
 </style>
