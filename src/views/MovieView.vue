@@ -426,7 +426,7 @@ const dataAssistido = ref(getTodayDate());
                 <div class="shrink-0">
                   <div
                     class="w-12 h-12 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-zinc-700 group-hover:border-[#00FCFF] transition-colors">
-                    <img class="w-full h-full object-cover" src="/assets/image.png" />
+                    <img class="w-full h-full object-cover" src="/image.png" />
                   </div>
                 </div>
 
