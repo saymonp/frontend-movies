@@ -45,6 +45,22 @@ const toggleQuickReview = (id: number) => {
     activeReviewId.value = activeReviewId.value === id ? null : id;
     rating.value = 0; // Reseta a nota ao abrir
 };
+
+
+
+
+const activeListId = ref<number | null>(null);
+const minhasListas = ref([
+    { id: 1, nome: 'Adrenalina Pura', selecionada: false },
+    { id: 2, nome: 'Filmes de Conforto', selecionada: false },
+    { id: 3, nome: 'Para ver depois', selecionada: true }
+]);
+
+const toggleAddToList = (id: number) => {
+    // Fecha o de review se estiver aberto e abre o de listas
+    activeReviewId.value = null;
+    activeListId.value = activeListId.value === id ? null : id;
+};
 </script>
 
 <template>
@@ -222,8 +238,9 @@ const toggleQuickReview = (id: number) => {
                                                 class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" />
                                             <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
                                                 }}</span>
-                                            <IconAddToList
-                                                class="w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-pointer" />
+                                            <IconAddToList @click.stop="toggleAddToList(movie.id)"
+                                                class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors"
+                                                :class="{ 'text-[#00FCFF]': activeListId === movie.id }" />
                                         </div>
                                     </div>
                                 </div>
@@ -254,6 +271,39 @@ const toggleQuickReview = (id: number) => {
                                                     ✕
                                                 </button>
                                             </div>
+                                        </div>
+                                    </div>
+                                </Transition>
+                                <Transition name="fade-slide">
+                                    <div v-if="activeListId === movie.id"
+                                        class="absolute top-full left-0 right-0 z-[60] mt-2 bg-[#0f0f0f] border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl w-[160px] sm:w-full mx-auto">
+
+                                        <div class="flex flex-col gap-3">
+                                            <p
+                                                class="text-[10px] text-zinc-500 uppercase font-black tracking-widest border-b border-white/5 pb-1">
+                                                Salvar em:</p>
+
+                                            <div
+                                                class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                                                <label v-for="lista in minhasListas" :key="lista.id"
+                                                    class="flex items-center gap-2 cursor-pointer group">
+                                                    <div class="relative flex items-center">
+                                                        <input type="checkbox" v-model="lista.selecionada"
+                                                            class="peer appearance-none w-4 h-4 border border-white/20 rounded bg-white/5 checked:bg-[#00FCFF] checked:border-[#00FCFF] transition-all cursor-pointer">
+                                                        <span
+                                                            class="absolute text-black opacity-0 peer-checked:opacity-100 pointer-events-none left-0.5 text-[10px] font-bold">✓</span>
+                                                    </div>
+                                                    <span
+                                                        class="text-zinc-300 text-[11px] group-hover:text-white transition-colors truncate">
+                                                        {{ lista.nome }}
+                                                    </span>
+                                                </label>
+                                            </div>
+
+                                            <button @click="activeListId = null"
+                                                class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black uppercase py-2 rounded-md transition-all">
+                                                Concluir
+                                            </button>
                                         </div>
                                     </div>
                                 </Transition>
