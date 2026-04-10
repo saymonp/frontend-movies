@@ -19,7 +19,7 @@ const filterShow = computed(() => {
     return (Math.round(filterRating.value * 10) / 10).toFixed(1);
 });
 
-const loggedIn = ref(false);
+const loggedIn = ref(true);
 
 </script>
 
@@ -57,7 +57,7 @@ const loggedIn = ref(false);
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
                 hover:shadow-[0_0_30px_rgba(0,252,255,1)]
                 hover:scale-105 active:scale-95">
-                            Comece agora — É Grátis
+                            {{ loggedIn === true ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
                         </button>
                     </div>
                 </div>
