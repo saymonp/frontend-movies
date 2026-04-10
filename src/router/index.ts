@@ -33,6 +33,12 @@ const router = createRouter({
       name: 'MovieView',
       component: () => import('../views/MovieView.vue'),
       props: true
+    },
+    {
+      path: '/lista/:id', // O :lang vira um parâmetro (br ou en)
+      name: 'ListView',
+      component: () => import('../views/ListView.vue'),
+      props: true
     }
   ],
 })

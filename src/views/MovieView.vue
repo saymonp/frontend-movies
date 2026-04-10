@@ -335,13 +335,18 @@ const dataAssistido = ref(getTodayDate());
             </h1>
 
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-y-12 gap-x-6">
-
+              <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }" class="w-full">
               <div class="group cursor-pointer">
                 <p
                   class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
                   Comédia Romântica
                 </p>
-
+                
                 <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
                     <img src="http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
@@ -368,7 +373,7 @@ const dataAssistido = ref(getTodayDate());
 
                 <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
               </div>
-
+              </RouterLink>
               <div class="group cursor-pointer">
                 <p
                   class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
