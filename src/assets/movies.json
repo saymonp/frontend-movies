@@ -42,8 +42,8 @@
 		"rating" : 7.4,
 		"poster_thumb_br" : "http://192.168.2.137:9000/posters/posters_br/w500_a1a2JYoBTchMy1stqpSHxS5MMle.jpg",
 		"diretor" : "Paul Thomas Anderson",
-		"slug_br": "pecadores4",
-		"slug_en": "sinners4"
+		"slug_br": "pecadores",
+		"slug_en": "sinners"
 	},
 	{
 		"titulo" : "Devoradores de Estrelas",
