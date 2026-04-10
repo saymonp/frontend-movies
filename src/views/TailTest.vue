@@ -27,17 +27,17 @@
         <section class="grid grid-cols-2 sm:grid-cols-3 max-w-3xl gap-5 p-2.5 mx-auto">
 
             <div v-for="n in 3" :key="'g1-' + n">
-                <img src="/assets/photo-1503777119540-ce54b422baff.avif?text=Gato" class="max-w-full block">
+                <img src="/photo-1503777119540-ce54b422baff.avif?text=Gato" class="max-w-full block">
                 <p class="mt-2">Legenda</p>
             </div>
 
             <div class="col-start-1 row-start-2 row-end-5 border-t-10 border-tomato hidden sm:block">
-                <img src="/assets/photo-1514888286974-6c03e2ca1dba.avif?text=Gato" class="max-w-full block">
+                <img src="/photo-1514888286974-6c03e2ca1dba.avif?text=Gato" class="max-w-full block">
                 <p class="mt-2">Anúncio</p>
             </div>
 
             <div v-for="n in 6" :key="'g1-sub-' + n" class="grid grid-cols-2 gap-2.5 items-center sm:block">
-                <img src="/assets/photo-1561948955-570b270e7c36.avif?text=Gato" class="max-w-full block">
+                <img src="/photo-1561948955-570b270e7c36.avif?text=Gato" class="max-w-full block">
                 <p>Legenda</p>
             </div>
         </section>
@@ -45,13 +45,13 @@
         <h1 class="text-center mt-24 text-3xl font-bold mb-6">Section Grid 2</h1>
         <section class="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-5 max-w-200 p-2.5 mx-auto">
             <div class="video">
-                <img src="/assets/photo-1573865526739-10659fec78a5.avif?text=Video" class="max-w-full block">
+                <img src="/photo-1573865526739-10659fec78a5.avif?text=Video" class="max-w-full block">
                 <h2 class="text-xl mt-4 font-bold">Como criar sites.</h2>
             </div>
 
             <div class="flex overflow-x-auto sm:block sm:overflow-visible gap-4">
                 <div v-for="n in 4" :key="'side-' + n" class="flex-none w-50 sm:w-full mb-2.5">
-                    <img src="/assets/premium_photo-1664299749481-ac8dc8b49754.avif?text=Gato"
+                    <img src="/premium_photo-1664299749481-ac8dc8b49754.avif?text=Gato"
                         class="max-w-full block">
                     <p class="mt-1">Legenda</p>
                 </div>
@@ -62,19 +62,19 @@
         <section class="grid grid-cols-2 gap-5 max-w-200 p-2.5 mx-auto">
 
             <div class="grid row-span-2 relative">
-                <img src="/assets/premium_photo-1667030474693-6d0632f97029.avif?text=Gato"
+                <img src="/premium_photo-1667030474693-6d0632f97029.avif?text=Gato"
                     class="w-full h-full object-cover self-end">
                 <p class="absolute bottom-0 w-full bg-black/60 p-2.5 text-white">Legenda</p>
             </div>
 
             <div class="grid relative">
-                <img src="/assets/premium_photo-1667030474693-6d0632f97029.avif?text=Gato"
+                <img src="/premium_photo-1667030474693-6d0632f97029.avif?text=Gato"
                     class="w-full h-full object-cover self-end">
                 <p class="absolute bottom-0 w-full bg-black/60 p-2.5 text-white">Legenda</p>
             </div>
 
             <div class="grid relative">
-                <img src="/assets/premium_photo-1677545183884-421157b2da02.avif?text=Gato"
+                <img src="/premium_photo-1677545183884-421157b2da02.avif?text=Gato"
                     class="w-full h-full object-cover self-end">
                 <p class="absolute bottom-0 w-full bg-black/60 p-2.5 text-white">Legenda</p>
             </div>
