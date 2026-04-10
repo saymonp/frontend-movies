@@ -39,6 +39,12 @@ const router = createRouter({
       name: 'ListView',
       component: () => import('../views/ListView.vue'),
       props: true
+    },
+    {
+      path: '/perfil', // O :lang vira um parâmetro (br ou en)
+      name: 'PerfilView',
+      component: () => import('../views/PerfilView.vue'),
+      props: true
     }
   ],
 })
