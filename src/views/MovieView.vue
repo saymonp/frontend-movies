@@ -349,23 +349,23 @@ const dataAssistido = ref(getTodayDate());
                 
                 <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
@@ -382,23 +382,23 @@ const dataAssistido = ref(getTodayDate());
 
                 <div class="flex items-center justify-center pl-1">
                   <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
                       class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
                   </div>
 
                   <div
                     class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
                       class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
                   </div>
 
                   <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
                       class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
                   </div>
 
                   <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="http://192.168.2.137:9000/posters/posters_br/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
                       class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
                   </div>
 
