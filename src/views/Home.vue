@@ -91,7 +91,7 @@ const toggleAddToList = (id: number) => {
                             class="text-[#00FCFF] text-xl text-center font-bold mt-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                             Crie listas para salvar seus filmes favoritos.
                         </p>
-
+                        <RouterLink to="/perfil">
                         <button class="mt-6 bg-[#00FCFF] text-black font-bold py-3 px-10 rounded-md 
                 transition-all duration-300
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
@@ -99,6 +99,7 @@ const toggleAddToList = (id: number) => {
                 hover:scale-105 active:scale-95">
                             {{ loggedIn === true ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
                         </button>
+                        </RouterLink>
                     </div>
                 </div>
 
@@ -113,12 +114,14 @@ const toggleAddToList = (id: number) => {
                     </div>
 
                     <div class="text-center max-w-9/10 mx-auto mt-5">
+                        <RouterLink to="/perfil">
                         <button class="bg-[#00FCFF] text-black font-bold py-2 px-6 rounded-md 
                 transition-all duration-300
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
                 hover:scale-105 active:scale-95">
-                            Comece agora — É Grátis
+                            {{ loggedIn === true ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
                         </button>
+                        </RouterLink>
                     </div>
                 </div>
 

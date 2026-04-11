@@ -137,8 +137,20 @@ const logout = () => {
                                 class="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
                                 Sair
                             </button>
-                        </div>
-                    </Transition>
+                <li><a
+                        class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                        <a class="font-bold text-zinc-100" @click="isLoginVisible = !isLoginVisible"
+                            :isLoginVisible="isLoginVisible">Entrar</a>
+                    </a>
+                </li>
+                <li>
+                    <a class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400"
+                        @click="isCriarConta = !isCriarConta" :isCriarConta="isCriarConta">
+                        <p class="font-bold text-zinc-100">Criar Conta</p>
+                    </a>
+                </li>
+                </div>
+                </Transition>
                 </li>
             </ul>
         </nav>
