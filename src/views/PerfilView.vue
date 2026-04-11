@@ -64,6 +64,12 @@ const abrirDetalheReview = (review: any) => {
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+    <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }">
     <div class="cursor-pointer hover:scale-105 transition-transform">
         <div>
         <h4 class="text-white font-bold text-md p-2">Adrenalina Pura</h4>
@@ -92,6 +98,13 @@ const abrirDetalheReview = (review: any) => {
         </div>
         </div>
         </div>
+        </RouterLink>
+        <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }">
 <div class="cursor-pointer hover:scale-105 transition-transform">
           <div>
         <h4 class="text-white font-bold text-md p-2">Emocionante</h4>
@@ -120,7 +133,13 @@ const abrirDetalheReview = (review: any) => {
         </div>
         </div>
         </div>
-
+</RouterLink>
+<RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }">
         <div class="cursor-pointer hover:scale-105 transition-transform">
           <div>
         <h4 class="text-white font-bold text-md p-2">Chorar no Banho</h4>
@@ -149,7 +168,13 @@ const abrirDetalheReview = (review: any) => {
         </div>
         </div>
         </div>
-
+</RouterLink>
+<RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }">
         <div class="cursor-pointer hover:scale-105 transition-transform">
           <div>
         <h4 class="text-white font-bold text-md p-2">Guilt Pleasure</h4>
@@ -178,6 +203,13 @@ const abrirDetalheReview = (review: any) => {
         </div>
         </div>
         </div>
+        </RouterLink>
+        <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }">
         <div class="cursor-pointer hover:scale-105 transition-transform">
           <div>
         <h4 class="text-white font-bold text-md p-2">Filmes de Conforto</h4>
@@ -206,6 +238,13 @@ const abrirDetalheReview = (review: any) => {
         </div>
         </div>
         </div>
+        </RouterLink>
+        <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }">
         <div class="cursor-pointer hover:scale-105 transition-transform">
           <div>
         <h4 class="text-white font-bold text-md p-2">Assistir com a Morena</h4>
@@ -234,6 +273,7 @@ const abrirDetalheReview = (review: any) => {
         </div>
         </div>
         </div>
+        </RouterLink>
   </div>
 </div>
 
