@@ -47,6 +47,15 @@ const router = createRouter({
       props: true
     }
   ],
+  scrollBehavior(to, from, savedPosition) {
+    // Se o usuário clicar em "Voltar", ele mantém a posição anterior (opcional)
+    if (savedPosition) {
+      return savedPosition;
+    } else {
+      // Para qualquer outra navegação, vai para o topo
+      return { top: 0 };
+    }
+  },
 })
 
 export default router
