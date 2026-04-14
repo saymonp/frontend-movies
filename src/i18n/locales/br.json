@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "login": "Entrar",
+    "filter": "Filtro"
+  },
+  "search": {
+    "placeholder": "Busca..."
+  },
+  "movie": {
+    "rating": "Nota Mínima",
+    "director": "Diretor"
+  }
+}

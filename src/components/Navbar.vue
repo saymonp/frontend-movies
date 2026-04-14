@@ -2,6 +2,8 @@
 import IconList from '@/components/icons/IconList.vue'
 import IconAdd from '@/components/icons/IconAdd.vue'
 import IconFilmeiroFooter from '@/components/icons/IconFilmeiroFooter.vue';
+import IconProfile from './icons/IconProfile.vue';
+import IconNavHam from './icons/IconNavHam.vue';
 import { ref } from 'vue';
 
 defineProps({
@@ -10,6 +12,19 @@ defineProps({
 
 const isLoginVisible = ref(false)
 const isCriarConta = ref(false)
+
+
+const menuAberto = ref(false);
+
+const toggleMenu = (event: Event) => {
+    event.preventDefault(); // Evita que o link recarregue a página
+    menuAberto.value = !menuAberto.value;
+};
+
+const logout = () => {
+    // Sua lógica de logout aqui
+    console.log("Saindo...");
+};
 </script>
 <template>
 
@@ -79,24 +94,63 @@ const isCriarConta = ref(false)
         </a>
         <nav>
             <ul class="flex list-none p-0 m-0">
-                <li v-if="!loggedIn"><a class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                <li v-if="!loggedIn"><a
+                        class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
                         <a class="font-bold text-zinc-100" @click="isLoginVisible = !isLoginVisible"
                             :isLoginVisible="isLoginVisible">Entrar</a>
                     </a>
                 </li>
                 <li v-if="!loggedIn">
-                    <a class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400" 
-                    @click="isCriarConta = !isCriarConta" :isCriarConta="isCriarConta">
+                    <a class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400"
+                        @click="isCriarConta = !isCriarConta" :isCriarConta="isCriarConta">
                         <p class="font-bold text-zinc-100">Criar Conta</p>
                     </a>
                 </li>
-                <li v-if="loggedIn"><a href="/" class="block p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
-                        <IconList class="w-8 text-zinc-100" />
+                <li v-if="loggedIn"><a href="/perfil"
+                        class="cursor-pointer block p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                        <IconProfile class="w-7 text-zinc-100" />
                     </a>
                 </li>
-                <li v-if="loggedIn"><a href="/" class="block p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
-                        <IconAdd class="w-8 text-zinc-100" />
+                <li v-if="loggedIn" class="relative">
+                    <button @click="toggleMenu"
+                        class="cursor-pointer block p-2.5 text-white no-underline ml-2.5 hover:text-[#00FCFF] transition-colors focus:outline-none">
+                        <IconNavHam class="rotate-90 w-7 text-zinc-100" />
+                    </button>
+
+                    <Transition enter-active-class="transition duration-100 ease-out"
+                        enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100"
+                        leave-active-class="transition duration-75 ease-in"
+                        leave-from-class="transform scale-100 opacity-100"
+                        leave-to-class="transform scale-95 opacity-0">
+                        <div v-if="menuAberto"
+                            class="absolute right-0 mt-2 w-48 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-2 z-[200]">
+
+                            <RouterLink to="/perfil"
+                                class="block px-4 py-2 text-sm text-zinc-300 hover:bg-[#00FCFF]/10 hover:text-[#00FCFF] transition-colors"
+                                @click="menuAberto = false">
+                                Minhas Listas
+                            </RouterLink>
+
+                            <div class="h-[1px] bg-white/5 my-1"></div>
+
+                            <button @click="logout"
+                                class="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                Sair
+                            </button>
+                <li><a
+                        class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                        <a class="font-bold text-zinc-100" @click="isLoginVisible = !isLoginVisible"
+                            :isLoginVisible="isLoginVisible">Entrar</a>
                     </a>
+                </li>
+                <li>
+                    <a class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400"
+                        @click="isCriarConta = !isCriarConta" :isCriarConta="isCriarConta">
+                        <p class="font-bold text-zinc-100">Criar Conta</p>
+                    </a>
+                </li>
+                </div>
+                </Transition>
                 </li>
             </ul>
         </nav>
