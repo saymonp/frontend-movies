@@ -127,95 +127,98 @@ const toggleAddToList = (id: number) => {
                     </div>
                 </div>
 
-                <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
-                    <div
-                        class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10">
+               <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
+    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-6">
+            
+            <div class="sm:col-span-4 flex flex-col gap-4">
+                <div class="flex items-center bg-white/5 border border-white/20 rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[#00FCFF] transition-all">
+                    <input type="text" placeholder="Busca..."
+                        class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs font-bold min-w-0">
+                    
+                    <div class="relative">
+                        <button @click="showFilter = !showFilter"
+                            class="flex items-center gap-1 ml-2 px-2 py-1 bg-[#00FCFF]/10 rounded-md hover:bg-[#00FCFF]/20 transition-all group">
+                            <span class="text-[9px] text-[#00FCFF] font-black uppercase tracking-tighter">Gêneros</span>
+                            <IconFilter class="w-3 text-[#00FCFF]" />
+                        </button>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-12 gap-4">
-
-                            <div class="col-span-1 sm:col-span-4 flex flex-col gap-3">
-
-                                <div
-                                    class="flex items-center bg-white/5 border border-white/20 rounded-xl px-2 py-1.5 ring-[#00FCFF] shadow-[0_0_10px_rgba(0,252,255,0.2)]">
-                                    <input type="text" placeholder="Busca..."
-                                        class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-[11px] font-bold min-w-0">
-                                    <div clas="relative">
-                                        <button @click="showFilter = !showFilter" :showFilter="showFilter"
-                                            class="flex-none ml-2 hover:scale-110 transition-transform">
-                                            <IconFilter class="w-4 text-[#2adde0]" />
-                                        </button>
-                                        <div v-if="showFilter" @click="showFilter = false"
-                                            class="absolute inset-0 z-10 bg-transparent cursor-default"></div>
-                                        <div v-show="showFilter"
-                                            class="absolute left-1/5 mt-2 z-50 bg-[#020036]/90 backdrop-blur-xl border shadow-2xl border-white/20 rounded-xl p-4 shadow-2xl w-[200px]">
-                                            <div class="flex flex-col gap-3">
-                                                <p
-                                                    class="text-[#00FCFF] text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2">
-                                                    Filtros Avançados
-                                                </p>
-
-                                                <div class="space-y-3">
-                                                    <div class="flex flex-col gap-1">
-                                                        <label
-                                                            class="text-[9px] text-zinc-500 uppercase font-bold">Diretor</label>
-                                                        <select
-                                                            class="w-full bg-white/5 border border-white/10 p-1.5 rounded text-[10px] text-white outline-none focus:border-[#00FCFF]">
-                                                            <option class="bg-zinc-900">Todos</option>
-                                                            <option class="bg-zinc-900">Guillermo del Toro</option>
-                                                            <option class="bg-zinc-900">Tim Burton</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="flex flex-col gap-1">
-                                                        <label
-                                                            class="text-[9px] text-zinc-500 uppercase font-bold">Estúdio</label>
-                                                        <select
-                                                            class="w-full bg-white/5 border border-white/10 p-1.5 rounded text-[10px] text-white outline-none focus:border-[#00FCFF]">
-                                                            <option class="bg-zinc-900">Todos</option>
-                                                            <option class="bg-zinc-900">Disney</option>
-                                                            <option class="bg-zinc-900">Warner Bros</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <button @click="showFilter = false"
-                                                    class="mt-2 text-[9px] text-zinc-400 hover:text-white transition-colors uppercase font-bold">
-                                                    Aplicar
-                                                </button>
-                                            </div>
-                                        </div>
+                        <div v-if="showFilter" @click="showFilter = false" class="fixed inset-0 z-40"></div>
+                        <div v-show="showFilter"
+                            class="absolute right-0 mt-3 z-50 bg-[#020036]/95 backdrop-blur-2xl border border-white/20 rounded-xl p-4 shadow-2xl w-[220px]">
+                            <p class="text-[#00FCFF] text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2 mb-3">
+                                Selecionar Gêneros
+                            </p>
+                            <div class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                <label v-for="g in ['Ação', 'Comédia', 'Drama', 'Terror', 'Ficção', 'Romance', 'Animação']" :key="g" 
+                                    class="flex items-center gap-3 cursor-pointer group">
+                                    <div class="relative flex items-center">
+                                        <input type="checkbox" class="peer appearance-none w-4 h-4 border border-white/20 rounded checked:bg-[#00FCFF] checked:border-[#00FCFF] transition-all">
+                                        <span class="absolute text-black font-bold text-[10px] left-1 opacity-0 peer-checked:opacity-100">✓</span>
                                     </div>
-                                </div>
-
-                                <div class="px-1">
-                                    <div class="flex justify-between items-center text-[9px] mb-1">
-                                        <span class="text-zinc-500 uppercase font-bold">Nota</span>
-                                        <span class="text-[#00FCFF] font-black">{{ filterShow }}</span>
-                                    </div>
-                                    <input type="range" min="0" max="10" step="0.001" v-model="filterRating"
-                                        class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00FCFF]">
-                                </div>
+                                    <span class="text-zinc-300 text-[11px] font-bold group-hover:text-white transition-colors">{{ g }}</span>
+                                </label>
                             </div>
-
-                            <div class="col-span-1 sm:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <button v-for="genero in ['Ação', 'Comédia', 'Romance', 'Drama', 'Terror', 'Aventura']"
-                                    :key="genero"
-                                    class="bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit">
-                                    <p class="text-white text-[10px] uppercase tracking-wider font-bold text-center">{{
-                                        genero
-                                        }}</p>
-                                </button>
-                                <div v-for="extra in ['Animação', 'Fantasia']" :key="extra"
-                                    class="hidden sm:block bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit">
-                                    <p class="text-white text-[10px] uppercase tracking-wider font-bold text-center">{{
-                                        extra
-                                        }}</p>
-                                </div>
-                            </div>
-
+                            <button @click="showFilter = false" class="w-full mt-4 py-2 bg-[#00FCFF] text-black text-[10px] font-black uppercase rounded-lg hover:brightness-110 transition-all">
+                                Aplicar Filtros
+                            </button>
                         </div>
                     </div>
                 </div>
+
+                <div class="px-1">
+                    <div class="flex justify-between items-center text-[9px] mb-1">
+                        <span class="text-zinc-500 uppercase font-bold tracking-widest">Nota Mínima</span>
+                        <span class="text-[#00FCFF] font-black bg-[#00FCFF]/10 px-2 py-0.5 rounded">{{ filterRating }}</span>
+                    </div>
+                    <input type="range" min="0" max="10" step="0.5" v-model="filterRating"
+                        class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00FCFF]">
+                </div>
+            </div>
+
+            <div class="sm:col-span-8 flex flex-col gap-4">
+                
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Ano</label>
+                        <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
+                            <option class="bg-zinc-900">Todos</option>
+                            <option class="bg-zinc-900">2026</option>
+                            <option class="bg-zinc-900">2025</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Diretor</label>
+                        <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
+                            <option class="bg-zinc-900">Qualquer um</option>
+                            <option class="bg-zinc-900">Christopher Nolan</option>
+                            <option class="bg-zinc-900">Denis Villeneuve</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Idioma</label>
+                        <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
+                            <option class="bg-zinc-900">Original</option>
+                            <option class="bg-zinc-900">Português</option>
+                            <option class="bg-zinc-900">Inglês</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-auto">
+                    <button v-for="tag in ['Destaques', '2026', 'Maiores Bilheterias']" :key="tag"
+                        class="flex-1 bg-white/5 border border-white/10 rounded-xl py-2.5 px-2 hover:border-[#00FCFF]/50 hover:bg-[#00FCFF]/5 transition-all group">
+                        <p class="text-zinc-400 text-[10px] uppercase tracking-tighter font-black group-hover:text-[#00FCFF] text-center">
+                            {{ tag }}
+                        </p>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
 
                 <TransitionGroup tag="section" name="list"
     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
