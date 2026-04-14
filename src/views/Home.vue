@@ -4,6 +4,8 @@ import IconAddReview from '@/components/icons/IconAddReview.vue'
 import IconAddToList from '@/components/icons/IconAddToList.vue'
 import IconFilter from '@/components/icons/IconFilter.vue'
 import IconStar from '@/components/icons/IconStar.vue';
+import IconReviewEstrelas from '@/components/icons/IconReviewEstrelas.vue';
+import IconReviewStar from '@/components/icons/IconReviewStar.vue';
 import TheFooter from '@/components/TheFooter.vue';
 import Navbar from '@/components/Navbar.vue';
 import movies_json from '../assets/movies.json'
@@ -241,7 +243,7 @@ const toggleAddToList = (id: number) => {
                     </p>
                     
                     <div class="flex items-center justify-between px-1 mt-2">
-                        <IconAddReview @click.stop="toggleQuickReview(movie.id)"
+                        <IconReviewStar @click.stop="toggleQuickReview(movie.id)"
                             class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" />
                         
                         <span class="text-[9px] sm:text-[10px] font-black text-zinc-400">

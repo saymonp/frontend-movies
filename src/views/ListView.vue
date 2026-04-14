@@ -5,6 +5,7 @@ import TheFooter from '@/components/TheFooter.vue';
 import movies_json from '../assets/movies.json';
 import IconAddReview from '@/components/icons/IconAddReview.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
+import IconDrag from '@/components/icons/IconDrag.vue';
 import IconNavHam from '@/components/icons/IconNavHam.vue';
 import IconDelete from '@/components/icons/IconDelete.vue';
 import draggable from 'vuedraggable';
@@ -120,8 +121,8 @@ const filteredSugestoes = computed(() => {
                                         <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
                                             }}</span>
 
-                                        <IconNavHam
-                                            class="drag-handle w-5 h-5 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />
+                                        <IconDrag
+                                            class="drag-handle w-6 h-6 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />
                                     </div>
                                 </div>
                             </div>
