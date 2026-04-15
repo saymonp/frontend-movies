@@ -144,7 +144,7 @@ const toggleAddToList = (id: number) => {
         </button>
     </div>
 
-    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10 transition-all duration-500">
+    <div class="relative z-50 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10 transition-all duration-500">
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-6">
             
             <div class="sm:col-span-4 flex flex-col gap-4">
