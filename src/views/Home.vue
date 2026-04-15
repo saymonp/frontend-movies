@@ -9,20 +9,25 @@ import IconReviewStar from '@/components/icons/IconReviewStar.vue';
 import TheFooter from '@/components/TheFooter.vue';
 import Navbar from '@/components/Navbar.vue';
 import movies_json from '../assets/movies.json'
+import { onClickOutside } from '@vueuse/core'
 
 import SearchBar from '@/components/SearchBar.vue';
 import SearchBar2 from '@/components/SearchBar2.vue';
 
+const target = ref(null)
+
 const movies = ref(movies_json.movie);
 const filterRating = ref(0)
 const showFilter = ref(false)
-
+onClickOutside(target, () => (showFilter.value = false))
 const searchMode = ref('movies')
 
 const filterShow = computed(() => {
     // Arredonda para a primeira casa decimal de forma mais estável
     return (Math.round(filterRating.value * 10) / 10).toFixed(1);
 });
+
+const filterValue = ref(0);
 
 const loggedIn = ref(true);
 
@@ -165,8 +170,7 @@ const toggleAddToList = (id: number) => {
                             <IconFilter class="w-3" />
                         </button>
 
-                        <div v-if="showFilter" @click="showFilter = false" class="fixed inset-0 z-40"></div>
-                        <div v-show="showFilter"
+                        <div ref="target" v-show="showFilter"
                             class="absolute right-0 mt-3 z-50 bg-[#020036]/95 backdrop-blur-2xl border border-white/20 rounded-xl p-4 shadow-2xl w-[220px]">
                             <p class="text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2 mb-3"
                                 :class="searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#ff0077]'">
@@ -198,7 +202,7 @@ const toggleAddToList = (id: number) => {
                             {{ filterValue }}
                         </span>
                     </div>
-                    <input type="range" min="0" :max="searchMode === 'movies' ? 10 : 1000" v-model="filterValue"
+                    <input type="range" min="0" step="0.5" :max="searchMode === 'movies' ? 10 : 1000" v-model="filterValue"
                         class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
                         :class="searchMode === 'movies' ? 'accent-[#00FCFF]' : 'accent-[#ff0077]'">
                 </div>
@@ -271,7 +275,7 @@ const toggleAddToList = (id: number) => {
                 <TransitionGroup tag="section" name="list"
     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
     
-    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterRating })"
+    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterValue })"
         :key="movie.id" 
         class="relative flex flex-col items-center w-full"
     >
