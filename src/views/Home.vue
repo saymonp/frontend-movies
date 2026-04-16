@@ -143,7 +143,7 @@ const toggleAddToList = (id: number) => {
             Filmes
         </button>
         <button @click="searchMode = 'lists'" 
-            :class="searchMode === 'lists' ? 'text-[#ff0077] border-b-2 border-[#ff0077]' : 'text-zinc-500 hover:text-zinc-300'"
+            :class="searchMode === 'lists' ? 'text-[#d919ff] border-b-2 border-[#d919ff]' : 'text-zinc-500 hover:text-zinc-300'"
             class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
             Listas
         </button>
@@ -163,7 +163,7 @@ const toggleAddToList = (id: number) => {
                     <div class="relative">
                         <button @click="showFilter = !showFilter"
                             class="flex items-center gap-1 ml-2 px-2 py-1 rounded-md transition-all group"
-                            :class="searchMode === 'movies' ? 'bg-[#00FCFF]/10 text-[#00FCFF]' : 'bg-[#ff0077]/10 text-[#ff0077]'">
+                            :class="searchMode === 'movies' ? 'bg-[#00FCFF]/10 text-[#00FCFF]' : 'bg-[#ff0077]/10 text-[#d919ff]'">
                             <span class="text-[9px] font-black uppercase tracking-tighter">
                                 {{ searchMode === 'movies' ? 'Gêneros' : 'Tags' }}
                             </span>
@@ -173,7 +173,7 @@ const toggleAddToList = (id: number) => {
                         <div ref="target" v-show="showFilter"
                             class="absolute right-0 mt-3 z-50 bg-[#020036]/95 backdrop-blur-2xl border border-white/20 rounded-xl p-4 shadow-2xl w-[220px]">
                             <p class="text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2 mb-3"
-                                :class="searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#ff0077]'">
+                                :class="searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#d919ff]'">
                                 {{ searchMode === 'movies' ? 'Selecionar Gêneros' : 'Filtrar por Tags' }}
                             </p>
                             <div class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
@@ -198,13 +198,13 @@ const toggleAddToList = (id: number) => {
                             {{ searchMode === 'movies' ? 'Nota Mínima' : 'Mínimo de Likes' }}
                         </span>
                         <span class="font-black px-2 py-0.5 rounded"
-                            :class="searchMode === 'movies' ? 'text-[#00FCFF] bg-[#00FCFF]/10' : 'text-[#ff0077] bg-[#ff0077]/10'">
+                            :class="searchMode === 'movies' ? 'text-[#00FCFF] bg-[#00FCFF]/10' : 'text-[#d919ff] bg-[#ff0077]/10'">
                             {{ filterValue }}
                         </span>
                     </div>
                     <input type="range" min="0" step="0.5" :max="searchMode === 'movies' ? 10 : 1000" v-model="filterValue"
                         class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
-                        :class="searchMode === 'movies' ? 'accent-[#00FCFF]' : 'accent-[#ff0077]'">
+                        :class="searchMode === 'movies' ? 'accent-[#00FCFF]' : 'accent-[#d919ff]'">
                 </div>
             </div>
 
