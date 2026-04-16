@@ -201,26 +201,33 @@ const dataAssistido = ref(getTodayDate());
                   {{ rating }}/5
                 </span>
               </div>
-              <div class="hidden lg:block">
-                <div class="grid grid-cols-3 gap-4 mx-auto lg:mx-0 w-fit lg:w-full max-w-sm mt-6 lg:mt-1 lg:basis-full">
+              <!-- PC -->
+              <div class="hidden lg:flex lg:w-full mt-8 lg:justify-around">
+  <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
 
-                  <div class="  flex flex-col items-center lg:items-start gap-1">
-                    <IconWatchLater class="w-6 h-6 lg:w-5 lg:h-5 text-zinc-100 opacity-80" />
-                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center lg:text-left">Assistir mais
-                      Tarde</span>
-                  </div>
+    <div class="flex flex-col items-center gap-2">
+      <IconWatchLater class="w-10 h-10 text-zinc-100 opacity-80" />
+      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+        Assistir mais Tarde
+      </span>
+    </div>
 
-                  <div class="flex flex-col items-center lg:items-start gap-1">
-                    <IconAddToList class="w-6 h-6 lg:w-5 lg:h-5 text-zinc-100 opacity-80" />
-                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center lg:text-left">Salvar na Lista</span>
-                  </div>
+    <div class="flex flex-col items-center gap-2">
+      <IconAddToList class="w-10 h-10 text-zinc-100 opacity-80" />
+      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+        Salvar na Lista
+      </span>
+    </div>
 
-                  <div class="flex flex-col items-center lg:items-start gap-1">
-                    <IconCheck class="w-6 h-6 lg:w-5 lg:h-5 text-zinc-100 opacity-80" />
-                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center lg:text-left">Assistido</span>
-                  </div>
-                </div>
-              </div>
+    <div class="flex flex-col items-center gap-2">
+      <IconCheck class="w-10 h-10 text-zinc-100 opacity-80" />
+      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+        Assistido
+      </span>
+    </div>
+
+  </div>
+</div>
             </div>
             <div class="flex flex-col ">
               <div class="shrink-0 ml-auto"><img :src="movie.poster_path_br"
@@ -231,7 +238,8 @@ const dataAssistido = ref(getTodayDate());
             </div>
 
           </div>
-          <div clas="block lg:hidden">
+          <!-- Mobile -->
+          <div class="block lg:hidden">
             <div class="grid grid-cols-3 gap-4 mx-auto lg:mx-0 w-fit lg:w-full max-w-md mt-9 lg:mt-6">
               <div class="flex flex-col items-center gap-2">
                 <IconWatchLater class="w-7 h-7 lg:w-10 text-zinc-100" />
