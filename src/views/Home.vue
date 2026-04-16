@@ -4,21 +4,30 @@ import IconAddReview from '@/components/icons/IconAddReview.vue'
 import IconAddToList from '@/components/icons/IconAddToList.vue'
 import IconFilter from '@/components/icons/IconFilter.vue'
 import IconStar from '@/components/icons/IconStar.vue';
+import IconReviewEstrelas from '@/components/icons/IconReviewEstrelas.vue';
+import IconReviewStar from '@/components/icons/IconReviewStar.vue';
 import TheFooter from '@/components/TheFooter.vue';
 import Navbar from '@/components/Navbar.vue';
 import movies_json from '../assets/movies.json'
+import { onClickOutside } from '@vueuse/core'
 
 import SearchBar from '@/components/SearchBar.vue';
 import SearchBar2 from '@/components/SearchBar2.vue';
 
+const target = ref(null)
+
 const movies = ref(movies_json.movie);
 const filterRating = ref(0)
 const showFilter = ref(false)
+onClickOutside(target, () => (showFilter.value = false))
+const searchMode = ref('movies')
 
 const filterShow = computed(() => {
     // Arredonda para a primeira casa decimal de forma mais estável
     return (Math.round(filterRating.value * 10) / 10).toFixed(1);
 });
+
+const filterValue = ref(0);
 
 const loggedIn = ref(true);
 
@@ -125,100 +134,148 @@ const toggleAddToList = (id: number) => {
                     </div>
                 </div>
 
-                <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
-                    <div
-                        class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10">
+               <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
+    <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
+    <div class="flex gap-4 mb-3 ml-2">
+        <button @click="searchMode = 'movies'" 
+            :class="searchMode === 'movies' ? 'text-[#00FCFF] border-b-2 border-[#00FCFF]' : 'text-zinc-500 hover:text-zinc-300'"
+            class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
+            Filmes
+        </button>
+        <button @click="searchMode = 'lists'" 
+            :class="searchMode === 'lists' ? 'text-[#d919ff] border-b-2 border-[#d919ff]' : 'text-zinc-500 hover:text-zinc-300'"
+            class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
+            Listas
+        </button>
+    </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-12 gap-4">
+    <div class="relative z-50 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10 transition-all duration-500">
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-6">
+            
+            <div class="sm:col-span-4 flex flex-col gap-4">
+                <div class="flex items-center bg-white/5 border border-white/20 rounded-xl px-3 py-2 focus-within:ring-1 transition-all"
+                    :class="searchMode === 'movies' ? 'focus-within:ring-[#00FCFF]' : 'focus-within:ring-[#ff0077]'">
+                    
+                    <input type="text" 
+                        :placeholder="searchMode === 'movies' ? 'Buscar filmes...' : 'Buscar listas por título...'"
+                        class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs font-bold min-w-0">
+                    
+                    <div class="relative">
+                        <button @click="showFilter = !showFilter"
+                            class="flex items-center gap-1 ml-2 px-2 py-1 rounded-md transition-all group"
+                            :class="searchMode === 'movies' ? 'bg-[#00FCFF]/10 text-[#00FCFF]' : 'bg-[#ff0077]/10 text-[#d919ff]'">
+                            <span class="text-[9px] font-black uppercase tracking-tighter">
+                                {{ searchMode === 'movies' ? 'Gêneros' : 'Tags' }}
+                            </span>
+                            <IconFilter class="w-3" />
+                        </button>
 
-                            <div class="col-span-1 sm:col-span-4 flex flex-col gap-3">
-
-                                <div
-                                    class="flex items-center bg-white/5 border border-white/20 rounded-xl px-2 py-1.5 ring-[#00FCFF] shadow-[0_0_10px_rgba(0,252,255,0.2)]">
-                                    <input type="text" placeholder="Busca..."
-                                        class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-[11px] font-bold min-w-0">
-                                    <div clas="relative">
-                                        <button @click="showFilter = !showFilter" :showFilter="showFilter"
-                                            class="flex-none ml-2 hover:scale-110 transition-transform">
-                                            <IconFilter class="w-4 text-[#2adde0]" />
-                                        </button>
-                                        <div v-if="showFilter" @click="showFilter = false"
-                                            class="absolute inset-0 z-10 bg-transparent cursor-default"></div>
-                                        <div v-show="showFilter"
-                                            class="absolute left-1/5 mt-2 z-50 bg-[#020036]/90 backdrop-blur-xl border shadow-2xl border-white/20 rounded-xl p-4 shadow-2xl w-[200px]">
-                                            <div class="flex flex-col gap-3">
-                                                <p
-                                                    class="text-[#00FCFF] text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2">
-                                                    Filtros Avançados
-                                                </p>
-
-                                                <div class="space-y-3">
-                                                    <div class="flex flex-col gap-1">
-                                                        <label
-                                                            class="text-[9px] text-zinc-500 uppercase font-bold">Diretor</label>
-                                                        <select
-                                                            class="w-full bg-white/5 border border-white/10 p-1.5 rounded text-[10px] text-white outline-none focus:border-[#00FCFF]">
-                                                            <option class="bg-zinc-900">Todos</option>
-                                                            <option class="bg-zinc-900">Guillermo del Toro</option>
-                                                            <option class="bg-zinc-900">Tim Burton</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="flex flex-col gap-1">
-                                                        <label
-                                                            class="text-[9px] text-zinc-500 uppercase font-bold">Estúdio</label>
-                                                        <select
-                                                            class="w-full bg-white/5 border border-white/10 p-1.5 rounded text-[10px] text-white outline-none focus:border-[#00FCFF]">
-                                                            <option class="bg-zinc-900">Todos</option>
-                                                            <option class="bg-zinc-900">Disney</option>
-                                                            <option class="bg-zinc-900">Warner Bros</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <button @click="showFilter = false"
-                                                    class="mt-2 text-[9px] text-zinc-400 hover:text-white transition-colors uppercase font-bold">
-                                                    Aplicar
-                                                </button>
-                                            </div>
-                                        </div>
+                        <div ref="target" v-show="showFilter"
+                            class="absolute right-0 mt-3 z-50 bg-[#020036]/95 backdrop-blur-2xl border border-white/20 rounded-xl p-4 shadow-2xl w-[220px]">
+                            <p class="text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2 mb-3"
+                                :class="searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#d919ff]'">
+                                {{ searchMode === 'movies' ? 'Selecionar Gêneros' : 'Filtrar por Tags' }}
+                            </p>
+                            <div class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                <label v-for="item in (searchMode === 'movies' ? ['Ação', 'Comédia', 'Drama', 'Terror'] : ['Favoritos', 'Maratona', 'Cyberpunk', 'Clássicos'])" 
+                                    :key="item" class="flex items-center gap-3 cursor-pointer group">
+                                    <div class="relative flex items-center">
+                                        <input type="checkbox" 
+                                            :class="searchMode === 'movies' ? 'checked:bg-[#00FCFF] checked:border-[#00FCFF]' : 'checked:bg-[#ff0077] checked:border-[#ff0077]'"
+                                            class="peer appearance-none w-4 h-4 border border-white/20 rounded transition-all">
+                                        <span class="absolute text-black font-bold text-[10px] left-1 opacity-0 peer-checked:opacity-100">✓</span>
                                     </div>
-                                </div>
-
-                                <div class="px-1">
-                                    <div class="flex justify-between items-center text-[9px] mb-1">
-                                        <span class="text-zinc-500 uppercase font-bold">Nota</span>
-                                        <span class="text-[#00FCFF] font-black">{{ filterShow }}</span>
-                                    </div>
-                                    <input type="range" min="0" max="10" step="0.001" v-model="filterRating"
-                                        class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00FCFF]">
-                                </div>
+                                    <span class="text-zinc-300 text-[11px] font-bold group-hover:text-white transition-colors">{{ item }}</span>
+                                </label>
                             </div>
-
-                            <div class="col-span-1 sm:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <button v-for="genero in ['Ação', 'Comédia', 'Romance', 'Drama', 'Terror', 'Aventura']"
-                                    :key="genero"
-                                    class="bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit">
-                                    <p class="text-white text-[10px] uppercase tracking-wider font-bold text-center">{{
-                                        genero
-                                        }}</p>
-                                </button>
-                                <div v-for="extra in ['Animação', 'Fantasia']" :key="extra"
-                                    class="hidden sm:block bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit">
-                                    <p class="text-white text-[10px] uppercase tracking-wider font-bold text-center">{{
-                                        extra
-                                        }}</p>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
                 </div>
 
+                <div class="px-1">
+                    <div class="flex justify-between items-center text-[9px] mb-1">
+                        <span class="text-zinc-500 uppercase font-bold tracking-widest">
+                            {{ searchMode === 'movies' ? 'Nota Mínima' : 'Mínimo de Likes' }}
+                        </span>
+                        <span class="font-black px-2 py-0.5 rounded"
+                            :class="searchMode === 'movies' ? 'text-[#00FCFF] bg-[#00FCFF]/10' : 'text-[#d919ff] bg-[#ff0077]/10'">
+                            {{ filterValue }}
+                        </span>
+                    </div>
+                    <input type="range" min="0" step="0.5" :max="searchMode === 'movies' ? 10 : 1000" v-model="filterValue"
+                        class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                        :class="searchMode === 'movies' ? 'accent-[#00FCFF]' : 'accent-[#d919ff]'">
+                </div>
+            </div>
+
+            <div class="sm:col-span-8 flex flex-col gap-4">
+                
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Ano</label>
+                        <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
+                            <option class="bg-zinc-900">Todos</option>
+                            <option class="bg-zinc-900">2026</option>
+                        </select>
+                    </div>
+
+                    <template v-if="searchMode === 'movies'">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Diretor</label>
+                            <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
+                                <option class="bg-zinc-900">Qualquer um</option>
+                                <option class="bg-zinc-900">Villeneuve</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Idioma</label>
+                            <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
+                                <option class="bg-zinc-900">Original</option>
+                                <option class="bg-zinc-900">Português</option>
+                            </select>
+                        </div>
+                    </template>
+
+                    <template v-else>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Ordenar por</label>
+                            <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#ff0077] cursor-pointer">
+                                <option class="bg-zinc-900">Mais curtidas</option>
+                                <option class="bg-zinc-900">Recentes</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Privacidade</label>
+                            <select class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#ff0077] cursor-pointer">
+                                <option class="bg-zinc-900">Públicas</option>
+                                <option class="bg-zinc-900">Minhas Listas</option>
+                            </select>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="flex gap-2 mt-auto">
+                    <button v-for="tag in (searchMode === 'movies' ? ['Destaques', '2026', 'Bilheterias'] : ['Top Listas', 'Curadorias', 'Mais Ativas'])" 
+                        :key="tag"
+                        class="flex-1 bg-white/5 border border-white/10 rounded-xl py-2.5 px-2 transition-all group hover:bg-white/10"
+                        :class="searchMode === 'movies' ? 'hover:border-[#00FCFF]/50' : 'hover:border-[#ff0077]/50'">
+                        <p class="text-zinc-400 text-[10px] uppercase tracking-tighter font-black text-center group-hover:text-white"
+                           :class="searchMode === 'movies' ? 'group-hover:text-[#00FCFF]' : 'group-hover:text-[#ff0077]'">
+                            {{ tag }}
+                        </p>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
                 <TransitionGroup tag="section" name="list"
     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
     
-    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterRating })"
+    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterValue })"
         :key="movie.id" 
         class="relative flex flex-col items-center w-full"
     >
@@ -241,7 +298,7 @@ const toggleAddToList = (id: number) => {
                     </p>
                     
                     <div class="flex items-center justify-between px-1 mt-2">
-                        <IconAddReview @click.stop="toggleQuickReview(movie.id)"
+                        <IconReviewStar @click.stop="toggleQuickReview(movie.id)"
                             class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" />
                         
                         <span class="text-[9px] sm:text-[10px] font-black text-zinc-400">
