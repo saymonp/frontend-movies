@@ -1,29 +1,93 @@
 <script setup lang="ts">
+import { ref, reactive } from 'vue';
+import { useAuthStore } from '@/stores/auth'; // Importe seu store
 import IconList from '@/components/icons/IconList.vue'
 import IconAdd from '@/components/icons/IconAdd.vue'
 import IconFilmeiroFooter from '@/components/icons/IconFilmeiroFooter.vue';
 import IconProfile from './icons/IconProfile.vue';
 import IconNavHam from './icons/IconNavHam.vue';
-import { ref } from 'vue';
 
-defineProps({
-    loggedIn: Boolean
-})
+import { storeToRefs } from 'pinia';
 
-const isLoginVisible = ref(false)
-const isCriarConta = ref(false)
-
-
+const authStore = useAuthStore();
+const { isAuthenticated, user } = storeToRefs(authStore);
+const isLoginVisible = ref(false);
+const isCriarConta = ref(false);
 const menuAberto = ref(false);
+const isLoading = ref(false);
+const errorMessage = ref('');
+
+// Dados dos formulários
+const loginData = reactive({
+    email: '', // O Laravel geralmente usa email como padrão, valide se o seu é 'user' ou 'email'
+    password: ''
+});
+
+const registerData = reactive({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: ''
+});
 
 const toggleMenu = (event: Event) => {
-    event.preventDefault(); // Evita que o link recarregue a página
+    event.preventDefault();
     menuAberto.value = !menuAberto.value;
 };
 
+// Ação de Login
+const handleLogin = async () => {
+    try {
+        isLoading.value = true;
+        errorMessage.value = '';
+
+        // No Laravel/Sanctum, enviamos as credenciais
+        await authStore.login({
+            email: loginData.email,
+            password: loginData.password
+        });
+
+        isLoginVisible.value = false;
+        // Limpar campos
+        loginData.email = '';
+        loginData.password = '';
+    } catch (error: any) {
+        errorMessage.value = error.response?.data?.message || 'Erro ao entrar. Verifique suas credenciais.';
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+// Ação de Cadastro
+const handleRegister = async () => {
+    try {
+        isLoading.value = true;
+        errorMessage.value = '';
+
+        // Chamada direta para o axios ou via action no store
+        await authStore.register({
+            name: registerData.name,
+            email: registerData.email,
+            password: registerData.password,
+            password_confirmation: registerData.password
+        });
+
+        isCriarConta.value = false;
+    } catch (error: any) {
+        errorMessage.value = error.response?.data?.message || 'Erro ao criar conta.';
+    } finally {
+        isLoading.value = false;
+    }
+};
+
 const logout = () => {
-    // Sua lógica de logout aqui
-    console.log("Saindo...");
+    authStore.logout();
+    menuAberto.value = false;
+};
+
+// Login Social
+const loginGoogle = () => {
+    window.location.href = import.meta.env.VITE_GOOGLE_AUTH_URL;
 };
 </script>
 <template>
@@ -37,15 +101,22 @@ const logout = () => {
                 Acesse sua conta no Filmeiro para salvar suas listas.
             </p>
 
-            <input type="text" placeholder="Usuário"
+            <input v-model="loginData.email" type="email" placeholder="E-mail"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
 
-            <input type="text" placeholder="Senha"
+            <input v-model="loginData.password" type="password" placeholder="Senha" @keyup.enter="handleLogin"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
 
-            <button @click="isLoginVisible = false"
-                class="bg-white/5 border border-white/20 text-white rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit">
-                Entrar
+            <p v-if="errorMessage" class="text-red-400 text-xs">{{ errorMessage }}</p>
+
+            <button @click="handleLogin" :disabled="isLoading"
+                class="w-full bg-white/5 border border-white/20 text-white rounded-lg py-2 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all disabled:opacity-50">
+                {{ isLoading ? 'Entrando...' : 'Entrar' }}
+            </button>
+
+            <!-- Botão Google -->
+            <button @click="loginGoogle" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
+                Ou entrar com Google
             </button>
 
             <button @click="isLoginVisible = false"
@@ -67,17 +138,21 @@ const logout = () => {
                 Crie sua conta no Filmeiro para salvar suas listas.
             </p>
 
-            <input type="text" placeholder="Usuário"
+            <input v-model="registerData.name" type="text" placeholder="Nome Completo"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
 
-            <input type="text" placeholder="Senha"
+            <input v-model="registerData.email" type="email" placeholder="E-mail"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
-
-            <button @click="isCriarConta = false"
-                class="bg-white/5 border border-white/20 text-white rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit">
-                Criar Conta
+            <input v-model="registerData.password" type="password" placeholder="Senha"
+                class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
+            <button @click="handleRegister" :disabled="isLoading"
+                class="w-full bg-white/5 border border-white/20 text-white rounded-lg py-2 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
+                {{ isLoading ? 'Criando...' : 'Criar Conta' }}
             </button>
-
+            <!-- Botão Google -->
+            <button @click="loginGoogle" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
+                Ou entrar com Google
+            </button>
             <button @click="isCriarConta = false"
                 class="cursor-pointer mt-4 text-xs text-zinc-400 hover:text-white transition-colors">
                 FECHAR
@@ -94,24 +169,24 @@ const logout = () => {
         </a>
         <nav>
             <ul class="flex list-none p-0 m-0">
-                <li v-if="!loggedIn"><a
+                <li v-if="!isAuthenticated"><a
                         class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
                         <a class="font-bold text-zinc-100" @click="isLoginVisible = !isLoginVisible"
                             :isLoginVisible="isLoginVisible">Entrar</a>
                     </a>
                 </li>
-                <li v-if="!loggedIn">
+                <li v-if="!isAuthenticated">
                     <a class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400"
                         @click="isCriarConta = !isCriarConta" :isCriarConta="isCriarConta">
                         <p class="font-bold text-zinc-100">Criar Conta</p>
                     </a>
                 </li>
-                <li v-if="loggedIn"><a href="/perfil"
+                <li v-if="isAuthenticated"><a href="/perfil"
                         class="cursor-pointer block p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
                         <IconProfile class="w-7 text-zinc-100" />
                     </a>
                 </li>
-                <li v-if="loggedIn" class="relative">
+                <li v-if="isAuthenticated" class="relative">
                     <button @click="toggleMenu"
                         class="cursor-pointer block p-2.5 text-white no-underline ml-2.5 hover:text-[#00FCFF] transition-colors focus:outline-none">
                         <IconNavHam class="rotate-90 w-7 text-zinc-100" />
@@ -137,11 +212,10 @@ const logout = () => {
                                 class="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
                                 Sair
                             </button>
-                <li><a
-                        class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
-                        <a class="font-bold text-zinc-100" @click="isLoginVisible = !isLoginVisible"
-                            :isLoginVisible="isLoginVisible">Entrar</a>
-                    </a>
+                <li v-if="user?.roles[0] == 'admin'"><RouterLink to="/administrador" class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                        <a class="font-bold text-zinc-100"
+                            :isLoginVisible="isLoginVisible">Administrador</a>
+                    </RouterLink>
                 </li>
                 <li>
                     <a class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400"

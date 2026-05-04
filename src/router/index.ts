@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import TailTest from '@/views/TailTest.vue'
+import { useAuthStore } from '@/stores/auth';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,7 +45,17 @@ const router = createRouter({
       path: '/perfil', // O :lang vira um parâmetro (br ou en)
       name: 'PerfilView',
       component: () => import('../views/PerfilView.vue'),
-      props: true
+      props: true,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/auth/success',
+      component: () => import('../views/AuthSuccess.vue'),
+    },
+    {
+      path: '/administrador',
+      component: () => import('../views/AdminView.vue'),
+      meta: { requiresAuth: true }
     }
   ],
   scrollBehavior(to, from, savedPosition) {
@@ -56,6 +67,20 @@ const router = createRouter({
       return { top: 0 };
     }
   },
-})
+  
+});
+
+router.beforeEach((to, from, next) => {
+  const auth = useAuthStore()
+
+  // Se a rota exige autenticação e o usuário não está logado
+  if (to.meta.requiresAuth && !auth.token) {
+    // Manda ele para o login
+    next('/login')
+  } else {
+    // Se estiver tudo ok ou a rota for pública, deixa passar
+    next()
+  }
+});
 
 export default router

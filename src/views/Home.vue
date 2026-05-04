@@ -11,8 +11,18 @@ import Navbar from '@/components/Navbar.vue';
 import movies_json from '../assets/movies.json'
 import { onClickOutside } from '@vueuse/core'
 
+import { useAuthStore } from '@/stores/auth';
+
 import SearchBar from '@/components/SearchBar.vue';
 import SearchBar2 from '@/components/SearchBar2.vue';
+import { storeToRefs } from 'pinia';
+
+
+const authStore = useAuthStore();
+
+// ✅ CORRETO: Isso transforma as propriedades em Refs, permitindo o uso de .value
+const { isAuthenticated, user } = storeToRefs(authStore);
+
 
 const target = ref(null)
 
@@ -28,8 +38,6 @@ const filterShow = computed(() => {
 });
 
 const filterValue = ref(0);
-
-const loggedIn = ref(true);
 
 
 const isCardReviewVisible = ref(false);
@@ -74,7 +82,7 @@ const toggleAddToList = (id: number) => {
 
 <template>
     <div class="bg-zinc-50 dark:bg-zinc-900">
-        <Navbar :loggedIn="loggedIn" />
+        <Navbar :loggedIn="isAuthenticated" />
         <div class="bg-hero">
 
             <div class="relative z-10 w-full h-auto">
@@ -106,7 +114,7 @@ const toggleAddToList = (id: number) => {
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
                 hover:shadow-[0_0_30px_rgba(0,252,255,1)]
                 hover:scale-105 active:scale-95">
-                            {{ loggedIn === true ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
+                            {{ isAuthenticated ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
                         </button>
                         </RouterLink>
                     </div>
@@ -128,7 +136,7 @@ const toggleAddToList = (id: number) => {
                 transition-all duration-300
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
                 hover:scale-105 active:scale-95">
-                            {{ loggedIn === true ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
+                            {{ !!isAuthenticated === true ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
                         </button>
                         </RouterLink>
                     </div>
