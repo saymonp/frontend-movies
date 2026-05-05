@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import IconAddReview from '@/components/icons/IconAddReview.vue'
 import IconAddToList from '@/components/icons/IconAddToList.vue'
 import IconFilter from '@/components/icons/IconFilter.vue'
@@ -12,21 +12,42 @@ import movies_json from '../assets/movies.json'
 import { onClickOutside } from '@vueuse/core'
 
 import { useAuthStore } from '@/stores/auth';
+import { useMovieStore } from '@/stores/movie';
+
 
 import SearchBar from '@/components/SearchBar.vue';
 import SearchBar2 from '@/components/SearchBar2.vue';
 import { storeToRefs } from 'pinia';
+import type { MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse } from '@/types/Movies';
 
 
 const authStore = useAuthStore();
+const movieStore = useMovieStore();
 
-// ✅ CORRETO: Isso transforma as propriedades em Refs, permitindo o uso de .value
+// transforma as propriedades em Refs, permitindo o uso de .value
 const { isAuthenticated, user } = storeToRefs(authStore);
 
 
 const target = ref(null)
 
-const movies = ref(movies_json.movie);
+// const movies = ref(movies_json.movie);
+
+
+const filterMovies = ref<MovieFilters>({
+    destaque: true
+});
+
+const movies = ref<MovieIndexResponse>();
+
+async function loadMovies(filters: MovieFilters) {
+    movies.value = await movieStore.listMovies(filters);
+}
+
+onMounted(() => {
+    loadMovies(filterMovies.value);
+});
+
+
 const filterRating = ref(0)
 const showFilter = ref(false)
 onClickOutside(target, () => (showFilter.value = false))
@@ -77,6 +98,11 @@ const toggleAddToList = (id: number) => {
     // Fecha o de review se estiver aberto e abre o de listas
     activeReviewId.value = null;
     activeListId.value = activeListId.value === id ? null : id;
+};
+
+const getImageUrl = (path: string) => {
+  if (!path) return '/placeholder.png';
+  return import.meta.env.VITE_IMAGE_BASE_URL + path;
 };
 </script>
 
@@ -283,18 +309,19 @@ const toggleAddToList = (id: number) => {
                 <TransitionGroup tag="section" name="list"
     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
     
-    <div v-for="movie in movies.filter((elemento: any) => { return elemento.rating >= filterValue })"
-        :key="movie.id" 
+    <div v-for="movie in movies?.data?.filter((elemento) => elemento.rating >= filterValue)" 
+     :key="movie.id" 
         class="relative flex flex-col items-center w-full"
     >
+    
         <RouterLink :to="{
             name: 'MovieView',
             params: {
                 lang: $i18n.locale,
-                slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
+                slug: $i18n.locale === 'br' ? movie.slug_pt : movie.slug_en
             }
         }" class="w-full">
-            <img :src="movie.poster_thumb_br"
+            <img :src="getImageUrl(movie.poster_thumb_br)"
                 class="w-full aspect-[2/3] object-cover ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-lg">
         </RouterLink>
 
@@ -302,7 +329,7 @@ const toggleAddToList = (id: number) => {
             <div class="flex flex-col items-center">
                 <div class="w-full mt-1">
                     <p class="text-center text-xs sm:text-sm font-bold text-zinc-100 truncate px-1">
-                        {{ movie.titulo }}
+                        {{ movie.titulo_br }}
                     </p>
                     
                     <div class="flex items-center justify-between px-1 mt-2">
