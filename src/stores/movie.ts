@@ -1,7 +1,7 @@
 // src/stores/auth.js
 import { defineStore } from 'pinia';
 import api from '@/services/api';
-import type { MovieIndex, MovieFilters, UpdateMovieRequest, MovieDetail, MovieIndexResponse, ApiResponse } from '@/types/Movies';
+import type { MovieIndex, DiretorResponse, MovieFilters, UpdateMovieRequest, MovieDetail, MovieIndexResponse, GeneroResponse, ApiResponse } from '@/types/Movies';
 
 
 export const useMovieStore = defineStore('movies', {
@@ -37,7 +37,19 @@ export const useMovieStore = defineStore('movies', {
                 params: { id: tmdbId }
             });
             return response.data;
-        }
+        },
+        async listGenres(): Promise<GeneroResponse[]> {
+            const response = await api.get<GeneroResponse[]>("/movies/generos");
+            return response.data;
+        },
+        async listDirectors(): Promise<DiretorResponse[]> {
+            const response = await api.get<DiretorResponse[]>("/movies/diretores");
+            return response.data;
+        },
+        async listIdioms(): Promise<string[]> {
+            const response = await api.get<string[]>("/movies/idiomas");
+            return response.data;
+        },
     }
 });
 

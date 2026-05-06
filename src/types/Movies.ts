@@ -11,6 +11,18 @@ export interface MovieFilters {
   page?: number;         // Para o controle da paginação
 }
 
+export interface GeneroResponse {
+  id: number;
+  tmdb_is: number;
+  nome_pt: string;
+  nome_en: string;
+}
+
+export interface DiretorResponse {
+  id: number;
+  nome: string;
+}
+
 export interface Genero {
   id: number;
   nome: string; 
