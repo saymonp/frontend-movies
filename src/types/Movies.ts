@@ -34,40 +34,43 @@ export interface Diretor {
 }
 
 export interface MovieIndexResponse {
-	current_page: number,
-	data: MovieIndex[],
-  next_page_url: number,
-	path: string,
-	per_page: number,
-	prev_page_url: number,
-	to: number,
-	total: number		
+	current_page: number;
+	data: MovieIndex[];
+  next_page_url: number;
+	path: string;
+	per_page: number;
+	prev_page_url: number;
+	to: number;
+	total: number;
+  last_page_url: string;
+  from: number;
+  last_page: number;
 }
 
 export interface MovieIndex {
-  id: number;
-  tmdb_id: number;
-  imdb_id: string;
-  titulo_original: string;
-  titulo_br: string;
-  descricao_br: string;
-  tagline_br: string;
-  titulo_en: string;
-  descricao_en: string;
-  tagline_en: string;
-  rating: number;
-  duracao: number;
-  lingua_origem: string;
-  revenue: number;
-  popularity: number;
-  poster_thumb_br: string;
-  poster_thumb_us: string;
-  colecao_id: number | null;
-  slug_pt: string;
-  slug_en: string;
-  release_date: string; // ISO Date String
-  generos: Genero[];
-  diretores: Diretor[];
+  id?: number;
+  tmdb_id?: number;
+  imdb_id?: string;
+  titulo_original?: string;
+  titulo_br?: string;
+  descricao_br?: string;
+  tagline_br?: string;
+  titulo_en?: string;
+  descricao_en?: string;
+  tagline_en?: string;
+  rating?: number;
+  duracao?: number;
+  lingua_origem?: string;
+  revenue?: number;
+  popularity?: number;
+  poster_thumb_br?: string;
+  poster_thumb_us?: string;
+  colecao_id?: number | null;
+  slug_pt?: string;
+  slug_en?: string;
+  release_date?: string; // ISO Date String
+  generos?: Genero[];
+  diretores?: Diretor[];
 }
 
 export interface MoviePaginationResponse {
@@ -254,3 +257,32 @@ export interface ApiResponse<T = any> {
   message: string;
   data?: T;
 }
+
+
+export interface DinamicMovieInsertionResponse {
+  id: number;
+  tmdb_id: number;
+  message: string;
+  temp_result: TempMovieResult;
+  status: "importing" | string;
+}
+
+export interface TempMovieResult {
+  adult: boolean;
+  backdrop_path: string | null;
+  genre_ids: number[];
+  id: number;
+  title: string;
+  original_language: string;
+  original_title: string;
+  overview: string;
+  popularity: number;
+  poster_path: string | null;
+  release_date: string; 
+  softcore: boolean;
+  video: boolean;
+  vote_average: number;
+  vote_count: number;
+}
+
+

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch, nextTick } from 'vue';
 import IconAddReview from '@/components/icons/IconAddReview.vue'
 import IconAddToList from '@/components/icons/IconAddToList.vue'
 import IconFilter from '@/components/icons/IconFilter.vue'
@@ -18,7 +18,7 @@ import { useMovieStore } from '@/stores/movie';
 import SearchBar from '@/components/SearchBar.vue';
 import SearchBar2 from '@/components/SearchBar2.vue';
 import { storeToRefs } from 'pinia';
-import type { GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse } from '@/types/Movies';
+import type { MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse } from '@/types/Movies';
 
 
 const authStore = useAuthStore();
@@ -28,7 +28,9 @@ const movieStore = useMovieStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 
 
-const target = ref(null)
+const target = ref(null);
+
+const isSearching = ref(false);
 
 // const movies = ref(movies_json.movie);
 const generos = ref<GeneroResponse[]>([]);
@@ -39,7 +41,7 @@ const filterMovies = ref<MovieFilters>({
     destaque: true,
     lang: 'pt-BR',
     search: undefined,
-    generos: [] as number[],    
+    generos: [] as number[],
     ano: undefined,
     diretores: [] as number[],  // Array de IDs
     idioma: undefined,       // Sigla do idioma (ex: 'en', 'es')
@@ -49,10 +51,21 @@ const filterMovies = ref<MovieFilters>({
 });
 // Função que observa mudanças e recarrega os filmes
 // Usamos um "debounce" no search para não sobrecarregar a API enquanto o usuário digita
-watch(filterMovies, (newFilters) => {
-    loadMovies(newFilters);
-}, { deep: true });
-
+//watch(filterMovies, (newFilters) => {
+//    loadMovies(newFilters);
+//}, { deep: true });
+watch(
+    () => ({ ...filterMovies.value }), // Observa uma cópia dos filtros
+    (newVal, oldVal) => {
+        // Se o que mudou NÃO foi a página, resetamos para a página 1
+        if (newVal.page === oldVal.page) {
+            filterMovies.value.page = 1;
+        }
+        
+        loadMovies(filterMovies.value);
+    },
+    { deep: true }
+);
 // Função para manipular os gêneros (Checkbox)
 const toggleGenero = (id: number) => {
     const index = filterMovies.value.generos?.indexOf(id);
@@ -63,11 +76,49 @@ const toggleGenero = (id: number) => {
     }
 };
 
-const movies = ref<MovieIndexResponse>();
+// const movies = ref<MovieIndexResponse>();
+// Se MovieIndexResponse for o objeto que contém { data: [...] }
+const movies = ref<MovieIndexResponse | DinamicMovieInsertionResponse>();
 
 async function loadMovies(filters: MovieFilters) {
-    movies.value = await movieStore.listMovies(filters);
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        const response = await movieStore.listMovies(filters);
+
+        // O TypeScript agora entende o que há dentro de 'response'
+        if (isImportingResponse(response)) {
+            const tempMovie = {
+                id: response.id,
+                tmdb: response.tmdb_id,
+                title_br: response.temp_result.title,
+                poster_thumb_br: "https://image.tmdb.org/t/p/w500" + response.temp_result.poster_path, 
+                rating: response.temp_result.vote_average,
+                year: response.temp_result.release_date?.split('-')[0],
+                is_importing: true,
+                slug_pt: 'temp-movie',
+                slug_en: 'temp-movie'
+            };
+            // @ts-ignore
+            movies.value = { data: [tempMovie] }; 
+            console.log(tempMovie);
+        } else {
+            // Aqui o TS sabe que é MovieIndexResponse
+            movies.value = response;
+        }
+    } catch (error) {
+        console.error("Erro na busca:", error);
+    } finally {
+        isSearching.value = false;
+    }
 }
+
+// Função para checar se a resposta é de importação
+function isImportingResponse(res: any): res is DinamicMovieInsertionResponse {
+    return res && res.status === 'importing';
+}
+
 async function loadGenres() {
     generos.value = await movieStore.listGenres();
 }
@@ -80,10 +131,10 @@ async function loadIdioms() {
 
 onMounted(() => {
     try {
-    loadMovies(filterMovies.value);
-    loadGenres();
-    loadDirectors();
-    loadIdioms();
+        loadMovies(filterMovies.value);
+        loadGenres();
+        loadDirectors();
+        loadIdioms();
     } catch (error) {
         console.error("Erro ao carregar:", error);
     }
@@ -142,17 +193,17 @@ const toggleAddToList = (id: number) => {
 };
 
 const getImageUrl = (path: string) => {
-  if (!path) return '/placeholder.png';
+    if (!path) return '/placeholder.png';
 
-  // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
-  if (path.startsWith('http')) {
-    return path;
-  }
+    // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
+    if (path.startsWith('http')) {
+        return path;
+    }
 
-  // Se for caminho relativo, remove uma possível barra extra no início para evitar //
-  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-  
-  return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
+    // Se for caminho relativo, remove uma possível barra extra no início para evitar //
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+    return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
 };
 
 const toggleBooleanFilter = (tag: string) => {
@@ -183,6 +234,26 @@ const isFilterActive = (tag: string): boolean => {
         if (tag === 'Bilheterias') return !!filterMovies.value.bilheteria;
     }
     return false;
+};
+const movieListSection = ref<HTMLElement | null>(null);
+
+const changePage = (newPage: number) => {
+    // Correção: Para validar a última página, use last_page (número) e não last_page_url (string)
+    // @ts-ignore
+    if (newPage < 1 || newPage > (movies.value?.last_page || 1)) return;
+    
+    filterMovies.value.page = newPage;
+    
+    // Pequeno delay para garantir que o Vue iniciou a atualização do DOM
+    nextTick(() => {
+        if (movieListSection.value) {
+            const yOffset = -150; // Ajuste este valor para controlar a altura (negativo sobe mais, positivo desce)
+            const element = movieListSection.value;
+            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+    });
 };
 </script>
 
@@ -248,7 +319,7 @@ const isFilterActive = (tag: string): boolean => {
                     </div>
                 </div>
 
-                <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
+                <div ref="movieListSection" class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
                     <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
                         <div class="flex gap-4 mb-3 ml-2">
                             <button @click="searchMode = 'movies'"
@@ -269,11 +340,14 @@ const isFilterActive = (tag: string): boolean => {
 
                                 <div class="sm:col-span-4 flex flex-col gap-4">
                                     <div class="flex items-center bg-white/5 border border-white/20 rounded-xl px-3 py-2 focus-within:ring-1 transition-all"
-                                        :class="searchMode === 'movies' ? 'focus-within:ring-[#00FCFF]' : 'focus-within:ring-[#ff0077]'">
+                                        :class="[
+            isSearching ? 'opacity-50 cursor-not-allowed' : '',
+            searchMode === 'movies' ? 'focus-within:ring-[#00FCFF]' : 'focus-within:ring-[#ff0077]'
+        ]">
 
-                                        <input type="text"
-                                        v-model="filterMovies.search"
-                                            :placeholder="searchMode === 'movies' ? 'Buscar filmes...' : 'Buscar listas por título...'"
+                                        <input type="text" v-model="filterMovies.search"
+                                       
+                                        :placeholder="searchMode === 'movies' ? 'Buscar filmes...' : 'Buscar listas por título...'"
                                             class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs font-bold min-w-0">
 
                                         <div class="relative">
@@ -298,21 +372,23 @@ const isFilterActive = (tag: string): boolean => {
                                                         v-for="item in (searchMode === 'movies' ? generos : ['Favoritos', 'Maratona', 'Cyberpunk', 'Clássicos'])"
                                                         :key="searchMode === 'movies' ? (item as any).id : (item as string)"
                                                         class="flex items-center gap-3 cursor-pointer group">
-                                                        
+
                                                         <div class="relative flex items-center">
-                                                                <input type="checkbox" 
-                                                                    :value="searchMode === 'movies' ? (item as any).id : (item as string)"
-                                                                    :checked="searchMode === 'movies' ? filterMovies.generos?.includes((item as any).id) : false"
-                                                                    @change="searchMode === 'movies' ? toggleGenero((item as any).id) : null"
-                                                                    :class="searchMode === 'movies' ? 'checked:bg-[#00FCFF] checked:border-[#00FCFF]' : 'checked:bg-[#ff0077] checked:border-[#ff0077]'"
+                                                            <input type="checkbox"
+                                                                :value="searchMode === 'movies' ? (item as any).id : (item as string)"
+                                                                :checked="searchMode === 'movies' ? filterMovies.generos?.includes((item as any).id) : false"
+                                                                @change="searchMode === 'movies' ? toggleGenero((item as any).id) : null"
+                                                                :class="searchMode === 'movies' ? 'checked:bg-[#00FCFF] checked:border-[#00FCFF]' : 'checked:bg-[#ff0077] checked:border-[#ff0077]'"
                                                                 class="peer appearance-none w-4 h-4 border border-white/20 rounded transition-all">
-                                                                >
-                                                            
-                                                                <span
+                                                            >
+
+                                                            <span
                                                                 class="absolute text-black font-bold text-[10px] left-1 opacity-0 peer-checked:opacity-100">✓</span>
                                                         </div>
                                                         <span
-                                                            class="text-zinc-300 text-[11px] font-bold group-hover:text-white transition-colors">{{ searchMode === 'movies' ? (item as any).nome_pt : item }}</span>
+                                                            class="text-zinc-300 text-[11px] font-bold group-hover:text-white transition-colors">{{
+                                                            searchMode === 'movies' ? (item as any).nome_pt : item
+                                                            }}</span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -357,23 +433,23 @@ const isFilterActive = (tag: string): boolean => {
                                                 <select v-model="filterMovies.diretores"
                                                     class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
                                                     <option class="bg-zinc-900" :value="undefined">Todos</option>
-                                                    <option v-for="diretor in diretores" 
-                                                        :key="diretor.id" 
-                                                        :value="diretor.id" 
-                                                        class="bg-zinc-900"
-                                                    >
+                                                    <option v-for="diretor in diretores" :key="diretor.id"
+                                                        :value="diretor.id" class="bg-zinc-900">
                                                         {{ diretor.nome }}
                                                     </option>
                                                 </select>
                                             </div>
                                             <div class="flex flex-col gap-1">
-                                                <label
-                                                    class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Idioma de Origem</label>
+                                                <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Idioma
+                                                    de Origem</label>
                                                 <select v-model="filterMovies.idioma"
                                                     class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
                                                     <option class="bg-zinc-900" :value="undefined">Todos</option>
-                                                    <option class="bg-zinc-900" v-for="idioma in idiomasDisponiveis" :key="idioma" :value="idioma">
-                                                        {{ new Intl.DisplayNames(['pt-BR'], { type: 'language' }).of(idioma) }}
+                                                    <option class="bg-zinc-900" v-for="idioma in idiomasDisponiveis"
+                                                        :key="idioma" :value="idioma">
+                                                        {{ new Intl.DisplayNames(['pt-BR'], {
+                                                            type: 'language'
+                                                        }).of(idioma) }}
                                                     </option>
                                                 </select>
                                             </div>
@@ -404,26 +480,24 @@ const isFilterActive = (tag: string): boolean => {
                                     <div class="flex gap-2 mt-auto">
                                         <button
                                             v-for="tag in (searchMode === 'movies' ? ['Destaques', '2026', 'Bilheterias'] : ['Top Listas', 'Curadorias', 'Mais Ativas'])"
-                                            :key="tag"
-                                            @click="toggleBooleanFilter(tag)"
+                                            :key="tag" @click="toggleBooleanFilter(tag)"
                                             class="flex-1 rounded-xl py-2.5 px-2 transition-all group hover:bg-white/10"
                                             :class="[
                                                 // Cores base e hover
                                                 searchMode === 'movies' ? 'hover:border-[#00FCFF]/50' : 'hover:border-[#ff0077]/50',
-                                                
+
                                                 // Estilo quando ATIVO
-                                                isFilterActive(tag) 
-                                                    ? (searchMode === 'movies' ? 'bg-[#00FCFF]/5 border border-[#00FCFF]' : 'bg-[#ff0077]/20 border-[#ff0077]') 
+                                                isFilterActive(tag)
+                                                    ? (searchMode === 'movies' ? 'bg-[#00FCFF]/5 border border-[#00FCFF]' : 'bg-[#ff0077]/20 border-[#ff0077]')
                                                     : 'bg-white/5 border border-white/10'
                                             ]">
                                             <p class="text-zinc-400 text-[10px] uppercase tracking-tighter font-black text-center group-hover:text-white"
                                                 :class="[
-            isFilterActive(tag) 
-                ? (searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#ff0077]') 
-                : 'text-zinc-400 group-hover:text-white'
-        ]"
-                                            >
-                                                
+                                                    isFilterActive(tag)
+                                                        ? (searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#ff0077]')
+                                                        : 'text-zinc-400 group-hover:text-white'
+                                                ]">
+
                                                 {{ tag }}
                                             </p>
                                         </button>
@@ -437,8 +511,7 @@ const isFilterActive = (tag: string): boolean => {
 
                 <TransitionGroup tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
-
-                    <div v-for="movie in movies?.data?.filter((elemento) => elemento.rating >= filterValue)"
+                    <div v-if="movies && (movies as any).data" v-for="movie in (movies as any)?.data?.filter((elemento: any) => elemento.rating >= filterValue)"
                         :key="movie.id" class="relative flex flex-col items-center w-full">
 
                         <RouterLink :to="{
@@ -520,6 +593,41 @@ const isFilterActive = (tag: string): boolean => {
                         </div>
                     </div>
                 </TransitionGroup>
+                <!-- Paginação -->
+<div class="flex items-center justify-center gap-2 mt-8 mb-12">
+    <!-- Botão Voltar -->
+    <button v-if="movies && (movies as any).data"
+        @click="changePage((movies as any).current_page - 1)"
+        :disabled="(movies as any).current_page === 1"
+        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#00FCFF] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+    >
+        <IconChevronLeft class="w-4 h-4" />
+    </button>
+
+    <!-- Números das Páginas (Simples) -->
+    <div class="flex gap-1">
+        <button v-if="movies && (movies as any).data"
+            v-for="page in (movies as any).last_page" 
+            :key="page"
+            @click="changePage(page)"
+            class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border"
+            :class="(movies as any).current_page  === page 
+                ? 'bg-[#00FCFF]/20 border-[#00FCFF] text-[#00FCFF]' 
+                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'"
+        >
+            {{ page }}
+        </button>
+    </div>
+
+    <!-- Botão Próximo -->
+    <button v-if="movies && (movies as any).data"
+        @click="changePage((movies as any).current_page + 1)"
+        :disabled="(movies as any).current_page === (movies as any).last_page"
+        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#00FCFF] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+    >
+        <IconChevronRight class="w-4 h-4" />
+    </button>
+</div>
             </div>
         </div>
         <TheFooter />
