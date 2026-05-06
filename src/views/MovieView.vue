@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Navbar from '@/components/Navbar.vue';
 import TheFooter from '@/components/TheFooter.vue';
@@ -10,29 +10,61 @@ import IconCheck from '@/components/icons/IconCheck.vue';
 
 import movie_json from '../assets/movieDetalhes.json';
 import movies_json from '../assets/movies.json'
+import type { MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse, MovieCollection } from '@/types/Movies';
+import { useAuthStore } from '@/stores/auth';
+import { useMovieStore } from '@/stores/movie';
+import { storeToRefs } from 'pinia';
+import i18n from '@/i18n';
 
+
+
+const movie = ref<MovieDetail>();
+const collection = ref<MovieCollection[]>();
 const abaAtiva = ref('generos');
-
+const authStore = useAuthStore();
+const { isAuthenticated, user } = storeToRefs(authStore);
+const movieStore = useMovieStore();
 const loggedIn = ref(true);
 const props = defineProps<{
   slug: string
 }>();
-
+const isSearching = ref(false);
 const { locale } = useI18n();
 
+async function loadMovies() {
+  if (isSearching.value) return;
+
+  isSearching.value = true;
+  try {
+    const response = await movieStore.detailMovie(props.slug);
+    movie.value = (response as any).movie;
+    collection.value = response.collection;
+    console.log(collection);
+  } catch (error) {
+    console.error("Erro na busca:", error);
+  } finally {
+    isSearching.value = false;
+  }
+}
 // Computed para encontrar o filme toda vez que o slug ou o idioma mudar
-const movie = computed(() => {
-  const slugKey = locale.value === 'br' ? 'slug_pt' : 'slug_en';
-
-  // Buscamos o filme que contenha o slug da URL em qualquer uma das linguagens
-  // Isso permite que o usuário acesse o link em EN mesmo estando no site em BR
-  return movie_json.find(m => m.slug_br === props.slug || m.slug_en === props.slug);
+//const movie = computed(() => {
+//const slugKey = locale.value === 'br' ? 'slug_pt' : 'slug_en';
+//loadMovies();
+// Buscamos o filme que contenha o slug da URL em qualquer uma das linguagens
+// Isso permite que o usuário acesse o link em EN mesmo estando no site em BR
+// return movie_json.find(m => m.slug_br === props.slug || m.slug_en === props.slug);
+//});
+onMounted(() => {
+  try {
+    loadMovies();
+  } catch (error) {
+    console.error("Erro ao carregar:", error);
+  }
 });
-
 // Opcional: Traduzir campos dinâmicos do JSON
-const movieTitle = computed(() => {
-  return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
-});
+//const movieTitle = computed(() => {
+//  return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
+//});
 
 const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
@@ -41,8 +73,6 @@ const selectRating = (val: number) => {
   rating.value = val;
 };
 
-
-const movies = ref(movies_json.movie);
 
 
 const limite = ref(1); // Quantas reviews aparecem inicialmente
@@ -64,9 +94,35 @@ const getTodayDate = () => {
   const today = new Date();
   return today.toISOString().split('T')[0];
 };
-
+const movies = ref(movies_json.movie);
 // Inicializamos o estado com a data de hoje
 const dataAssistido = ref(getTodayDate());
+
+const getImageUrl = (path: string) => {
+  if (!path) return '/placeholder.png';
+
+  // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
+  if (path.startsWith('http')) {
+    return path;
+  }
+
+  // Se for caminho relativo, remove uma possível barra extra no início para evitar //
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+  return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
+};
+const getMovieParam = (movie: any) => {
+  // Pega o slug de acordo com o idioma
+  const slug = (i18n as any).locale === 'br' ? movie.slug_pt : movie.slug_en;
+
+  // Se não houver slug (nulo ou vazio), retorna apenas o ID
+  if (!slug || slug.trim() === '') {
+    return String(movie.id);
+  }
+
+  // Retorna o formato 235-nome-do-filme
+  return `${movie.id}-${slug}`;
+};
 </script>
 
 <template>
@@ -140,7 +196,7 @@ const dataAssistido = ref(getTodayDate());
     class="fixed inset-0 bg-black/10 backdrop-blur-xs z-40">
   </div>
   <div class="bg-zinc-50 dark:bg-zinc-900">
-    <Navbar :loggedIn="loggedIn" />
+    <Navbar />
     <div class="bg-hero">
       <div v-if="movie" class="relative z-10 w-full h-auto">
 
@@ -151,13 +207,10 @@ const dataAssistido = ref(getTodayDate());
           <div
             class="relative w-full h-auto mx-auto max-w-[1440px] h-auto lg:max-w-[400%] lg:max-h-[450px] object-cover object-top mask-[linear-gradient(to_bottom,black_55%,transparent_100%)] sm:mask-[linear-gradient(to_bottom,black_70%,transparent_100%)]">
 
-            <div class="absolute inset-0 bg-[#CC00CC] opacity-20"></div>
-
-            <div class="absolute inset-0 bg-[#CC00CC]"></div>
 
 
 
-            <img :src="movie.backdrop_path_br" class="relative w-full h-full object-cover opacity-73" />
+            <img :src="getImageUrl(movie.backdrop_path)" class="relative w-full h-full object-cover opacity-73" />
 
           </div>
         </div>
@@ -170,13 +223,13 @@ const dataAssistido = ref(getTodayDate());
             <div
               class="flex-1 flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
               <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md">
-                {{ movieTitle }}
+                {{ movie.titulo_br }}
               </h1>
               <p class="items-center justify-center text-zinc-300 font-bold leading-relaxed">{{
                 movie.release_date?.slice(0, 4) }}
               </p>
               <p class="text-zinc-400 leading-relaxed">Dirigido por <span class="font-bold text-zinc-300">{{
-                movie.diretores }}</span></p>
+                movie.diretores?.map(diretor => diretor.nome).join(', ') || 'Diretor desconhecido' }}</span></p>
               <p class="text-zinc-400 leading-relaxed drop-shadow-sm basis-full">{{ movie.tagline_br }}</p>
               <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
               <div class="mt-2 hidden lg:block">
@@ -203,34 +256,34 @@ const dataAssistido = ref(getTodayDate());
               </div>
               <!-- PC -->
               <div class="hidden lg:flex lg:w-full mt-8 lg:justify-around">
-  <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
+                <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
 
-    <div class="flex flex-col items-center gap-2">
-      <IconWatchLater class="w-10 h-10 text-zinc-100 opacity-80" />
-      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-        Assistir mais Tarde
-      </span>
-    </div>
+                  <div class="flex flex-col items-center gap-2">
+                    <IconWatchLater class="w-10 h-10 text-zinc-100 opacity-80" />
+                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+                      Assistir mais Tarde
+                    </span>
+                  </div>
 
-    <div class="flex flex-col items-center gap-2">
-      <IconAddToList class="w-10 h-10 text-zinc-100 opacity-80" />
-      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-        Salvar na Lista
-      </span>
-    </div>
+                  <div class="flex flex-col items-center gap-2">
+                    <IconAddToList class="w-10 h-10 text-zinc-100 opacity-80" />
+                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+                      Salvar na Lista
+                    </span>
+                  </div>
 
-    <div class="flex flex-col items-center gap-2">
-      <IconCheck class="w-10 h-10 text-zinc-100 opacity-80" />
-      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-        Assistido
-      </span>
-    </div>
+                  <div class="flex flex-col items-center gap-2">
+                    <IconCheck class="w-10 h-10 text-zinc-100 opacity-80" />
+                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+                      Assistido
+                    </span>
+                  </div>
 
-  </div>
-</div>
+                </div>
+              </div>
             </div>
             <div class="flex flex-col ">
-              <div class="shrink-0 ml-auto"><img :src="movie.poster_path_br"
+              <div class="shrink-0 ml-auto"><img :src="getImageUrl(movie.poster_path_br)"
                   class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
               </div>
 
@@ -281,18 +334,60 @@ const dataAssistido = ref(getTodayDate());
             <div v-if="abaAtiva === 'generos'" class="flex flex-wrap gap-2">
               <span v-for="(genero, index) in movie.generos" :key="index"
                 class="bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit"">
-                <p class=" text-white text-[10px] uppercase tracking-wider font-bold text-center"> {{ genero }}</p>
+                <p class=" text-white text-[10px] uppercase tracking-wider font-bold text-center"> {{ genero.nome_pt }}
+                </p>
               </span>
             </div>
 
             <div v-if="abaAtiva === 'detalhes'" class="text-zinc-400 text-sm space-y-2">
               <p><span class="text-zinc-100 font-bold">Título Original:</span> {{ movie.titulo_original }}</p>
-              <p><span class="text-zinc-100 font-bold">Idioma:</span> {{ movie.lingua_origem }}</p>
-              <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{ movie.estudios }}</p>
+              <p><span class="text-zinc-100 font-bold">Idioma:</span> {{ new Intl.DisplayNames(['pt-BR'], {
+                type:
+                  'language'
+              }).of(movie.lingua_origem) }}</p>
+              <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{movie.estudios?.map(estudio =>
+                estudio.nome).join(', ') || 'Estudio desconhecido' }}</p>
               <p><span class="text-zinc-100 font-bold">Nota IMDb</span> {{ movie.rating }}</p>
             </div>
             <p class="mt-5 text-zinc-100 font-bold"><a class="underline"
-                href="https://www.imdb.com/pt/title/tt31193180/">Mais em TMDb</a></p>
+                :href="`https://www.imdb.com/title/${movie.imdb_id}/`" target="_blank" rel="noopener noreferrer">Mais em
+                IMDb</a></p>
+          </div>
+        </div>
+        <div v-if="!collection?.length" class="lg:max-w-5xl mx-auto">
+          <h1 class="max-w-13/14 mx-auto mt-8 text-zinc-100 font-black text-lg uppercase drop-shadow-md">
+            Coleção
+          </h1>
+
+          <div class="flex overflow-x-auto snap-x snap-mandatory gap-3 mt-3 px-4 pb-4 
+           lg:grid lg:grid-cols-6 lg:gap-5 lg:px-2 lg:overflow-visible lg:pb-0">
+            <div v-for="m in movie.collection" :key="movie.id"
+              class="movie-card flex flex-col items-center min-w-[120px] sm:min-w-[150px] lg:min-w-0 snap-start">
+              <RouterLink :to="{
+                name: 'MovieView',
+                params: {
+                  lang: $i18n.locale,
+                  slug: getMovieParam(movie)
+                }
+              }" class="w-full">
+                <img :src="getImageUrl(m.poster_thumb_br)"
+                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
+              </RouterLink>
+
+              <div class="w-full flex flex-col">
+                <p class="text-center text-[10px] sm:text-xs font-bold text-zinc-100 truncate leading-tight">
+                  {{ m.titulo_br }}
+                </p>
+
+                <div class="flex items-center justify-between mt-1 px-0.5">
+                  <IconAddReview class="w-4 h-4 text-[#97A7CB] hover:text-[#00FCFF]" />
+                  <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
+                    {{ movie.rating }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
         <div class="lg:max-w-5xl mx-auto">
@@ -332,172 +427,172 @@ const dataAssistido = ref(getTodayDate());
           </div>
         </div>
         <div class="max-w-[95%] mx-auto mb-20 lg:max-w-5xl">
-        <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
+          <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
             Listas Relacionadas
           </h1>
-        <div class="overflow-x-auto snap-x snap-mandatory  ">
-          
+          <div class="overflow-x-auto snap-x snap-mandatory  ">
 
-          <div class="flex lg:grid lg:grid-cols-4 gap-y-12 gap-x-6">
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Comédia Romântica
-                </p>
 
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+            <div class="flex lg:grid lg:grid-cols-4 gap-y-12 gap-x-6">
+              <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }" class="w-full">
+                <div class="group cursor-pointer">
+                  <p
+                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
+                    Comédia Romântica
+                  </p>
+
+                  <div class="flex items-center justify-center pl-1">
+                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
+                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    </div>
+
+                    <div
+                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
+                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
+                    </div>
+
+                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
+                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
+                    </div>
+
+                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
+                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
+                    </div>
+
                   </div>
 
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
+                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
                 </div>
+              </RouterLink>
+              <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }" class="w-full">
+                <div class="group cursor-pointer">
+                  <p
+                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
+                    Adrenalina pura
+                  </p>
 
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-              </div>
-            </RouterLink>
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Adrenalina pura
-                </p>
+                  <div class="flex items-center justify-center pl-1">
+                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
+                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    </div>
 
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    <div
+                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
+                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
+                    </div>
+
+                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
+                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
+                    </div>
+
+                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
+                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
+                    </div>
+
                   </div>
 
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
+                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
                 </div>
+              </RouterLink>
+              <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }" class="w-full">
+                <div class="group cursor-pointer">
+                  <p
+                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
+                    Adrenalina pura
+                  </p>
 
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-              </div>
-            </RouterLink>
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Adrenalina pura
-                </p>
+                  <div class="flex items-center justify-center pl-1">
+                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
+                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    </div>
 
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    <div
+                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
+                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
+                    </div>
+
+                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
+                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
+                    </div>
+
+                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
+                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
+                    </div>
+
                   </div>
 
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
+                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
                 </div>
+              </RouterLink>
+              <RouterLink :to="{
+                name: 'ListView',
+                params: {
+                  id: 1
+                }
+              }" class="w-full">
+                <div class="group cursor-pointer">
+                  <p
+                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
+                    Comédia Romântica
+                  </p>
 
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-              </div>
-            </RouterLink>
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Comédia Romântica
-                </p>
+                  <div class="flex items-center justify-center pl-1">
+                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
+                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
+                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    </div>
 
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    <div
+                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
+                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
+                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
+                    </div>
+
+                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
+                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
+                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
+                    </div>
+
+                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
+                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
+                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
+                    </div>
+
                   </div>
 
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
+                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
                 </div>
-
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-              </div>
-            </RouterLink>
+              </RouterLink>
+            </div>
           </div>
         </div>
-</div>
 
 
 
