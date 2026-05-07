@@ -10,7 +10,7 @@ import IconCheck from '@/components/icons/IconCheck.vue';
 
 import movie_json from '../assets/movieDetalhes.json';
 import movies_json from '../assets/movies.json'
-import type { MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse, MovieCollection } from '@/types/Movies';
+import type { Movie, MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse, MovieCollection } from '@/types/Movies';
 import { useAuthStore } from '@/stores/auth';
 import { useMovieStore } from '@/stores/movie';
 import { storeToRefs } from 'pinia';
@@ -20,7 +20,7 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 
 
-const movie = ref<MovieDetail>();
+const movie = ref<Movie>();
 const collection = ref<MovieCollection[]>();
 const abaAtiva = ref('generos');
 const authStore = useAuthStore();
@@ -39,7 +39,7 @@ async function loadMovies() {
   isSearching.value = true;
   try {
     const response = await movieStore.detailMovie(props.slug);
-    movie.value = (response as any).movie;
+    movie.value = response.movie;
     collection.value = response.collection;
     console.log(collection);
   } catch (error) {

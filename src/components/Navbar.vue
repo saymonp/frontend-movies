@@ -19,7 +19,7 @@ const errorMessage = ref('');
 
 // Dados dos formulários
 const loginData = reactive({
-    email: '', // O Laravel geralmente usa email como padrão, valide se o seu é 'user' ou 'email'
+    email: '', 
     password: ''
 });
 

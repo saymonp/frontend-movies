@@ -25,7 +25,7 @@ export interface DiretorResponse {
 
 export interface Genero {
   id: number;
-  nome: string; 
+  nome: string;
 }
 
 export interface Diretor {
@@ -34,14 +34,14 @@ export interface Diretor {
 }
 
 export interface MovieIndexResponse {
-	current_page: number;
-	data: MovieIndex[];
+  current_page: number;
+  data: MovieIndex[];
   next_page_url: number;
-	path: string;
-	per_page: number;
-	prev_page_url: number;
-	to: number;
-	total: number;
+  path: string;
+  per_page: number;
+  prev_page_url: number;
+  to: number;
+  total: number;
   last_page_url: string;
   from: number;
   last_page: number;
@@ -115,16 +115,16 @@ export interface UpdateMovieRequest {
   backdrop_path?: string | null;
   poster_path_us?: string | null;
   poster_thumb_us?: string | null;
-  
+
   // Arrays (Geralmente enviados como IDs no Laravel)
-  generos: string[]; 
+  generos: string[];
   diretores?: number[];
   estudios?: number[];
   paises?: number[];
-  
+
   revenue?: number | null;
   popularity?: number | null;
-  
+
   // Objeto aninhado para Coleção
   colecao?: {
     nome: string;
@@ -174,41 +174,43 @@ export interface Colecao {
   poster_thumb: string;
   backdrop_path: string;
 }
+export interface Movie {
+id: number;
+    tmdb_id: number;
+    imdb_id: string;
+    titulo_original: string;
+    titulo_br: string;
+    descricao_br: string;
+    tagline_br: string;
+    titulo_en: string;
+    descricao_en: string;
+    tagline_en: string;
+    rating: number;
+    duracao: number;
+    lingua_origem: string;
+    revenue: number;
+    popularity: number;
+    poster_path_br: string;
+    poster_thumb_br: string;
+    backdrop_path: string;
+    poster_path_us: string;
+    poster_thumb_us: string;
+    homepage: string;
+    created_at: string;
+    colecao_id: number | null;
+    slug_pt: string;
+    slug_en: string;
+    release_date: string;
 
+    // Relacionamentos
+    generos: Genero[];
+    diretores: Diretor[];
+    estudios: Estudio[];
+    paises: Pais[];
+    colecao: Colecao | null;
+}
 export interface MovieDetail {
-  id: number;
-  tmdb_id: number;
-  imdb_id: string;
-  titulo_original: string;
-  titulo_br: string;
-  descricao_br: string;
-  tagline_br: string;
-  titulo_en: string;
-  descricao_en: string;
-  tagline_en: string;
-  rating: number;
-  duracao: number;
-  lingua_origem: string;
-  revenue: number;
-  popularity: number;
-  poster_path_br: string;
-  poster_thumb_br: string;
-  backdrop_path: string;
-  poster_path_us: string;
-  poster_thumb_us: string;
-  homepage: string;
-  created_at: string;
-  colecao_id: number | null;
-  slug_pt: string;
-  slug_en: string;
-  release_date: string;
-  
-  // Relacionamentos
-  generos: Genero[];
-  diretores: Diretor[];
-  estudios: Estudio[];
-  paises: Pais[];
-  colecao: Colecao | null;
+  movie: Movie
   collection: MovieCollection[] | undefined;
 }
 
@@ -245,16 +247,16 @@ export interface MovieUpdateRequest {
   backdrop_path?: string | null;
   poster_path_us?: string | null;
   poster_thumb_us?: string | null;
-  
+
   // Arrays (Geralmente enviados como IDs no Laravel)
-  generos: number[]; 
+  generos: number[];
   diretores?: number[];
   estudios?: number[];
   paises?: number[];
-  
+
   revenue?: number | null;
   popularity?: number | null;
-  
+
   // Objeto Coleção
   colecao?: {
     nome: string;
@@ -290,7 +292,7 @@ export interface TempMovieResult {
   overview: string;
   popularity: number;
   poster_path: string | null;
-  release_date: string; 
+  release_date: string;
   softcore: boolean;
   video: boolean;
   vote_average: number;

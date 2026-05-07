@@ -19,26 +19,20 @@ export const useMovieStore = defineStore('movies', {
             const response = await api.get<MovieDetail>(`/movies/${movieIdSlug}`);
             return response.data;
         },
-        async createMovie(tmdbId: number): Promise<ApiResponse<{ tmdb_id: string }>> {
-            const response = await api.post<ApiResponse<{ tmdb_id: string }>>("/admin/movies/single", {
-                id: tmdbId
-            });
+        async importSingleMovie(tmdbId: number): Promise<ApiResponse<{ tmdb_id: string }>> {
+            const response = await api.post<ApiResponse<{ tmdb_id: string }>>(`/admin/movies/single/${tmdbId}`);
             return response.data;
         },
-        async importMovies(limit: number): Promise<ApiResponse> {
-            const response = await api.post<ApiResponse>("/admin/movies/batch", {
-                limit: limit
-            });
+        async importBatchMovies(limit: number): Promise<ApiResponse> {
+            const response = await api.post<ApiResponse>(`/admin/movies/batch${limit}`);
             return response.data;
         },
-        async updateMovie(movieData: UpdateMovieRequest): Promise<MovieDetail> {
+        async updateManualMovie(movieData: UpdateMovieRequest): Promise<MovieDetail> {
             const response = await api.post<MovieDetail>("/admin/movies/update", movieData);
             return response.data;
         },
-        async deleteMovie(tmdbId: number): Promise<ApiResponse> {
-            const response = await api.delete<ApiResponse>("/admin/movies/delete", {
-                params: { id: tmdbId }
-            });
+        async deleteMovie(id: number): Promise<ApiResponse> {
+            const response = await api.delete<ApiResponse>(`/admin/movies/delete${id}`);
             return response.data;
         },
         async listGenres(): Promise<GeneroResponse[]> {
