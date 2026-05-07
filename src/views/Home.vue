@@ -19,6 +19,7 @@ import SearchBar from '@/components/SearchBar.vue';
 import SearchBar2 from '@/components/SearchBar2.vue';
 import { storeToRefs } from 'pinia';
 import type { MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse } from '@/types/Movies';
+import i18n from '@/i18n';
 
 
 const authStore = useAuthStore();
@@ -27,7 +28,7 @@ const movieStore = useMovieStore();
 // transforma as propriedades em Refs, permitindo o uso de .value
 const { isAuthenticated, user } = storeToRefs(authStore);
 
-
+const isResettingFilters = ref(false);
 const target = ref(null);
 
 const isSearching = ref(false);
@@ -57,15 +58,38 @@ const filterMovies = ref<MovieFilters>({
 watch(
     () => ({ ...filterMovies.value }), // Observa uma cópia dos filtros
     (newVal, oldVal) => {
+        if (isSearching.value || isResettingFilters.value) return;
         // Se o que mudou NÃO foi a página, resetamos para a página 1
         if (newVal.page === oldVal.page) {
             filterMovies.value.page = 1;
         }
-        
+
         loadMovies(filterMovies.value);
     },
     { deep: true }
 );
+const resetFilters = async () => {
+    isResettingFilters.value = true;
+
+    filterValue.value = 0;
+
+    filterMovies.value = {
+        destaque: false,
+        lang: 'pt-BR',
+        search: filterMovies.value.search, // mantém busca
+        generos: [],
+        ano: undefined,
+        diretores: [],
+        idioma: undefined,
+        recentes: undefined,
+        bilheteria: undefined,
+        page: 1,
+    };
+
+    await nextTick();
+
+    isResettingFilters.value = false;
+};
 // Função para manipular os gêneros (Checkbox)
 const toggleGenero = (id: number) => {
     const index = filterMovies.value.generos?.indexOf(id);
@@ -86,22 +110,24 @@ async function loadMovies(filters: MovieFilters) {
     isSearching.value = true;
     try {
         const response = await movieStore.listMovies(filters);
-
+        
         // O TypeScript agora entende o que há dentro de 'response'
         if (isImportingResponse(response)) {
+           await resetFilters();
             const tempMovie = {
                 id: response.id,
                 tmdb: response.tmdb_id,
-                title_br: response.temp_result.title,
-                poster_thumb_br: "https://image.tmdb.org/t/p/w500" + response.temp_result.poster_path, 
+                titulo_br: response.temp_result.title, // Mudado de title_br para titulo_br
+                poster_thumb_br: "https://image.tmdb.org/t/p/w500" + response.temp_result.poster_path,
                 rating: response.temp_result.vote_average,
                 year: response.temp_result.release_date?.split('-')[0],
                 is_importing: true,
                 slug_pt: 'temp-movie',
                 slug_en: 'temp-movie'
             };
+     
             // @ts-ignore
-            movies.value = { data: [tempMovie] }; 
+            movies.value = { data: [tempMovie] };
             console.log(tempMovie);
         } else {
             // Aqui o TS sabe que é MovieIndexResponse
@@ -116,7 +142,7 @@ async function loadMovies(filters: MovieFilters) {
 
 // Função para checar se a resposta é de importação
 function isImportingResponse(res: any): res is DinamicMovieInsertionResponse {
-    return res && res.status === 'importing';
+    return res && res.status === 'processando';
 }
 
 async function loadGenres() {
@@ -241,9 +267,9 @@ const changePage = (newPage: number) => {
     // Correção: Para validar a última página, use last_page (número) e não last_page_url (string)
     // @ts-ignore
     if (newPage < 1 || newPage > (movies.value?.last_page || 1)) return;
-    
+
     filterMovies.value.page = newPage;
-    
+
     // Pequeno delay para garantir que o Vue iniciou a atualização do DOM
     nextTick(() => {
         if (movieListSection.value) {
@@ -254,6 +280,19 @@ const changePage = (newPage: number) => {
             window.scrollTo({ top: y, behavior: 'smooth' });
         }
     });
+};
+
+const getMovieParam = (movie: any) => {
+    // Pega o slug de acordo com o idioma
+    const slug = (i18n as any).locale === 'br' ? movie.slug_pt : movie.slug_en;
+
+    // Se não houver slug (nulo ou vazio), retorna apenas o ID
+    if (!slug || slug.trim() === '') {
+        return String(movie.id);
+    }
+
+    // Retorna o formato 235-nome-do-filme
+    return `${movie.id}-${slug}`;
 };
 </script>
 
@@ -341,13 +380,12 @@ const changePage = (newPage: number) => {
                                 <div class="sm:col-span-4 flex flex-col gap-4">
                                     <div class="flex items-center bg-white/5 border border-white/20 rounded-xl px-3 py-2 focus-within:ring-1 transition-all"
                                         :class="[
-            isSearching ? 'opacity-50 cursor-not-allowed' : '',
-            searchMode === 'movies' ? 'focus-within:ring-[#00FCFF]' : 'focus-within:ring-[#ff0077]'
-        ]">
+                                            isSearching ? 'opacity-50 cursor-not-allowed' : '',
+                                            searchMode === 'movies' ? 'focus-within:ring-[#00FCFF]' : 'focus-within:ring-[#ff0077]'
+                                        ]">
 
                                         <input type="text" v-model="filterMovies.search"
-                                       
-                                        :placeholder="searchMode === 'movies' ? 'Buscar filmes...' : 'Buscar listas por título...'"
+                                            :placeholder="searchMode === 'movies' ? 'Buscar filmes...' : 'Buscar listas por título...'"
                                             class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs font-bold min-w-0">
 
                                         <div class="relative">
@@ -387,7 +425,7 @@ const changePage = (newPage: number) => {
                                                         </div>
                                                         <span
                                                             class="text-zinc-300 text-[11px] font-bold group-hover:text-white transition-colors">{{
-                                                            searchMode === 'movies' ? (item as any).nome_pt : item
+                                                                searchMode === 'movies' ? (item as any).nome_pt : item
                                                             }}</span>
                                                     </label>
                                                 </div>
@@ -511,14 +549,16 @@ const changePage = (newPage: number) => {
 
                 <TransitionGroup tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
-                    <div v-if="movies && (movies as any).data" v-for="movie in (movies as any)?.data?.filter((elemento: any) => elemento.rating >= filterValue)"
+                    <div v-if="movies && (movies as any).data"
+                        v-for="movie in (movies as any)?.data?.filter((elemento: any) => elemento.rating >= filterValue)"
                         :key="movie.id" class="relative flex flex-col items-center w-full">
+
 
                         <RouterLink :to="{
                             name: 'MovieView',
                             params: {
                                 lang: $i18n.locale,
-                                slug: $i18n.locale === 'br' ? movie.slug_pt : movie.slug_en
+                                slug: getMovieParam(movie)
                             }
                         }" class="w-full">
                             <img :src="getImageUrl(movie.poster_thumb_br)"
@@ -594,40 +634,32 @@ const changePage = (newPage: number) => {
                     </div>
                 </TransitionGroup>
                 <!-- Paginação -->
-<div class="flex items-center justify-center gap-2 mt-8 mb-12">
-    <!-- Botão Voltar -->
-    <button v-if="movies && (movies as any).data"
-        @click="changePage((movies as any).current_page - 1)"
-        :disabled="(movies as any).current_page === 1"
-        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#00FCFF] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-    >
-        <IconChevronLeft class="w-4 h-4" />
-    </button>
+                <div class="flex items-center justify-center gap-2 mt-8 mb-12">
+                    <!-- Botão Voltar -->
+                    <button v-if="movies && (movies as any).data" @click="changePage((movies as any).current_page - 1)"
+                        :disabled="(movies as any).current_page === 1"
+                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#00FCFF] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        <IconChevronLeft class="w-4 h-4" />
+                    </button>
 
-    <!-- Números das Páginas (Simples) -->
-    <div class="flex gap-1">
-        <button v-if="movies && (movies as any).data"
-            v-for="page in (movies as any).last_page" 
-            :key="page"
-            @click="changePage(page)"
-            class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border"
-            :class="(movies as any).current_page  === page 
-                ? 'bg-[#00FCFF]/20 border-[#00FCFF] text-[#00FCFF]' 
-                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'"
-        >
-            {{ page }}
-        </button>
-    </div>
+                    <!-- Números das Páginas (Simples) -->
+                    <div class="flex gap-1">
+                        <button v-if="movies && (movies as any).data" v-for="page in (movies as any).last_page"
+                            :key="page" @click="changePage(page)"
+                            class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="(movies as any).current_page === page
+                                ? 'bg-[#00FCFF]/20 border-[#00FCFF] text-[#00FCFF]'
+                                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
+                            {{ page }}
+                        </button>
+                    </div>
 
-    <!-- Botão Próximo -->
-    <button v-if="movies && (movies as any).data"
-        @click="changePage((movies as any).current_page + 1)"
-        :disabled="(movies as any).current_page === (movies as any).last_page"
-        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#00FCFF] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-    >
-        <IconChevronRight class="w-4 h-4" />
-    </button>
-</div>
+                    <!-- Botão Próximo -->
+                    <button v-if="movies && (movies as any).data" @click="changePage((movies as any).current_page + 1)"
+                        :disabled="(movies as any).current_page === (movies as any).last_page"
+                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#00FCFF] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        <IconChevronRight class="w-4 h-4" />
+                    </button>
+                </div>
             </div>
         </div>
         <TheFooter />

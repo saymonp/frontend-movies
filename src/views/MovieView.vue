@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect } from 'vue';
+import { computed, onMounted, ref, watchEffect, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Navbar from '@/components/Navbar.vue';
 import TheFooter from '@/components/TheFooter.vue';
@@ -15,7 +15,9 @@ import { useAuthStore } from '@/stores/auth';
 import { useMovieStore } from '@/stores/movie';
 import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 
 
 const movie = ref<MovieDetail>();
@@ -65,7 +67,11 @@ onMounted(() => {
 //const movieTitle = computed(() => {
 //  return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
 //});
-
+// Observa mudanças no slug da URL (ex: clicar num filme da coleção)
+watch(() => props.slug, () => {
+  loadMovies();
+  window.scrollTo({ top: 0, behavior: 'smooth' }); // Opcional: volta ao topo ao trocar de filme
+});
 const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
 
@@ -354,20 +360,20 @@ const getMovieParam = (movie: any) => {
                 IMDb</a></p>
           </div>
         </div>
-        <div v-if="!collection?.length" class="lg:max-w-5xl mx-auto">
+        <div v-if="collection && collection.length" class="lg:max-w-5xl mx-auto">
           <h1 class="max-w-13/14 mx-auto mt-8 text-zinc-100 font-black text-lg uppercase drop-shadow-md">
             Coleção
           </h1>
 
           <div class="flex overflow-x-auto snap-x snap-mandatory gap-3 mt-3 px-4 pb-4 
            lg:grid lg:grid-cols-6 lg:gap-5 lg:px-2 lg:overflow-visible lg:pb-0">
-            <div v-for="m in movie.collection" :key="movie.id"
+            <div v-for="m in collection" :key="m.id"
               class="movie-card flex flex-col items-center min-w-[120px] sm:min-w-[150px] lg:min-w-0 snap-start">
               <RouterLink :to="{
                 name: 'MovieView',
                 params: {
                   lang: $i18n.locale,
-                  slug: getMovieParam(movie)
+                  slug: getMovieParam(m)
                 }
               }" class="w-full">
                 <img :src="getImageUrl(m.poster_thumb_br)"

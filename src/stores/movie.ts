@@ -15,8 +15,8 @@ export const useMovieStore = defineStore('movies', {
 
             return response.data;
         },
-        async detailMovie(movieId: number): Promise<MovieDetail> {
-            const response = await api.get<MovieDetail>(`/movies/${movieId}`);
+        async detailMovie(movieIdSlug: string): Promise<MovieDetail> {
+            const response = await api.get<MovieDetail>(`/movies/${movieIdSlug}`);
             return response.data;
         },
         async createMovie(tmdbId: number): Promise<ApiResponse<{ tmdb_id: string }>> {

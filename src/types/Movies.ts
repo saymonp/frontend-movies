@@ -209,6 +209,18 @@ export interface MovieDetail {
   estudios: Estudio[];
   paises: Pais[];
   colecao: Colecao | null;
+  collection: MovieCollection[] | undefined;
+}
+
+export interface MovieCollection {
+  id: number;
+  titulo_br: string;
+  titulo_en: string;
+  poster_thumb_br: string;
+  rating: number;
+  tmdb_id: number;
+  slug_pt: string;
+  slug_en: string;
 }
 
 export interface MovieUpdateRequest {
