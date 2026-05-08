@@ -1,24 +1,17 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch, nextTick } from 'vue';
-import IconAddReview from '@/components/icons/IconAddReview.vue'
+import { ref, onMounted, watch, nextTick } from 'vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue'
-import IconFilter from '@/components/icons/IconFilter.vue'
 import IconStar from '@/components/icons/IconStar.vue';
-import IconReviewEstrelas from '@/components/icons/IconReviewEstrelas.vue';
 import IconReviewStar from '@/components/icons/IconReviewStar.vue';
 import TheFooter from '@/components/TheFooter.vue';
 import Navbar from '@/components/Navbar.vue';
-import movies_json from '../assets/movies.json'
 import { onClickOutside } from '@vueuse/core'
-
+import SearchBarHome from '@/components/SearchBarHome.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useMovieStore } from '@/stores/movie';
 
-
-import SearchBar from '@/components/SearchBar.vue';
-import SearchBar2 from '@/components/SearchBar2.vue';
 import { storeToRefs } from 'pinia';
-import type { MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse } from '@/types/Movies';
+import type { DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse } from '@/types/Movies';
 import i18n from '@/i18n';
 
 
@@ -50,20 +43,26 @@ const filterMovies = ref<MovieFilters>({
     bilheteria: undefined,
     page: 1,
 });
+
 // Função que observa mudanças e recarrega os filmes
-// Usamos um "debounce" no search para não sobrecarregar a API enquanto o usuário digita
-//watch(filterMovies, (newFilters) => {
-//    loadMovies(newFilters);
-//}, { deep: true });
 watch(
-    () => ({ ...filterMovies.value }), // Observa uma cópia dos filtros
-    (newVal, oldVal) => {
+    () => ({ ...filterMovies.value }),
+    (newVal: any, oldVal) => {
         if (isSearching.value || isResettingFilters.value) return;
-        // Se o que mudou NÃO foi a página, resetamos para a página 1
-        if (newVal.page === oldVal.page) {
+        
+        // Verifica se o que mudou foi algo além da página
+        const changedOtherThanPage = Object.keys(newVal).some(
+            key => key !== 'page' && JSON.stringify(newVal[key]) !== JSON.stringify(oldVal[key])
+        );
+
+        if (changedOtherThanPage) {
+            // Se mudou um filtro, resetamos a página
             filterMovies.value.page = 1;
+            // IMPORTANTE: Não damos 'return' aqui. 
+            // Chamamos o loadMovies com o objeto atualizado (já com page: 1)
         }
 
+        console.log("Executando carga de filmes com:", filterMovies.value);
         loadMovies(filterMovies.value);
     },
     { deep: true }
@@ -90,15 +89,6 @@ const resetFilters = async () => {
 
     isResettingFilters.value = false;
 };
-// Função para manipular os gêneros (Checkbox)
-const toggleGenero = (id: number) => {
-    const index = filterMovies.value.generos?.indexOf(id);
-    if (index !== undefined && index > -1) {
-        filterMovies.value.generos?.splice(index, 1);
-    } else {
-        filterMovies.value.generos?.push(id);
-    }
-};
 
 // const movies = ref<MovieIndexResponse>();
 // Se MovieIndexResponse for o objeto que contém { data: [...] }
@@ -110,10 +100,10 @@ async function loadMovies(filters: MovieFilters) {
     isSearching.value = true;
     try {
         const response = await movieStore.listMovies(filters);
-        
+
         // O TypeScript agora entende o que há dentro de 'response'
         if (isImportingResponse(response)) {
-           await resetFilters();
+            await resetFilters();
             const tempMovie = {
                 id: response.id,
                 tmdb: response.tmdb_id,
@@ -125,7 +115,7 @@ async function loadMovies(filters: MovieFilters) {
                 slug_pt: 'temp-movie',
                 slug_en: 'temp-movie'
             };
-     
+
             // @ts-ignore
             movies.value = { data: [tempMovie] };
             console.log(tempMovie);
@@ -171,23 +161,12 @@ const showFilter = ref(false)
 onClickOutside(target, () => (showFilter.value = false))
 const searchMode = ref('movies')
 
-const filterShow = computed(() => {
-    // Arredonda para a primeira casa decimal de forma mais estável
-    return (Math.round(filterRating.value * 10) / 10).toFixed(1);
-});
-
 const filterValue = ref(0);
-
 
 const isCardReviewVisible = ref(false);
 //const rating = ref(0);
 const hoverRating = ref(0);
 const selectedMovieTitle = ref(''); // Para mostrar o nome do filme no modal
-
-const openQuickReview = (movieTitle: string) => {
-    selectedMovieTitle.value = movieTitle;
-    isCardReviewVisible.value = true;
-};
 
 const selectRating = (star: number) => {
     rating.value = star;
@@ -201,9 +180,6 @@ const toggleQuickReview = (id: number) => {
     activeReviewId.value = activeReviewId.value === id ? null : id;
     rating.value = 0; // Reseta a nota ao abrir
 };
-
-
-
 
 const activeListId = ref<number | null>(null);
 const minhasListas = ref([
@@ -232,35 +208,6 @@ const getImageUrl = (path: string) => {
     return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
 };
 
-const toggleBooleanFilter = (tag: string) => {
-    if (searchMode.value === 'movies') {
-        switch (tag) {
-            case 'Destaques':
-                filterMovies.value.destaque = !filterMovies.value.destaque;
-                break;
-            case '2026':
-                // Se clicar em 2026, seta o ano ou limpa
-                filterMovies.value.ano = filterMovies.value.ano === 2026 ? undefined : 2026;
-                break;
-            case 'Bilheterias':
-                filterMovies.value.bilheteria = !filterMovies.value.bilheteria;
-                break;
-        }
-    } else {
-        // Lógica para o searchMode === 'lists' se necessário
-        console.log('Filtro de lista clicado:', tag);
-    }
-};
-
-// Função para verificar se o botão deve estar com estilo "ativo"
-const isFilterActive = (tag: string): boolean => {
-    if (searchMode.value === 'movies') {
-        if (tag === 'Destaques') return !!filterMovies.value.destaque;
-        if (tag === '2026') return filterMovies.value.ano === 2026;
-        if (tag === 'Bilheterias') return !!filterMovies.value.bilheteria;
-    }
-    return false;
-};
 const movieListSection = ref<HTMLElement | null>(null);
 
 const changePage = (newPage: number) => {
@@ -358,195 +305,9 @@ const getMovieParam = (movie: any) => {
                     </div>
                 </div>
 
-                <div ref="movieListSection" class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
-                    <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
-                        <div class="flex gap-4 mb-3 ml-2">
-                            <button @click="searchMode = 'movies'"
-                                :class="searchMode === 'movies' ? 'text-[#00FCFF] border-b-2 border-[#00FCFF]' : 'text-zinc-500 hover:text-zinc-300'"
-                                class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
-                                Filmes
-                            </button>
-                            <button @click="searchMode = 'lists'"
-                                :class="searchMode === 'lists' ? 'text-[#d919ff] border-b-2 border-[#d919ff]' : 'text-zinc-500 hover:text-zinc-300'"
-                                class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
-                                Listas
-                            </button>
-                        </div>
-
-                        <div
-                            class="relative z-50 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10 transition-all duration-500">
-                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-6">
-
-                                <div class="sm:col-span-4 flex flex-col gap-4">
-                                    <div class="flex items-center bg-white/5 border border-white/20 rounded-xl px-3 py-2 focus-within:ring-1 transition-all"
-                                        :class="[
-                                            isSearching ? 'opacity-50 cursor-not-allowed' : '',
-                                            searchMode === 'movies' ? 'focus-within:ring-[#00FCFF]' : 'focus-within:ring-[#ff0077]'
-                                        ]">
-
-                                        <input type="text" v-model="filterMovies.search"
-                                            :placeholder="searchMode === 'movies' ? 'Buscar filmes...' : 'Buscar listas por título...'"
-                                            class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs font-bold min-w-0">
-
-                                        <div class="relative">
-                                            <button @click="showFilter = !showFilter"
-                                                class="flex items-center gap-1 ml-2 px-2 py-1 rounded-md transition-all group"
-                                                :class="searchMode === 'movies' ? 'bg-[#00FCFF]/10 text-[#00FCFF]' : 'bg-[#ff0077]/10 text-[#d919ff]'">
-                                                <span class="text-[9px] font-black uppercase tracking-tighter">
-                                                    {{ searchMode === 'movies' ? 'Gêneros' : 'Tags' }}
-                                                </span>
-                                                <IconFilter class="w-3" />
-                                            </button>
-
-                                            <div ref="target" v-show="showFilter"
-                                                class="absolute right-0 mt-3 z-50 bg-[#020036]/95 backdrop-blur-2xl border border-white/20 rounded-xl p-4 shadow-2xl w-[220px]">
-                                                <p class="text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-2 mb-3"
-                                                    :class="searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#d919ff]'">
-                                                    {{ searchMode === 'movies' ? 'Selecionar Gêneros' : 'Filtrar por Tags' }}
-                                                </p>
-                                                <div
-                                                    class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                                                    <label
-                                                        v-for="item in (searchMode === 'movies' ? generos : ['Favoritos', 'Maratona', 'Cyberpunk', 'Clássicos'])"
-                                                        :key="searchMode === 'movies' ? (item as any).id : (item as string)"
-                                                        class="flex items-center gap-3 cursor-pointer group">
-
-                                                        <div class="relative flex items-center">
-                                                            <input type="checkbox"
-                                                                :value="searchMode === 'movies' ? (item as any).id : (item as string)"
-                                                                :checked="searchMode === 'movies' ? filterMovies.generos?.includes((item as any).id) : false"
-                                                                @change="searchMode === 'movies' ? toggleGenero((item as any).id) : null"
-                                                                :class="searchMode === 'movies' ? 'checked:bg-[#00FCFF] checked:border-[#00FCFF]' : 'checked:bg-[#ff0077] checked:border-[#ff0077]'"
-                                                                class="peer appearance-none w-4 h-4 border border-white/20 rounded transition-all">
-                                                            >
-
-                                                            <span
-                                                                class="absolute text-black font-bold text-[10px] left-1 opacity-0 peer-checked:opacity-100">✓</span>
-                                                        </div>
-                                                        <span
-                                                            class="text-zinc-300 text-[11px] font-bold group-hover:text-white transition-colors">{{
-                                                                searchMode === 'movies' ? (item as any).nome_pt : item
-                                                            }}</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="px-1">
-                                        <div class="flex justify-between items-center text-[9px] mb-1">
-                                            <span class="text-zinc-500 uppercase font-bold tracking-widest">
-                                                {{ searchMode === 'movies' ? 'Nota Mínima' : 'Mínimo de Likes' }}
-                                            </span>
-                                            <span class="font-black px-2 py-0.5 rounded"
-                                                :class="searchMode === 'movies' ? 'text-[#00FCFF] bg-[#00FCFF]/10' : 'text-[#d919ff] bg-[#ff0077]/10'">
-                                                {{ filterValue }}
-                                            </span>
-                                        </div>
-                                        <input type="range" min="0" step="0.5"
-                                            :max="searchMode === 'movies' ? 10 : 1000" v-model="filterValue"
-                                            class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
-                                            :class="searchMode === 'movies' ? 'accent-[#00FCFF]' : 'accent-[#d919ff]'">
-                                    </div>
-                                </div>
-
-                                <div class="sm:col-span-8 flex flex-col gap-4">
-
-                                    <div class="grid grid-cols-3 gap-3">
-                                        <div class="flex flex-col gap-1">
-                                            <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Ano</label>
-                                            <select v-model="filterMovies.ano"
-                                                class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
-                                                <option class="bg-zinc-900" :value="undefined">Todos</option>
-                                                <option class="bg-zinc-900">2026</option>
-                                                <option class="bg-zinc-900">2025</option>
-                                                <option class="bg-zinc-900">2024</option>
-                                            </select>
-                                        </div>
-
-                                        <template v-if="searchMode === 'movies'">
-                                            <div class="flex flex-col gap-1">
-                                                <label
-                                                    class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Diretor</label>
-                                                <select v-model="filterMovies.diretores"
-                                                    class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
-                                                    <option class="bg-zinc-900" :value="undefined">Todos</option>
-                                                    <option v-for="diretor in diretores" :key="diretor.id"
-                                                        :value="diretor.id" class="bg-zinc-900">
-                                                        {{ diretor.nome }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                            <div class="flex flex-col gap-1">
-                                                <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Idioma
-                                                    de Origem</label>
-                                                <select v-model="filterMovies.idioma"
-                                                    class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#00FCFF] cursor-pointer">
-                                                    <option class="bg-zinc-900" :value="undefined">Todos</option>
-                                                    <option class="bg-zinc-900" v-for="idioma in idiomasDisponiveis"
-                                                        :key="idioma" :value="idioma">
-                                                        {{ new Intl.DisplayNames(['pt-BR'], {
-                                                            type: 'language'
-                                                        }).of(idioma) }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </template>
-
-                                        <template v-else>
-                                            <div class="flex flex-col gap-1">
-                                                <label class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Ordenar
-                                                    por</label>
-                                                <select
-                                                    class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#ff0077] cursor-pointer">
-                                                    <option class="bg-zinc-900">Mais curtidas</option>
-                                                    <option class="bg-zinc-900">Recentes</option>
-                                                </select>
-                                            </div>
-                                            <div class="flex flex-col gap-1">
-                                                <label
-                                                    class="text-[9px] text-zinc-500 uppercase font-bold ml-1">Privacidade</label>
-                                                <select
-                                                    class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#ff0077] cursor-pointer">
-                                                    <option class="bg-zinc-900">Públicas</option>
-                                                    <option class="bg-zinc-900">Minhas Listas</option>
-                                                </select>
-                                            </div>
-                                        </template>
-                                    </div>
-
-                                    <div class="flex gap-2 mt-auto">
-                                        <button
-                                            v-for="tag in (searchMode === 'movies' ? ['Destaques', '2026', 'Bilheterias'] : ['Top Listas', 'Curadorias', 'Mais Ativas'])"
-                                            :key="tag" @click="toggleBooleanFilter(tag)"
-                                            class="flex-1 rounded-xl py-2.5 px-2 transition-all group hover:bg-white/10"
-                                            :class="[
-                                                // Cores base e hover
-                                                searchMode === 'movies' ? 'hover:border-[#00FCFF]/50' : 'hover:border-[#ff0077]/50',
-
-                                                // Estilo quando ATIVO
-                                                isFilterActive(tag)
-                                                    ? (searchMode === 'movies' ? 'bg-[#00FCFF]/5 border border-[#00FCFF]' : 'bg-[#ff0077]/20 border-[#ff0077]')
-                                                    : 'bg-white/5 border border-white/10'
-                                            ]">
-                                            <p class="text-zinc-400 text-[10px] uppercase tracking-tighter font-black text-center group-hover:text-white"
-                                                :class="[
-                                                    isFilterActive(tag)
-                                                        ? (searchMode === 'movies' ? 'text-[#00FCFF]' : 'text-[#ff0077]')
-                                                        : 'text-zinc-400 group-hover:text-white'
-                                                ]">
-
-                                                {{ tag }}
-                                            </p>
-                                        </button>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+                <SearchBarHome v-model:filterMovies="filterMovies" :generos="generos" :diretores="diretores"
+                    :idiomas="idiomasDisponiveis" :isSearching="isSearching" v-model:filterValue="filterValue" @search="loadMovies(filterMovies)" />
+                                                                                
                 <TransitionGroup tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
                     <div v-if="movies && (movies as any).data"
