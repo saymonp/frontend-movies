@@ -36,7 +36,7 @@ const router = createRouter({
       props: true
     },
     {
-      path: '/lista/:id', // O :lang vira um parâmetro (br ou en)
+      path: '/lista/:id-:slug',
       name: 'ListView',
       component: () => import('../views/ListView.vue'),
       props: true
@@ -54,8 +54,10 @@ const router = createRouter({
     },
     {
       path: '/administrador',
+      name: 'AdminView',
       component: () => import('../views/AdminView.vue'),
-      meta: { requiresAuth: true }
+      // Marcamos que esta rota exige autenticação E nível de admin
+      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ],
   scrollBehavior(to, from, savedPosition) {
@@ -67,20 +69,31 @@ const router = createRouter({
       return { top: 0 };
     }
   },
-  
+
 });
 
 router.beforeEach((to, from, next) => {
-  const auth = useAuthStore()
+  const auth = useAuthStore();
 
-  // Se a rota exige autenticação e o usuário não está logado
-  if (to.meta.requiresAuth && !auth.token) {
-    // Manda ele para o login
-    next('/login')
-  } else {
-    // Se estiver tudo ok ou a rota for pública, deixa passar
-    next()
+  // 1. Verificar se a rota exige autenticação
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  // 2. Verificar se a rota exige nível de administrador
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin);
+
+  // Caso A: A rota exige login e o usuário não tem token
+  if (requiresAuth && !auth.token) {
+    return next('/'); // Ou sua rota de login/modal
   }
+
+  // Caso B: A rota exige Admin, mas o usuário logado não é admin
+  // Usamos .includes() ou a lógica de roles que você definiu no store
+  if (requiresAdmin && !auth.user?.roles.includes('admin')) {
+    console.warn("Acesso negado: Usuário não é administrador.");
+    return next('/'); // Redireciona para a home
+  }
+
+  // Caso C: Tudo ok ou rota pública
+  next();
 });
 
 export default router

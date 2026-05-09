@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import Navbar from '@/components/Navbar.vue';
 import TheFooter from '@/components/TheFooter.vue';
 import movies_json from '../assets/movies.json';
@@ -9,20 +9,23 @@ import IconDrag from '@/components/icons/IconDrag.vue';
 import IconNavHam from '@/components/icons/IconNavHam.vue';
 import IconDelete from '@/components/icons/IconDelete.vue';
 import draggable from 'vuedraggable';
-import type { Lista, UpdateLista, Movie } from '@/types/Listas';
+import type { Lista, UpdateLista, MovieWithDirectors } from '@/types/Listas';
 import { useListaStore } from '@/stores/lista';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
+import { useMovieStore } from '@/stores/movie';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 
 const listaStore = useListaStore();
-const moviesList = ref(movies_json.movie.slice(0, 8));
+const movieStore = useMovieStore();
+// const moviesList = ref(movies_json.movie.slice(0, 8));
 const isSearching = ref(false);
 const isUserOwnList = ref();
 const isEditMode = ref(false);
 const novaTag = ref('');
+const moviesList = ref<MovieWithDirectors[]>([]);
 
 const props = defineProps<{
     id: number,
@@ -63,7 +66,7 @@ const removerTag = (index: number) => {
 
 const removerFilmeDaLista = (id: number) => {
     // Filtramos o array para manter apenas os filmes que NÃO têm o ID clicado
-    moviesList.value = moviesList.value.filter(movie => movie.id !== id);
+    //moviesList.value = moviesList.value.filter(movie => movie.id !== id);
 };
 
 const lista = ref<Lista>();
@@ -75,17 +78,6 @@ const sugestoesLista = [
     { id: 2, movie: "LaBreathless (1960)", diretor: "Jean-Luc Godard" },
     { id: 3, movie: "LaBedazzled (2000)", diretor: "Harold Ramis" },
 ];
-
-// Filtra as sugestões conforme o usuário digita
-const filteredSugestoes = computed(() => {
-    if (searchQuery.value.length < 2) return [];
-    console.log(sugestoesLista.filter(s =>
-        s.movie.toLowerCase().includes(searchQuery.value.toLowerCase())
-    ))
-    return sugestoesLista.filter(s =>
-        s.movie.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-});
 
 async function loadLista() {
     if (isSearching.value) return;
@@ -154,7 +146,45 @@ const toggleEditMode = () => {
     isEditMode.value = !isEditMode.value;
 }
 
+async function loadMovies() {
+    if (isSearching.value) return;
 
+    isSearching.value = true;
+
+    try {
+        const response = await listaStore.moviesAddToList(searchQuery.value);
+        if (response && !Array.isArray(response) && 'temp_result' in response) {
+            const movie = (response as any).temp_result;
+            moviesList.value = [{
+                titulo_original: movie.original_title,
+                titulo_br: movie.title,
+                id: movie.id,
+            }];
+        } else {
+            moviesList.value = response;
+        }
+    } catch (error) {
+
+        console.error("Erro na comunicação com a API:", error);
+
+    } finally {
+        isSearching.value = false;
+    }
+}
+
+watch(searchQuery, async (newQuery) => {
+    // Avoid empty calls or overworking the server
+    if (newQuery.length < 3) {
+        moviesList.value = []
+        return
+    }
+
+    try {
+        loadMovies();
+    } catch (error) {
+        console.error('Search error:', error)
+    }
+});
 
 </script>
 <template>
@@ -246,7 +276,21 @@ const toggleEditMode = () => {
                                     placeholder="Busque um filme para adicionar..."
                                     class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm font-medium">
                             </div>
-                            <!-- Dropdown de sugestões aqui... -->
+                            <div v-if="moviesList.length > 0"
+                                class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
+                                <div v-for="movie in moviesList" :key="movie.id"
+                                    class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer transition-colors group">
+                                    <div class="flex">
+                                        <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF]">{{
+                                            movie.titulo_br || movie.titulo_original
+                                        }}</p>
+                                        <p class="ml-3 text-zinc-500 text-[12px] font-bold">{{ movie.rating || '' }}</p>
+                                    </div>
+                                    <p class="text-zinc-500 text-[10px]">{{movie.diretores?.map(diretor =>
+                                        diretor.nome).join(', ') || ''}}</p>
+
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

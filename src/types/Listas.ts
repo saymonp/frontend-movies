@@ -105,10 +105,18 @@ export interface MovieCreateInput {
 export interface CreateLista {
     titulo: string;
     comentario: string;
-    tags: string[]; // No seu exemplo, você envia os nomes das tags
+    tags: Tag[]; // No seu exemplo, você envia os nomes das tags
     idioma: 'pt' | 'en'; // Tipagem estrita para os idiomas suportados
     slug: string;
     movies: MovieCreateInput[];
+}
+
+
+export interface UpdateLista {
+    titulo: string;
+    comentario: string;
+    tags: string[];
+    movies: MovieCreateInput[]
 }
 
 export interface ApiResponse<T = any> {
@@ -120,4 +128,24 @@ export interface LikeResponse {
     message: string;
     is_liked: boolean;
     likes_count: number;
+}
+
+export interface MovieDirectorPivot {
+  movie_id: number;
+  diretor_id: number;
+}
+
+export interface MovieDirector {
+  id: number;
+  nome: string;
+  pivot: MovieDirectorPivot;
+}
+
+export interface MovieWithDirectors {
+  id: number;
+  titulo_original: string;
+  titulo_br?: string;
+  titulo_en?: string;
+  rating?: number;
+  diretores?: MovieDirector[];
 }

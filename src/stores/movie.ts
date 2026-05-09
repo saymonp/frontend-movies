@@ -24,7 +24,7 @@ export const useMovieStore = defineStore('movies', {
             return response.data;
         },
         async importBatchMovies(limit: number): Promise<ApiResponse> {
-            const response = await api.post<ApiResponse>(`/admin/movies/batch${limit}`);
+            const response = await api.post<ApiResponse>(`/admin/movies/batch/${limit}`);
             return response.data;
         },
         async updateManualMovie(movieData: UpdateMovieRequest): Promise<MovieDetail> {

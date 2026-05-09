@@ -1,24 +1,29 @@
 // src/stores/auth.js
 import { defineStore } from 'pinia';
 import api from '@/services/api';
-import type { Lista, ListaFilters, ListaPaginada, CreateLista, ApiResponse, LikeResponse } from '@/types/Listas';
+import type { Lista, ListaFilters, ListaPaginada, CreateLista, ApiResponse, LikeResponse, MovieWithDirectors } from '@/types/Listas';
 
 
 export const useListaStore = defineStore('listas', {
     actions: {
-        async listListas(search?: ListaFilters, user_only?: boolean): Promise<ListaPaginada> {
-            const response = await api.get<ListaPaginada>(`/listas`, {
-                // O Axios espera que os parâmetros de consulta fiquem aqui dentro
-                params: {
-                    ...search,
-                    perfil: user_only
+        async listListas({ search, user_only }: { search?: ListaFilters, user_only?: boolean } = {}): Promise<ListaPaginada> {
+            const response = await api.get<ListaPaginada>(`/listas`,
+                {
+                    params: search,
                 }
-            });
-
+            );
             return response.data;
         },
-        async detailLista(listaIdSlug: string): Promise<Lista> {
-            const response = await api.get<Lista>(`/listas/${listaIdSlug}`);
+        async moviesAddToList(search: string): Promise<MovieWithDirectors[]> {
+            const response = await api.get<MovieWithDirectors[]>(`/movies/listas`, {
+                params: {
+                    search: search
+                }
+            });
+            return response.data;
+        },
+        async detailLista(listaId: number): Promise<Lista> {
+            const response = await api.get<Lista>(`/listas/${listaId}`);
             return response.data;
         },
         async createLista(listaData: CreateLista): Promise<Lista> {
@@ -34,7 +39,10 @@ export const useListaStore = defineStore('listas', {
             return response.data;
         },
         async reorderMoviesLista(listaId: number, movieIds: number[]): Promise<ApiResponse> {
-            const response = await api.post<ApiResponse>(`/listas/${listaId}`);
+            // Enviamos os IDs dentro de um objeto
+            const response = await api.put<ApiResponse>(`/listas/${listaId}/reorder`, {
+                movie_ids: movieIds
+            });
             return response.data;
         },
         async likeLista(listaId: number, movieIds: number[]): Promise<LikeResponse> {

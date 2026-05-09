@@ -17,6 +17,7 @@ import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
 import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
+
 const route = useRoute();
 const router = useRouter();
 const { locale } = useI18n();
