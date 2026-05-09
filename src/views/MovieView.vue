@@ -16,10 +16,10 @@ import { useMovieStore } from '@/stores/movie';
 import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
 import { useRoute } from 'vue-router';
-
+import { useRouter } from 'vue-router';
 const route = useRoute();
-
-
+const router = useRouter();
+const { locale } = useI18n();
 const movie = ref<Movie>();
 const collection = ref<MovieCollection[]>();
 const abaAtiva = ref('generos');
@@ -31,7 +31,6 @@ const props = defineProps<{
   slug: string
 }>();
 const isSearching = ref(false);
-const { locale } = useI18n();
 
 const maxRetries = 10;
 const retryDelay = 2500;
@@ -63,7 +62,7 @@ async function loadMovies(retryCount = 0) {
       !!movieData.poster_path_br &&
       !!movieData.backdrop_path &&
       !!movieData.descricao_br;
-      
+
     if (
       !movieReady &&
       retryCount < maxRetries
@@ -82,7 +81,26 @@ async function loadMovies(retryCount = 0) {
     // Filme pronto
     movie.value = movieData;
     collection.value = response.collection;
+    const definitiveSlug =
+      (i18n as any).locale === 'br'
+        ? movieData.slug_pt
+        : movieData.slug_en;
 
+    const currentSlug = props.slug;
+
+    // evita replace desnecessário
+    if (
+      definitiveSlug &&
+      !currentSlug.includes(definitiveSlug)
+    ) {
+      router.replace({
+        name: 'MovieView',
+        params: {
+          lang: (i18n as any).locale,
+          slug: `${movieData.id}-${definitiveSlug}`
+        }
+      });
+    }
     // Feedback opcional
     if (movieData.status === 'processado') {
       console.log('Filme processado com sucesso!', movie.value);
