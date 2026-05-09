@@ -7,12 +7,13 @@ import type { Lista, ListaFilters, ListaPaginada, CreateLista, ApiResponse, Like
 export const useListaStore = defineStore('listas', {
     actions: {
         async listListas(search?: ListaFilters, user_only?: boolean): Promise<ListaPaginada> {
-            const response = await api.get<ListaPaginada>(`/listas`,
-                {
-                    ...search,         // Espalha os filtros de busca (page, search, etc)
+            const response = await api.get<ListaPaginada>(`/listas`, {
+                // O Axios espera que os parâmetros de consulta fiquem aqui dentro
+                params: {
+                    ...search,
                     perfil: user_only
-                } as any
-            );
+                }
+            });
 
             return response.data;
         },
