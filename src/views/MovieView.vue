@@ -33,19 +33,73 @@ const props = defineProps<{
 const isSearching = ref(false);
 const { locale } = useI18n();
 
-async function loadMovies() {
-  if (isSearching.value) return;
+const maxRetries = 10;
+const retryDelay = 2500;
 
-  isSearching.value = true;
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function loadMovies(retryCount = 0) {
+
+  // Só bloqueia chamadas manuais
+  if (isSearching.value && retryCount === 0) return;
+
+  // Ativa loading apenas na primeira tentativa
+  if (retryCount === 0) {
+    isSearching.value = true;
+  }
+
   try {
+
     const response = await movieStore.detailMovie(props.slug);
-    movie.value = response.movie;
+
+    const movieData = response.movie;
+
+    // Filme ainda processando
+    const movieReady =
+      movieData.status === 'processado' &&
+      !!movieData.titulo_original &&
+      !!movieData.poster_path_br &&
+      !!movieData.backdrop_path &&
+      !!movieData.descricao_br;
+      
+    if (
+      !movieReady &&
+      retryCount < maxRetries
+    ) {
+
+      console.log(
+        `Processando filme... tentativa ${retryCount + 1}/${maxRetries}`
+      );
+
+      // espera antes de tentar novamente
+      await sleep(retryDelay);
+
+      return await loadMovies(retryCount + 1);
+    }
+
+    // Filme pronto
+    movie.value = movieData;
     collection.value = response.collection;
-    console.log(collection);
+
+    // Feedback opcional
+    if (movieData.status === 'processado') {
+      console.log('Filme processado com sucesso!', movie.value);
+    }
+
   } catch (error) {
-    console.error("Erro na busca:", error);
+
+    console.error("Erro na comunicação com a API:", error);
+
   } finally {
-    isSearching.value = false;
+
+    // Só encerra loading quando:
+    // - terminou
+    // - OU falhou após máximo de tentativas
+    if (retryCount >= maxRetries || movie.value?.status !== 'processando') {
+      isSearching.value = false;
+    }
   }
 }
 // Computed para encontrar o filme toda vez que o slug ou o idioma mudar
@@ -235,7 +289,7 @@ const getMovieParam = (movie: any) => {
                 movie.release_date?.slice(0, 4) }}
               </p>
               <p class="text-zinc-400 leading-relaxed">Dirigido por <span class="font-bold text-zinc-300">{{
-                movie.diretores?.map(diretor => diretor.nome).join(', ') || 'Diretor desconhecido' }}</span></p>
+                movie.diretores?.map(diretor => diretor.nome).join(', ') || 'Diretor desconhecido'}}</span></p>
               <p class="text-zinc-400 leading-relaxed drop-shadow-sm basis-full">{{ movie.tagline_br }}</p>
               <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
               <div class="mt-2 hidden lg:block">
@@ -352,7 +406,7 @@ const getMovieParam = (movie: any) => {
                   'language'
               }).of(movie.lingua_origem) }}</p>
               <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{movie.estudios?.map(estudio =>
-                estudio.nome).join(', ') || 'Estudio desconhecido' }}</p>
+                estudio.nome).join(', ') || 'Estudio desconhecido'}}</p>
               <p><span class="text-zinc-100 font-bold">Nota IMDb</span> {{ movie.rating }}</p>
             </div>
             <p class="mt-5 text-zinc-100 font-bold"><a class="underline"

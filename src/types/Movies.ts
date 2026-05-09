@@ -201,7 +201,7 @@ id: number;
     slug_pt: string;
     slug_en: string;
     release_date: string;
-
+    status: string;
     // Relacionamentos
     generos: Genero[];
     diretores: Diretor[];
