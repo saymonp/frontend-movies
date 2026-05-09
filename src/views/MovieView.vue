@@ -7,7 +7,7 @@ import IconStar from '@/components/icons/IconStar.vue';
 import IconWatchLater from '@/components/icons/IconWatchLater.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
 import IconCheck from '@/components/icons/IconCheck.vue';
-
+import MovieDetailSkeleton from '@/components/MovieDetailSkeleton.vue';
 import movie_json from '../assets/movieDetalhes.json';
 import movies_json from '../assets/movies.json'
 import type { Movie, MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse, MovieCollection } from '@/types/Movies';
@@ -275,7 +275,12 @@ const getMovieParam = (movie: any) => {
   </div>
   <div class="bg-zinc-50 dark:bg-zinc-900">
     <Navbar />
-    <div class="bg-hero">
+    <!-- ESTADO DE LOADING -->
+    <div v-if="isSearching" class="bg-hero">
+      <MovieDetailSkeleton />
+    </div>
+
+    <div v-else-if="movie" class="bg-hero">
       <div v-if="movie" class="relative z-10 w-full h-auto">
 
         <div class="relative w-full h-auto overflow-hidden">
@@ -742,4 +747,5 @@ const getMovieParam = (movie: any) => {
     /* Chrome, Safari and Opera */
   }
 }
+
 </style>
