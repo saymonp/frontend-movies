@@ -189,10 +189,10 @@ async function loadMovies() {
     try {
         const response = await listaStore.moviesAddToList(searchQuery.value);
         if (response && !Array.isArray(response) && 'temp_result' in response) {
-            const movie = (response as any).temp_result;
+            const movie = (response as any);
             moviesList.value = [{
-                titulo_original: movie.original_title,
-                titulo_br: movie.title,
+                titulo_original: movie.temp_result.original_title,
+                titulo_br: movie.temp_result.title,
                 id: movie.id,
             }];
         } else {
@@ -230,11 +230,11 @@ async function addMovie(movieId: number) {
             if (!lista.value?.id) {
                 throw new Error('Lista não encontrada');
             }
-            console.log('Lista de filmes antes',updateData.value);
+           
 
             const newMovies = lista.value.movies.map(movie => movie.id);
             newMovies.push(movieId);
-            console.log('Lista de filmes Depois',updateData.value);
+            console.log('Lista de filmes Depois',newMovies);
           
             const listaMoviesAtualizada = await listaStore.updateLista(lista.value?.id, { movies: newMovies });
             
@@ -244,6 +244,8 @@ async function addMovie(movieId: number) {
     } catch (error) {
         console.error('Search error:', error)
     } finally {
+        searchQuery.value = '';
+        moviesList.value = [];
         isSearching.value = false;
     }
 };
@@ -366,6 +368,11 @@ async function updateLista() {
                                     @input="searchQuery = ($event.target as HTMLInputElement).value" type="text"
                                     placeholder="Busque um filme para adicionar..."
                                     class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm font-medium">
+                            </div>
+                            <div v-if="isSearching && searchQuery.length > 3" 
+                                class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto"
+                                >
+                                <p class="p-4 text-zinc-100 text-sm font-bold">Carregando...</p>
                             </div>
                             <div v-if="moviesList.length > 0"
                                 class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
