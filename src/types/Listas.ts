@@ -47,7 +47,7 @@ export interface Movie {
     };
 }
 
-export interface ListaResponse{
+export interface ListaResponse {
     message: string;
     data: Lista;
 }
@@ -111,13 +111,16 @@ export interface MovieCreateInput {
 export interface CreateLista {
     titulo: string;
     comentario: string;
-    tags: Tag[]; // No seu exemplo, você envia os nomes das tags
+    tags: string[];
     idioma: 'pt' | 'en'; // Tipagem estrita para os idiomas suportados
     slug: string;
     publica: boolean;
-    movies: MovieCreateInput[];
+    movies: MovieCreateLista[];
 }
-
+interface MovieCreateLista {
+    id: number;
+    poster_thumb_br: string;
+}
 
 export interface UpdateLista {
     titulo?: string;
@@ -139,21 +142,24 @@ export interface LikeResponse {
 }
 
 export interface MovieDirectorPivot {
-  movie_id: number;
-  diretor_id: number;
+    movie_id: number;
+    diretor_id: number;
 }
 
 export interface MovieDirector {
-  id: number;
-  nome: string;
-  pivot: MovieDirectorPivot;
+    id: number;
+    nome: string;
+    pivot: MovieDirectorPivot;
 }
 
 export interface MovieWithDirectors {
-  id: number;
-  titulo_original: string;
-  titulo_br?: string;
-  titulo_en?: string;
-  rating?: number;
-  diretores?: MovieDirector[];
+    id: number;
+    titulo_original: string;
+    titulo_br?: string;
+    titulo_en?: string;
+    rating?: number;
+    release_date?: string
+    poster_thumb_br?: string;
+    poster_thumb_us?: string;
+    diretores?: MovieDirector[];
 }

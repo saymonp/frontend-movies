@@ -42,6 +42,12 @@ const router = createRouter({
       props: true
     },
     {
+      path: '/lista/criar',
+      name: 'CreateListView',
+      component: () => import('../views/CreateListView.vue'),
+      props: true
+    },
+    {
       path: '/perfil', // O :lang vira um parâmetro (br ou en)
       name: 'PerfilView',
       component: () => import('../views/PerfilView.vue'),

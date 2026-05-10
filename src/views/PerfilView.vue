@@ -109,7 +109,7 @@ const movieStyles = [
       <div class="mt-10">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest">Minhas Listas</h3>
-          <RouterLink to="/criar-lista"
+          <RouterLink to="/lista/criar"
             class="text-[#00FCFF] text-[10px] font-black uppercase border border-[#00FCFF]/30 px-3 py-1 rounded-full hover:bg-[#00FCFF]/10 transition-all">
             + Nova Lista
           </RouterLink>
