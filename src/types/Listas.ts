@@ -60,6 +60,7 @@ export interface Lista {
     user_id: number;
     likes_count: number;
     is_liked: boolean;
+    publica: boolean;
     user: User;
     tags: Tag[];
     movies: Movie[];
@@ -113,6 +114,7 @@ export interface CreateLista {
     tags: Tag[]; // No seu exemplo, você envia os nomes das tags
     idioma: 'pt' | 'en'; // Tipagem estrita para os idiomas suportados
     slug: string;
+    publica: boolean;
     movies: MovieCreateInput[];
 }
 
@@ -121,7 +123,8 @@ export interface UpdateLista {
     titulo?: string;
     comentario?: string;
     tags?: string[];
-    movies?: number[]
+    publica?: boolean;
+    movies?: number[];
 }
 
 export interface ApiResponse<T = any> {

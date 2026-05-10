@@ -14,13 +14,14 @@ import { useListaStore } from '@/stores/lista';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
 import { useMovieStore } from '@/stores/movie';
+import { onClickOutside, transition } from '@vueuse/core';
+import i18n from '@/i18n';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 
 const listaStore = useListaStore();
-const movieStore = useMovieStore();
-// const moviesList = ref(movies_json.movie.slice(0, 8));
+const target = ref(null);
 const isSearching = ref(false);
 const isUserOwnList = ref();
 const isEditMode = ref(false);
@@ -34,12 +35,6 @@ const props = defineProps<{
     slug: string
 }>();
 
-//const updateData: UpdateLista = reactive({
-//    titulo: '',
-//    comentario: '',
-//    tags: [],
-//    movies: []
-//});
 const updateData = ref<UpdateLista>({
     titulo: '',
     comentario: '',
@@ -62,9 +57,28 @@ const removerTag = (index: number) => {
     updateData.value.tags?.splice(index, 1);
 };
 
-const removerFilmeDaLista = (id: number) => {
-    // Filtramos o array para manter apenas os filmes que NÃO têm o ID clicado
-    //moviesList.value = moviesList.value.filter(movie => movie.id !== id);
+const removerFilmeDaLista = async (movieId: number) => {
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        if (isUserOwnList.value) {
+            if (!lista.value?.id) {
+                throw new Error('Lista não encontrada');
+            }
+
+            let newMovies = lista.value.movies.map(movie => movie.id);
+            newMovies = newMovies.filter(id => id !== movieId);
+            const listaMoviesAtualizada = await listaStore.updateLista(lista.value?.id, { movies: newMovies });
+
+            lista.value.movies = listaMoviesAtualizada.data.movies;
+            console.log("Filme Excluído")
+        }
+    } catch (error) {
+
+    } finally {
+        isSearching.value = false;
+    }
 };
 
 const lista = ref<Lista>();
@@ -137,7 +151,8 @@ const toggleEditMode = async () => {
         const snapshot = {
             titulo: lista.value?.titulo,
             comentario: lista.value?.comentario,
-            tags: lista.value?.tags.map(tag => tag.nome)
+            tags: lista.value?.tags.map(tag => tag.nome),
+            publica: lista.value?.publica
         };
 
         // Preenchemos o updateData e guardamos a string original para comparar depois
@@ -150,7 +165,8 @@ const toggleEditMode = async () => {
         const currentData = JSON.stringify({
             titulo: updateData.value.titulo,
             comentario: updateData.value.comentario,
-            tags: updateData.value.tags
+            tags: updateData.value.tags,
+            publica: updateData.value.publica
         });
 
         // CHECAGEM: Se os dados forem idênticos ao original, apenas fecha
@@ -167,7 +183,7 @@ const toggleEditMode = async () => {
             }
             const response = await listaStore.updateLista(lista.value.id, updateData.value);
 
-        
+
             lista.value.titulo = response.data.titulo;
             lista.value.comentario = response.data.comentario;
 
@@ -230,16 +246,14 @@ async function addMovie(movieId: number) {
             if (!lista.value?.id) {
                 throw new Error('Lista não encontrada');
             }
-           
 
             const newMovies = lista.value.movies.map(movie => movie.id);
-            newMovies.push(movieId);
-            console.log('Lista de filmes Depois',newMovies);
-          
+            newMovies.unshift(movieId);
+
             const listaMoviesAtualizada = await listaStore.updateLista(lista.value?.id, { movies: newMovies });
-            
+
             lista.value.movies = listaMoviesAtualizada.data.movies;
-            
+
         }
     } catch (error) {
         console.error('Search error:', error)
@@ -249,35 +263,21 @@ async function addMovie(movieId: number) {
         isSearching.value = false;
     }
 };
+onClickOutside(target, () => {
+    searchQuery.value = '';
+    moviesList.value = [];
+});
+const getMovieParam = (movie: any) => {
+    // Pega o slug de acordo com o idioma
+    const slug = (i18n as any).locale === 'br' ? movie.slug_pt : movie.slug_en;
 
-async function updateLista() {
-    if (isSearching.value) return;
-
-    isSearching.value = true;
-    try {
-        if (isUserOwnList.value) {
-            if (!lista.value?.id) {
-                throw new Error('Lista não encontrada');
-            }
-
-            // remove movies
-            const { movies, ...payload } = updateData.value;
-
-            const listaAtualizada = await listaStore.updateLista(lista.value?.id, payload);
-
-            //updateData.value.comentario = listaAtualizada.comentario;
-            //updateData.value.titulo = listaAtualizada.titulo;
-           // updateData.value.tags = listaAtualizada.tags.map(tag => tag.nome);
-            //updateData.value.movies = listaAtualizada.movies;
-
-            //lista.value = listaAtualizada;
-        }
-
-    } catch (error) {
-        console.error('Search error:', error)
-    } finally {
-        isSearching.value = false;
+    // Se não houver slug (nulo ou vazio), retorna apenas o ID
+    if (!slug || slug.trim() === '') {
+        return String(movie.id);
     }
+
+    // Retorna o formato 235-nome-do-filme
+    return `${movie.id}-${slug}`;
 };
 </script>
 <template>
@@ -296,6 +296,7 @@ async function updateLista() {
                             class="absolute right-0 hidden lg:block bg-[#00FCFF]/20 border border-[#00FCFF]/50 rounded-lg py-1.5 px-3 hover:bg-[#00FCFF]/30 cursor-pointer transition-all shadow-[0_0_15px_rgba(0,252,255,0.2)]">
                             <p class="text-zinc-100 text-[9px] uppercase tracking-tighter font-bold">Salvar Lista</p>
                         </button>
+
                     </div>
 
                     <textarea v-model="updateData.comentario"
@@ -369,15 +370,13 @@ async function updateLista() {
                                     placeholder="Busque um filme para adicionar..."
                                     class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm font-medium">
                             </div>
-                            <div v-if="isSearching && searchQuery.length > 3" 
-                                class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto"
-                                >
+                            <div v-if="isSearching && searchQuery.length > 3"
+                                class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
                                 <p class="p-4 text-zinc-100 text-sm font-bold">Carregando...</p>
                             </div>
-                            <div v-if="moviesList.length > 0"
+                            <div ref="target" v-if="moviesList.length > 0"
                                 class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
-                                <div v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id)"
-                                    class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
+                                <div v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id)" class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
                                     transition-colors group">
                                     <div class="flex">
                                         <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF]">{{
@@ -394,7 +393,25 @@ async function updateLista() {
                     </div>
                 </div>
             </Transition>
+            <transition name="fade">
+                <div v-if="isUserOwnList && isEditMode">
+                <label class="flex items-end gap-2 cursor-pointer">
+                    <p class="text-zinc-300 font-medium text-sm text-center italic opacity-80">Lista
+                        Pública</p>
 
+                    <div class="relative flex items-center">
+                        <input v-if="lista" type="checkbox" v-model="lista.publica"
+                            class="peer appearance-none w-4 h-4 border border-white/20 rounded transition-all checked:bg-[#00FCFF] checked:border-[#00FCFF]">
+
+                        <span
+                            class="absolute left-1 text-[10px] font-bold text-black opacity-0 peer-checked:opacity-100">
+                            ✓
+                        </span>
+                    </div>
+                </label>
+            </div>
+            </transition>
+            
             <!-- LISTAGEM DE FILMES (DRAGGABLE) -->
             <div class="flex justify-end mb-4">
                 <button @click="toggleEditMode"
@@ -407,9 +424,16 @@ async function updateLista() {
                 @end="handleDragEnd" handle=".drag-handle" ghost-class="opacity-50"
                 class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10">
                 <template #item="{ element: movie }">
+                    
                     <div class="movie-card group">
                         <div class="flex flex-col items-center">
-                            <RouterLink :to="{ name: 'MovieView', params: { lang: 'br', slug: movie.slug_pt } }"
+                            <RouterLink :to="{
+                            name: 'MovieView',
+                            params: {
+                                lang: $i18n.locale,
+                                slug: getMovieParam(movie)
+                            }
+                        }"
                                 class="relative">
                                 <img :src="getImageUrl(movie.poster_thumb_br)"
                                     class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg">
