@@ -9,7 +9,7 @@ import IconDrag from '@/components/icons/IconDrag.vue';
 import IconNavHam from '@/components/icons/IconNavHam.vue';
 import IconDelete from '@/components/icons/IconDelete.vue';
 import draggable from 'vuedraggable';
-import type { Lista, UpdateLista, MovieWithDirectors } from '@/types/Listas';
+import type { Lista, UpdateLista, MovieWithDirectors, Tag } from '@/types/Listas';
 import { useListaStore } from '@/stores/lista';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -26,43 +26,41 @@ const isUserOwnList = ref();
 const isEditMode = ref(false);
 const novaTag = ref('');
 const moviesList = ref<MovieWithDirectors[]>([]);
+// Objeto para guardar o estado original (antes da edição)
+const originalData = ref('');
 
 const props = defineProps<{
     id: number,
     slug: string
 }>();
 
-const updateData: UpdateLista = reactive({
+//const updateData: UpdateLista = reactive({
+//    titulo: '',
+//    comentario: '',
+//    tags: [],
+//    movies: []
+//});
+const updateData = ref<UpdateLista>({
     titulo: '',
     comentario: '',
     tags: [],
     movies: []
 });
 
-
 const adicionarTag = () => {
     const valor = novaTag.value.trim();
 
     // Evita tags vazias ou duplicadas
-    if (valor && !updateData.tags.includes(valor)) {
+    if (valor && !updateData.value.tags?.includes(valor)) {
         // Adiciona ao array de tags que será enviado ao backend
-        updateData.tags.push(valor);
+        updateData.value.tags?.push(valor);
         novaTag.value = ''; // Limpa o input
     }
 };
 
 const removerTag = (index: number) => {
-    updateData.tags.splice(index, 1);
+    updateData.value.tags?.splice(index, 1);
 };
-
-//const listaData = ref<CreateLista>({
-//    titulo: '',
-//    comentario: '',
-//    idioma: 'pt',
-//    slug: '',
-//    tags: [],
-//    movies: []
-//});
 
 const removerFilmeDaLista = (id: number) => {
     // Filtramos o array para manter apenas os filmes que NÃO têm o ID clicado
@@ -71,13 +69,6 @@ const removerFilmeDaLista = (id: number) => {
 
 const lista = ref<Lista>();
 const searchQuery = ref('');
-
-// Sugestões mockadas (em um app real, viriam de uma API)
-const sugestoesLista = [
-    { id: 1, movie: "Late Night with The Devil (2023)", diretor: "Cameron Cairnes" },
-    { id: 2, movie: "LaBreathless (1960)", diretor: "Jean-Luc Godard" },
-    { id: 3, movie: "LaBedazzled (2000)", diretor: "Harold Ramis" },
-];
 
 async function loadLista() {
     if (isSearching.value) return;
@@ -92,10 +83,6 @@ async function loadLista() {
         lista.value = listaData;
         if (user.value?.id == lista.value.user_id) {
             isUserOwnList.value = true;
-
-            updateData.comentario = listaData.comentario;
-            updateData.titulo = listaData.titulo;
-            updateData.tags = listaData.tags.map(tag => tag.nome);
         }
 
     } catch (error) {
@@ -142,9 +129,57 @@ const handleDragEnd = async () => {
     }
 };
 
-const toggleEditMode = () => {
-    isEditMode.value = !isEditMode.value;
-}
+
+const toggleEditMode = async () => {
+    if (!isEditMode.value) {
+        // ENTRANDO NO MODO EDIÇÃO
+        // Cria snapshot do que tem agora na lista
+        const snapshot = {
+            titulo: lista.value?.titulo,
+            comentario: lista.value?.comentario,
+            tags: lista.value?.tags.map(tag => tag.nome)
+        };
+
+        // Preenchemos o updateData e guardamos a string original para comparar depois
+        updateData.value = JSON.parse(JSON.stringify(snapshot));
+        originalData.value = JSON.stringify(snapshot);
+
+        isEditMode.value = true;
+    } else {
+        // CLICOU EM SALVAR (SAINDO DO MODO EDIÇÃO)
+        const currentData = JSON.stringify({
+            titulo: updateData.value.titulo,
+            comentario: updateData.value.comentario,
+            tags: updateData.value.tags
+        });
+
+        // CHECAGEM: Se os dados forem idênticos ao original, apenas fecha
+        if (currentData === originalData.value) {
+            console.log("Nada mudou, não vou chamar a API.");
+            isEditMode.value = false;
+            return;
+        }
+
+        // Se chegou aqui, algo mudou, chama o método de atualizar
+        try {
+            if (!lista.value?.id) {
+                throw new Error('Lista não encontrada');
+            }
+            const response = await listaStore.updateLista(lista.value.id, updateData.value);
+
+        
+            lista.value.titulo = response.data.titulo;
+            lista.value.comentario = response.data.comentario;
+
+            lista.value.tags = response.data.tags;
+
+
+            isEditMode.value = false;
+        } catch (error) {
+            console.error("Erro ao atualizar:", error);
+        }
+    }
+};
 
 async function loadMovies() {
     if (isSearching.value) return;
@@ -182,10 +217,66 @@ watch(searchQuery, async (newQuery) => {
     try {
         loadMovies();
     } catch (error) {
-        console.error('Search error:', error)
+        console.error('Search error:', error);
     }
 });
 
+async function addMovie(movieId: number) {
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        if (isUserOwnList.value) {
+            if (!lista.value?.id) {
+                throw new Error('Lista não encontrada');
+            }
+            console.log('Lista de filmes antes',updateData.value);
+
+            const newMovies = lista.value.movies.map(movie => movie.id);
+            newMovies.push(movieId);
+            console.log('Lista de filmes Depois',updateData.value);
+          
+            const listaMoviesAtualizada = await listaStore.updateLista(lista.value?.id, { movies: newMovies });
+            
+            lista.value.movies = listaMoviesAtualizada.data.movies;
+            
+        }
+    } catch (error) {
+        console.error('Search error:', error)
+    } finally {
+        isSearching.value = false;
+    }
+};
+
+async function updateLista() {
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        if (isUserOwnList.value) {
+            if (!lista.value?.id) {
+                throw new Error('Lista não encontrada');
+            }
+
+            // remove movies
+            const { movies, ...payload } = updateData.value;
+
+            const listaAtualizada = await listaStore.updateLista(lista.value?.id, payload);
+
+            //updateData.value.comentario = listaAtualizada.comentario;
+            //updateData.value.titulo = listaAtualizada.titulo;
+           // updateData.value.tags = listaAtualizada.tags.map(tag => tag.nome);
+            //updateData.value.movies = listaAtualizada.movies;
+
+            //lista.value = listaAtualizada;
+        }
+
+    } catch (error) {
+        console.error('Search error:', error)
+    } finally {
+        isSearching.value = false;
+    }
+};
 </script>
 <template>
     <Navbar />
@@ -278,12 +369,13 @@ watch(searchQuery, async (newQuery) => {
                             </div>
                             <div v-if="moviesList.length > 0"
                                 class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
-                                <div v-for="movie in moviesList" :key="movie.id"
-                                    class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer transition-colors group">
+                                <div v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id)"
+                                    class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
+                                    transition-colors group">
                                     <div class="flex">
                                         <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF]">{{
                                             movie.titulo_br || movie.titulo_original
-                                        }}</p>
+                                            }}</p>
                                         <p class="ml-3 text-zinc-500 text-[12px] font-bold">{{ movie.rating || '' }}</p>
                                     </div>
                                     <p class="text-zinc-500 text-[10px]">{{movie.diretores?.map(diretor =>
@@ -325,7 +417,7 @@ watch(searchQuery, async (newQuery) => {
                                         class="w-6 h-6 text-[#ff0077] hover:scale-110 active:scale-90 cursor-pointer transition-all" />
 
                                     <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
-                                    }}</span>
+                                        }}</span>
 
                                     <IconDrag
                                         class="drag-handle w-6 h-6 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />

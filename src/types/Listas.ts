@@ -47,6 +47,11 @@ export interface Movie {
     };
 }
 
+export interface ListaResponse{
+    message: string;
+    data: Lista;
+}
+
 export interface Lista {
     id: number;
     titulo: string;
@@ -99,7 +104,7 @@ export interface ListaPaginada {
 
 export interface MovieCreateInput {
     id: number;
-    tmdb_id: number;
+    tmdb_id?: number;
 }
 
 export interface CreateLista {
@@ -113,10 +118,10 @@ export interface CreateLista {
 
 
 export interface UpdateLista {
-    titulo: string;
-    comentario: string;
-    tags: string[];
-    movies: MovieCreateInput[]
+    titulo?: string;
+    comentario?: string;
+    tags?: string[];
+    movies?: number[]
 }
 
 export interface ApiResponse<T = any> {

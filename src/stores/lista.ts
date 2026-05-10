@@ -1,7 +1,7 @@
 // src/stores/auth.js
 import { defineStore } from 'pinia';
 import api from '@/services/api';
-import type { Lista, ListaFilters, ListaPaginada, CreateLista, ApiResponse, LikeResponse, MovieWithDirectors } from '@/types/Listas';
+import type { Lista, ListaFilters, ListaPaginada, ListaResponse, CreateLista, ApiResponse, LikeResponse, MovieWithDirectors, UpdateLista } from '@/types/Listas';
 
 
 export const useListaStore = defineStore('listas', {
@@ -30,8 +30,8 @@ export const useListaStore = defineStore('listas', {
             const response = await api.post<Lista>('/listas', listaData);
             return response.data;
         },
-        async updateLista(listaData: CreateLista): Promise<Lista> {
-            const response = await api.put<Lista>('/listas', listaData);
+        async updateLista(id:number, listaData: UpdateLista): Promise<ListaResponse> {
+            const response = await api.put<ListaResponse>(`/listas/${id}`, listaData);
             return response.data;
         },
         async deleteLista(id: number): Promise<ApiResponse> {

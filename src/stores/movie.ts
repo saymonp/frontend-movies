@@ -32,7 +32,7 @@ export const useMovieStore = defineStore('movies', {
             return response.data;
         },
         async deleteMovie(id: number): Promise<ApiResponse> {
-            const response = await api.delete<ApiResponse>(`/admin/movies/delete${id}`);
+            const response = await api.delete<ApiResponse>(`/admin/movies/delete/${id}`);
             return response.data;
         },
         async listGenres(): Promise<GeneroResponse[]> {
