@@ -69,26 +69,31 @@ const toggleTag = (tag: string) => {
 //    emit('update:filterValue', Number(value))
 //}
 
-const toggleBooleanFilter = (tag: string) => {
-    if (tag === 'Top Listas') {
-        updateFilter('top_listas', !props.filters.top_listas)
+const toggleOrderBy = (tag: string) => {
+    // Mapeamos o nome do botão para o valor que o backend espera
+    const valueMap: Record<string, string> = {
+        'Top Listas': 'likes',
+        'Mais Ativas': 'ativas'
     }
 
-    if (tag === 'Curadorias') {
-        updateFilter('curadorias', !props.filters.curadorias)
-    }
+    const newValue = valueMap[tag]
 
-    if (tag === 'Mais Ativas') {
-        updateFilter('mais_ativas', !props.filters.mais_ativas)
+    // Se o filtro clicado já é o atual, desativamos (volta para o padrão)
+    // Se não, definimos o novo valor (isso automaticamente "desliga" o outro)
+    if (props.filters.orderBy === newValue) {
+        updateFilter('orderBy', null)
+    } else {
+        updateFilter('orderBy', newValue)
     }
 }
 
+// Ajuste a função de verificar se está ativo
 const isFilterActive = (tag: string) => {
-    if (tag === 'Top Listas') return !!props.filters.top_listas
-    if (tag === 'Curadorias') return !!props.filters.curadorias
-    if (tag === 'Mais Ativas') return !!props.filters.mais_ativas
-
-    return false
+    const valueMap: Record<string, string> = {
+        'Top Listas': 'likes',
+        'Mais Ativas': 'ativas'
+    }
+    return props.filters.orderBy === valueMap[tag]
 }
 </script>
 
@@ -104,17 +109,16 @@ const isFilterActive = (tag: string) => {
                 <div class="sm:col-span-4 flex flex-col gap-4">
 
                     <!-- SEARCH -->
-                    <div
-                        class="flex items-center bg-white/5 border border-white/20 rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[#ff0077] transition-all"
+                    <div class="flex items-center bg-white/5 border border-white/20 rounded-xl px-3 py-2 focus-within:ring-1 focus-within:ring-[#ff0077] transition-all"
                         :class="isSearching ? 'opacity-50 cursor-not-allowed' : ''">
 
-                        <input type="text"
-                            :value="filters.search"
+                        <input type="text" :value="filters.search"
                             @input="e => updateFilter('search', (e.target as HTMLInputElement).value)"
                             placeholder="Buscar listas..."
                             class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs font-bold min-w-0">
 
                         <!-- FILTRO TAG -->
+                        <!--
                         <div class="relative">
 
                             <button @click="showFilter = !showFilter"
@@ -127,7 +131,7 @@ const isFilterActive = (tag: string) => {
                                 <IconFilter class="w-3" />
                             </button>
 
-                            <!-- DROPDOWN -->
+                            
                             <div ref="target"
                                 v-show="showFilter"
                                 class="absolute right-0 mt-3 z-[9999] bg-[#020036]/95 backdrop-blur-2xl border border-white/20 rounded-xl p-4 shadow-2xl w-[220px]">
@@ -166,6 +170,7 @@ const isFilterActive = (tag: string) => {
                                 </div>
                             </div>
                         </div>
+-->
                     </div>
 
                     <!-- RANGE -->
@@ -182,11 +187,7 @@ const isFilterActive = (tag: string) => {
                             </span>
                         </div>
 
-                        <input type="range"
-                            min="0"
-                            :max="maxLikes"
-                            step="1"
-                            :value="filters.filterValue"
+                        <input type="range" min="0" :max="maxLikes" step="1" :value="filters.filterValue"
                             @change="e => updateFilter('filterValue', (e.target as HTMLSelectElement).value)"
                             class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#d919ff]">
                     </div>
@@ -204,8 +205,7 @@ const isFilterActive = (tag: string) => {
                                 Ordenar por
                             </label>
 
-                            <select
-                                :value="filters.orderBy"
+                            <select :value="filters.orderBy"
                                 @change="e => updateFilter('orderBy', (e.target as HTMLSelectElement).value)"
                                 class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#ff0077] cursor-pointer">
 
@@ -230,8 +230,7 @@ const isFilterActive = (tag: string) => {
                                 Privacidade
                             </label>
 
-                            <select
-                                :value="filters.user_only"
+                            <select :value="filters.user_only"
                                 @change="e => updateFilter('user_only', (e.target as HTMLSelectElement).value)"
                                 class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#ff0077] cursor-pointer">
 
@@ -248,22 +247,14 @@ const isFilterActive = (tag: string) => {
 
                     <!-- BOTÕES -->
                     <div class="flex gap-2 mt-auto">
-
-                        <button
-                            v-for="tag in ['Top Listas', 'Curadorias', 'Mais Ativas']"
-                            :key="tag"
-                            @click="toggleBooleanFilter(tag)"
-                            class="flex-1 rounded-xl py-2.5 px-2 transition-all group hover:bg-white/10"
-                            :class="isFilterActive(tag)
+                        <button v-for="tag in ['Top Listas', 'Mais Ativas']" :key="tag" @click="toggleOrderBy(tag)"
+                            class="flex-1 rounded-xl py-2.5 px-2 transition-all group hover:bg-white/10" :class="isFilterActive(tag)
                                 ? 'bg-[#ff0077]/20 border border-[#ff0077]'
                                 : 'bg-white/5 border border-white/10 hover:border-[#ff0077]/50'">
-
-                            <p
-                                class="text-[10px] uppercase tracking-tighter font-black text-center transition-colors"
+                            <p class="text-[10px] uppercase tracking-tighter font-black text-center transition-colors"
                                 :class="isFilterActive(tag)
                                     ? 'text-[#ff0077]'
                                     : 'text-zinc-400 group-hover:text-white'">
-
                                 {{ tag }}
                             </p>
                         </button>
