@@ -9,15 +9,17 @@ import { onClickOutside } from '@vueuse/core'
 import SearchBarHome from '@/components/SearchBarHome.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useMovieStore } from '@/stores/movie';
-
+import SearchBarListas from '@/components/SearchBarListas.vue';
 import { storeToRefs } from 'pinia';
 import type { DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse } from '@/types/Movies';
+import type { ListaFilters } from '@/types/Listas';
 import i18n from '@/i18n';
+import { useListaStore } from '@/stores/lista';
 
 
 const authStore = useAuthStore();
 const movieStore = useMovieStore();
-
+const listaStore = useListaStore();
 // transforma as propriedades em Refs, permitindo o uso de .value
 const { isAuthenticated, user } = storeToRefs(authStore);
 
@@ -25,11 +27,12 @@ const isResettingFilters = ref(false);
 const target = ref(null);
 
 const isSearching = ref(false);
-
-// const movies = ref(movies_json.movie);
+const listas = ref();
 const generos = ref<GeneroResponse[]>([]);
 const diretores = ref<DiretorResponse[]>([]);
 const idiomasDisponiveis = ref<string[]>([]);
+const hasLoadedListas = ref(false);
+const searchMode = ref('movies')
 
 const filterMovies = ref<MovieFilters>({
     destaque: true,
@@ -43,13 +46,21 @@ const filterMovies = ref<MovieFilters>({
     bilheteria: undefined,
     page: 1,
 });
-
+const filterListas = ref<ListaFilters>({
+    search: '',
+    tags: [],
+    orderBy: 'likes',
+    privacy: 'publicas',
+    top_listas: false,
+    curadorias: false,
+    mais_ativas: false
+})
 // Função que observa mudanças e recarrega os filmes
 watch(
     () => ({ ...filterMovies.value }),
     (newVal: any, oldVal) => {
         if (isSearching.value || isResettingFilters.value) return;
-        
+
         // Verifica se o que mudou foi algo além da página
         const changedOtherThanPage = Object.keys(newVal).some(
             key => key !== 'page' && JSON.stringify(newVal[key]) !== JSON.stringify(oldVal[key])
@@ -67,6 +78,47 @@ watch(
     },
     { deep: true }
 );
+// Função que observa mudanças e recarrega as Listas
+watch(
+    () => ({ ...filterListas.value }),
+    (newVal, oldVal) => {
+
+        if (isSearching.value || isResettingFilters.value) return;
+
+        // Verifica se mudou algo além da página
+        const changedOtherThanPage = Object.keys(newVal).some(
+            key =>
+                key !== 'page' &&
+                JSON.stringify(newVal[key as keyof typeof newVal]) !==
+                JSON.stringify(oldVal[key as keyof typeof oldVal])
+        );
+
+        // Se mudou filtro, reseta paginação
+        if (changedOtherThanPage) {
+            filterListas.value.page = 1;
+        }
+
+        console.log(
+            "Executando carga de listas com:",
+            filterListas.value
+        );
+
+        loadListas(filterListas.value);
+    },
+    { deep: true }
+);
+
+// Watch para carregar as listas, inicialmente
+watch(searchMode, async (mode) => {
+
+    if (mode === 'lists' && !hasLoadedListas.value) {
+
+        hasLoadedListas.value = true;
+
+        await loadListas(filterListas.value);
+    }
+});
+
 const resetFilters = async () => {
     isResettingFilters.value = true;
 
@@ -128,8 +180,29 @@ async function loadMovies(filters: MovieFilters) {
     } finally {
         isSearching.value = false;
     }
-}
+};
 
+async function loadListas(filters: ListaFilters) {
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        let userListas = false;
+        if (filters.privacy == 'minhas') {
+            userListas = true;
+        }
+        if (filters.privacy == 'publicas') {
+            userListas = false;
+        }
+        const response = await listaStore.listListas({ search: filters, user_only: userListas });
+
+        listas.value = response;
+    } catch (error) {
+        console.error("Erro na busca:", error);
+    } finally {
+        isSearching.value = false;
+    }
+}
 // Função para checar se a resposta é de importação
 function isImportingResponse(res: any): res is DinamicMovieInsertionResponse {
     return res && res.status === 'processando';
@@ -159,7 +232,7 @@ onMounted(() => {
 const filterRating = ref(0)
 const showFilter = ref(false)
 onClickOutside(target, () => (showFilter.value = false))
-const searchMode = ref('movies')
+
 
 const filterValue = ref(0);
 
@@ -180,7 +253,9 @@ const toggleQuickReview = (id: number) => {
     activeReviewId.value = activeReviewId.value === id ? null : id;
     rating.value = 0; // Reseta a nota ao abrir
 };
-
+const changeListaPage = (page: number) => {
+    filterListas.value.page = page;
+};
 const activeListId = ref<number | null>(null);
 const minhasListas = ref([
     { id: 1, nome: 'Adrenalina Pura', selecionada: false },
@@ -241,6 +316,13 @@ const getMovieParam = (movie: any) => {
     // Retorna o formato 235-nome-do-filme
     return `${movie.id}-${slug}`;
 };
+
+const movieStyles = [
+  { zIndex: 'z-40', ml: '', opacity: 'opacity-100', hover: 'group-hover:-translate-y-2', ring: 'ring-2 ring-[#7075AB]' },
+  { zIndex: 'z-30', ml: '-ml-2 sm:-ml-14 lg:-ml-16', opacity: 'opacity-90', hover: 'group-hover:-translate-y-1', ring: 'ring-1 ring-white/20' },
+  { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-80', hover: '', ring: 'ring-1 ring-white/10' },
+  { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-70', hover: '', ring: 'ring-1 ring-white/5' },
+];
 </script>
 
 <template>
@@ -304,11 +386,26 @@ const getMovieParam = (movie: any) => {
                         </RouterLink>
                     </div>
                 </div>
-
-                <SearchBarHome v-model:filterMovies="filterMovies" :generos="generos" :diretores="diretores"
-                    :idiomas="idiomasDisponiveis" :isSearching="isSearching" v-model:filterValue="filterValue" @search="loadMovies(filterMovies)" />
-                                                                                
-                <TransitionGroup tag="section" name="list"
+                <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
+                    <div class="flex gap-4 mb-3 ml-2">
+                        <button @click="searchMode = 'movies'"
+                            :class="searchMode === 'movies' ? 'text-[#00FCFF] border-b-2 border-[#00FCFF]' : 'text-zinc-500 hover:text-zinc-300'"
+                            class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
+                            Filmes
+                        </button>
+                        <button @click="searchMode = 'lists'"
+                            :class="searchMode === 'lists' ? 'text-[#d919ff] border-b-2 border-[#d919ff]' : 'text-zinc-500 hover:text-zinc-300'"
+                            class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
+                            Listas
+                        </button>
+                    </div>
+                    <SearchBarHome v-if="searchMode == 'movies'" v-model:filterMovies="filterMovies" :generos="generos"
+                        :diretores="diretores" :idiomas="idiomasDisponiveis" :isSearching="isSearching"
+                        v-model:filterValue="filterValue" @search="loadMovies(filterMovies)" />
+                    <SearchBarListas v-if="searchMode == 'lists'" v-model:filters="filterListas"
+                        :isSearching="isSearching" v-model:filterValue="filterValue" />
+                </div>
+                <TransitionGroup v-if="searchMode == 'movies'" tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
                     <div v-if="movies && (movies as any).data"
                         v-for="movie in (movies as any)?.data?.filter((elemento: any) => elemento.rating >= filterValue)"
@@ -394,8 +491,40 @@ const getMovieParam = (movie: any) => {
                         </div>
                     </div>
                 </TransitionGroup>
+                <TransitionGroup v-if="searchMode=='lists'" tag="section" name="list">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="lista in listas?.data">
+                        <RouterLink :to="{
+                            name: 'ListView',
+                            params: {
+                                id: lista.id,
+                                slug: lista.slug
+                            }
+                        }">
+                            <div class="cursor-pointer hover:scale-105 transition-transform">
+                                <div>
+                                    <h4 class="text-white font-bold text-md p-2">{{ lista.titulo }}</h4>
+                                    <div class="flex items-center justify-center pl-1">
+                                        <template v-for="(style, index) in movieStyles" :key="index">
+                                            <!-- Só renderiza se o filme existir na lista -->
+                                            <div v-if="lista.movies[index]"
+                                                class="relative w-28 sm:w-28 lg:w-32 transition-transform"
+                                                :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+                                                <img :src="getImageUrl(lista.movies[index].poster_thumb_br)"
+                                                    class="w-full h-auto rounded-sm"
+                                                    :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
+                                            </div>
+                                        </template>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </RouterLink>
+                    </div>
+                </div>
+                </TransitionGroup>
                 <!-- Paginação -->
-                <div class="flex items-center justify-center gap-2 mt-8 mb-12">
+                <div v-if="searchMode == 'movies'" class="flex items-center justify-center gap-2 mt-8 mb-12">
                     <!-- Botão Voltar -->
                     <button v-if="movies && (movies as any).data" @click="changePage((movies as any).current_page - 1)"
                         :disabled="(movies as any).current_page === 1"

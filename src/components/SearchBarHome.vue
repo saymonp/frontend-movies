@@ -71,21 +71,8 @@ onClickOutside(target, () => (showFilter.value = false))
 </script>
 
 <template>
-    <div ref="movieListSection" class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
-        <div class="lg:max-w-3xl max-w-13/14 mx-auto mt-10">
-            <div class="flex gap-4 mb-3 ml-2">
-                <button @click="searchMode = 'movies'"
-                    :class="searchMode === 'movies' ? 'text-[#00FCFF] border-b-2 border-[#00FCFF]' : 'text-zinc-500 hover:text-zinc-300'"
-                    class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
-                    Filmes
-                </button>
-                <button @click="searchMode = 'lists'"
-                    :class="searchMode === 'lists' ? 'text-[#d919ff] border-b-2 border-[#d919ff]' : 'text-zinc-500 hover:text-zinc-300'"
-                    class="text-[10px] font-black uppercase tracking-[0.2em] pb-1 transition-all cursor-pointer">
-                    Listas
-                </button>
-            </div>
-
+    <div ref="movieListSection" class="lg:max-w-3xl max-w-13/14 mx-auto">
+        <div class="lg:max-w-3xl max-w-13/14 mx-auto">
             <div
                 class="relative z-50 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 ring-1 ring-white/10 transition-all duration-500">
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-6">

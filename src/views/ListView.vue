@@ -360,20 +360,25 @@ const getMovieParam = (movie: any) => {
                 <div v-if="isUserOwnList && isEditMode"
                     class="bg-white/5 backdrop-blur-xl border border-[#00FCFF]/20 rounded-2xl p-6 shadow-2xl relative z-50 mb-8">
                     <div class="flex flex-col gap-4">
-                    <div class="flex items-center justify-between px-1">
-                        <label class="text-[#00FCFF] text-[10px] font-black uppercase tracking-[0.2em]">
-                            Explorar Filmes
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <span class="text-zinc-500 text-[10px] font-bold uppercase group-hover:text-zinc-300 transition-colors">Pública</span>
-                            <div class="relative">
-                                <input v-if="lista" type="checkbox" v-model="lista.publica" class="peer hidden">
-                                <div class="w-8 h-4 bg-zinc-800 rounded-full border border-white/10 peer-checked:bg-[#00FCFF]/20 peer-checked:border-[#00FCFF]/50 transition-all"></div>
-                                <div class="absolute left-1 top-1 w-2 h-2 bg-zinc-500 rounded-full peer-checked:left-5 peer-checked:bg-[#00FCFF] transition-all"></div>
-                            </div>
-                        </label>
-                    </div>
-                  
+                        <div class="flex items-center justify-between px-1">
+                            <label class="text-[#00FCFF] text-[10px] font-black uppercase tracking-[0.2em]">
+                                Explorar Filmes
+                            </label>
+                            <label class="flex items-center gap-3 cursor-pointer group">
+                                <span
+                                    class="text-zinc-500 text-[10px] font-bold uppercase group-hover:text-zinc-300 transition-colors">Pública</span>
+                                <div class="relative">
+                                    <input v-if="lista" type="checkbox" v-model="lista.publica" class="peer hidden">
+                                    <div
+                                        class="w-8 h-4 bg-zinc-800 rounded-full border border-white/10 peer-checked:bg-[#00FCFF]/20 peer-checked:border-[#00FCFF]/50 transition-all">
+                                    </div>
+                                    <div
+                                        class="absolute left-1 top-1 w-2 h-2 bg-zinc-500 rounded-full peer-checked:left-5 peer-checked:bg-[#00FCFF] transition-all">
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
                         <div class="relative">
                             <div
                                 class="flex items-center bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#00FCFF] transition-all">
@@ -390,23 +395,28 @@ const getMovieParam = (movie: any) => {
                                 class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
                                 <div v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id)" class="flex p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
                                     transition-colors group">
-                                    <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)" class="w-10 h-14 object-cover rounded-md shadow-md">
-                                <div class="ml-3 flex-1">
-                                    <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
-                                        {{ movie.titulo_br || movie.titulo_original }}
-                                    </p>
-                                    <p class="text-zinc-500 text-xs mt-1">{{ movie.release_date?.split('-')[0] }}</p>
-                                    <p class="text-zinc-500 text-[10px]">{{movie.diretores?.map(diretor =>
-                                        diretor.nome).join(', ') || ''}}</p>
-                                </div>
-                               <span class="text-[#00FCFF] text-xs font-black opacity-0 group-hover:opacity-100 transition-all">+ Adicionar</span>
+                                    <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)"
+                                        class="w-10 h-14 object-cover rounded-md shadow-md">
+                                    <div class="ml-3 flex-1">
+                                        <p
+                                            class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
+                                            {{ movie.titulo_br || movie.titulo_original }}
+                                        </p>
+                                        <p class="text-zinc-500 text-xs mt-1">{{ movie.release_date?.split('-')[0] }}
+                                        </p>
+                                        <p class="text-zinc-500 text-[10px]">{{movie.diretores?.map(diretor =>
+                                            diretor.nome).join(', ') || ''}}</p>
+                                    </div>
+                                    <span
+                                        class="text-[#00FCFF] text-xs font-black opacity-0 group-hover:opacity-100 transition-all">+
+                                        Adicionar</span>
 
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </Transition>   
+            </Transition>
             <!-- LISTAGEM DE FILMES (DRAGGABLE) -->
             <div class="flex justify-end mb-4">
                 <button @click="toggleEditMode"
@@ -419,33 +429,34 @@ const getMovieParam = (movie: any) => {
                 @end="handleDragEnd" handle=".drag-handle" ghost-class="opacity-50"
                 class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10">
                 <template #item="{ element: movie }">
-                    
+
                     <div class="movie-card group">
                         <div class="flex flex-col items-center">
                             <RouterLink :to="{
-                            name: 'MovieView',
-                            params: {
-                                lang: $i18n.locale,
-                                slug: getMovieParam(movie)
-                            }
-                        }"
-                                class="relative">
+                                name: 'MovieView',
+                                params: {
+                                    lang: $i18n.locale,
+                                    slug: getMovieParam(movie)
+                                }
+                            }" class="relative">
                                 <img :src="getImageUrl(movie.poster_thumb_br)"
                                     class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg">
                             </RouterLink>
 
-                            <div class="w-full mt-3 text-center">
+                            <div class="w-full mt-3 text-center align-middle">
                                 <p class="text-sm font-bold text-zinc-100 truncate px-1">
                                     {{ movie.titulo_br || movie.titulo_original }}
                                 </p>
-                                <div class="flex items-center justify-between mt-2 px-1">
-                                    <IconDelete @click.stop="removerFilmeDaLista(movie.id)"
+                                <div class="flex items-center mt-2 px-1"
+                                    :class="isUserOwnList ? 'justify-between' : 'justify-center'">
+                                    <IconDelete v-if="isUserOwnList" @click.stop="removerFilmeDaLista(movie.id)"
                                         class="w-6 h-6 text-[#ff0077] hover:scale-110 active:scale-90 cursor-pointer transition-all" />
 
-                                    <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
-                                        }}</span>
+                                    <span class="text-center text-[10px] font-black text-zinc-400">
+                                        IMDb {{ movie.rating }}
+                                    </span>
 
-                                    <IconDrag
+                                    <IconDrag v-if="isUserOwnList"
                                         class="drag-handle w-6 h-6 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />
                                 </div>
                             </div>

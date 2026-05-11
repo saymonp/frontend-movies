@@ -6,12 +6,23 @@ import type { Lista, ListaFilters, ListaPaginada, ListaResponse, CreateLista, Ap
 
 export const useListaStore = defineStore('listas', {
     actions: {
-        async listListas({ search, user_only }: { search?: ListaFilters, user_only?: boolean } = {}): Promise<ListaPaginada> {
-            const response = await api.get<ListaPaginada>(`/listas`,
-                {
-                    params: search,
+        async listListas(
+            {
+                search,
+                user_only
+            }: {
+                search?: ListaFilters,
+                user_only?: boolean
+            } = {}
+        ): Promise<ListaPaginada> {
+
+            const response = await api.get<ListaPaginada>('/listas', {
+                params: {
+                    ...search,
+                    user_only
                 }
-            );
+            });
+
             return response.data;
         },
         async moviesAddToList(search: string): Promise<MovieWithDirectors[]> {
@@ -30,7 +41,7 @@ export const useListaStore = defineStore('listas', {
             const response = await api.post<Lista>('/listas', listaData);
             return response.data;
         },
-        async updateLista(id:number, listaData: UpdateLista): Promise<ListaResponse> {
+        async updateLista(id: number, listaData: UpdateLista): Promise<ListaResponse> {
             const response = await api.put<ListaResponse>(`/listas/${id}`, listaData);
             return response.data;
         },

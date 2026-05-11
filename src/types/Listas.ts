@@ -1,11 +1,13 @@
 export interface ListaFilters {
-    search?: string;
-    tags?: number[];    // Array de IDs enviado como query param
-    recentes?: boolean;
-    idioma?: string;       // Sigla do idioma (ex: 'en', 'es')
-    popular?: boolean;
-    page?: number;         // Para o controle da paginação
-    perfil?: boolean;
+    search?: string
+    tags?: string[]
+    orderBy?: string
+    privacy?: string;
+    top_listas?: boolean;
+    curadorias?: boolean;
+    mais_ativas?: boolean;
+    page?: number; 
+    idioma?: string; // 'en', 'es'
 }
 
 export interface User {
