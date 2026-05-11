@@ -210,9 +210,9 @@ onClickOutside(target, () => {
 <template>
     <Navbar />
     <div class="bg-hero min-h-screen pt-24 pb-10">
-        <div class="max-w-4xl mx-auto px-4 relative z-30">
+        <div class="max-w-4xl mx-auto px-4 relative">
 
-            <div class="flex flex-col items-center mb-12">
+            <div class="flex flex-col items-center mb-12 relative z-10">
                 <div class="relative w-full flex items-center justify-center mb-6">
                     <input v-model="listaData.titulo" type="text"
                         class="text-zinc-100 font-black text-4xl lg:text-5xl bg-transparent border-none outline-none focus:ring-0 text-center w-full placeholder:text-zinc-700"
@@ -245,7 +245,7 @@ onClickOutside(target, () => {
                 </div>
             </div>
 
-            <div class="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 mb-12 shadow-2xl">
+            <div class="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 mb-12 shadow-2xl relative z-50">
                 <div class="flex flex-col gap-4">
                     <div class="flex items-center justify-between px-1">
                         <label class="text-[#00FCFF] text-[10px] font-black uppercase tracking-[0.2em]">
@@ -262,24 +262,36 @@ onClickOutside(target, () => {
                     </div>
 
                     <div class="relative">
-                        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus-within:border-[#00FCFF]/40 focus-within:bg-white/10 transition-all">
-                            <input :value="searchQuery" @input="searchQuery = ($event.target as HTMLInputElement).value"
-                                type="text" placeholder="Digite o nome de um filme..."
-                                class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-lg placeholder:text-zinc-600">
+                        <div class="flex items-center bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#00FCFF] transition-all">
+                            <input :value="searchQuery"
+                                @input="searchQuery = ($event.target as HTMLInputElement).value" type="text"
+                                placeholder="Busque um filme para adicionar..."
+                                class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm font-medium">
                         </div>
-                        
-                        <div ref="target" v-if="moviesList.length > 0" 
-                            class="z-100 absolute left-0 top-full w-full mt-2 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
-                            <div v-for="movie in moviesList" :key="movie.id"
-                                @click="addMovie(movie.id, movie.poster_thumb_br)" 
-                                class="p-4 flex items-center gap-4 hover:bg-[#00FCFF]/5 cursor-pointer border-b border-white/5 last:border-none group">
+
+                        <div ref="target" v-if="(isSearching && searchQuery.length > 3) || moviesList.length > 0"
+                            class="absolute left-0 top-full w-full mt-2 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,1)] max-h-80 overflow-y-auto z-[100] backdrop-blur-xl">
+                            
+                            <div v-if="isSearching" class="p-4 text-zinc-100 text-sm font-bold flex items-center gap-2">
+                                <div class="w-4 h-4 border-2 border-[#00FCFF] border-t-transparent rounded-full animate-spin"></div>
+                                Carregando...
+                            </div>
+
+                            <div v-else v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id, movie.poster_thumb_br)" 
+                                class="flex p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer transition-colors group items-center">
+                                
                                 <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)" class="w-10 h-14 object-cover rounded-md shadow-md">
-                                <div class="flex-1">
+                                
+                                <div class="ml-3 flex-1">
                                     <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
                                         {{ movie.titulo_br || movie.titulo_original }}
                                     </p>
                                     <p class="text-zinc-500 text-xs mt-1">{{ movie.release_date?.split('-')[0] }}</p>
+                                    <p class="text-zinc-500 text-[10px] line-clamp-1">
+                                        {{ movie.diretores?.map(d => d.nome).join(', ') || '' }}
+                                    </p>
                                 </div>
+                                
                                 <span class="text-[#00FCFF] text-xs font-black opacity-0 group-hover:opacity-100 transition-all">+ Adicionar</span>
                             </div>
                         </div>
@@ -289,11 +301,11 @@ onClickOutside(target, () => {
 
             <draggable v-model="listaData.movies" item-key="id" tag="section" handle=".drag-handle" 
                 ghost-class="opacity-20"
-                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-6">
+                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-6 relative z-0">
                 <template #item="{ element: movie }">
                     <div class="relative group">
                         <button @click.stop="removerFilmeDaLista(movie.id)" 
-                            class="absolute -top-2 -right-2 z-50 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-xl">
+                            class="absolute -top-2 -right-2 z-20 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-xl">
                             <span class="text-xs">×</span>
                         </button>
 
@@ -321,32 +333,3 @@ onClickOutside(target, () => {
     </div>
     <TheFooter />
 </template>
-
-<style scoped>
-/* Transição suave de troca de modo */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-    transition: all 0.3s ease;
-}
-
-.fade-slide-enter-from {
-    opacity: 0;
-    transform: translateY(10px);
-}
-
-.fade-slide-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
-}
-
-/* Transição simples para o campo de busca */
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-}
-</style>
