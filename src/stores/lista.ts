@@ -56,7 +56,7 @@ export const useListaStore = defineStore('listas', {
             });
             return response.data;
         },
-        async likeLista(listaId: number, movieIds: number[]): Promise<LikeResponse> {
+        async likeLista(listaId: number): Promise<LikeResponse> {
             const response = await api.post<LikeResponse>(`/listas/${listaId}/like`);
             return response.data;
         },

@@ -5,6 +5,7 @@ import TheFooter from '@/components/TheFooter.vue';
 import movies_json from '../assets/movies.json';
 import IconAddReview from '@/components/icons/IconAddReview.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
+import IconLike from '@/components/icons/IconLike.vue';
 import IconDrag from '@/components/icons/IconDrag.vue';
 import IconNavHam from '@/components/icons/IconNavHam.vue';
 import IconDelete from '@/components/icons/IconDelete.vue';
@@ -95,12 +96,31 @@ async function loadLista() {
         const listaData = response;
 
         lista.value = listaData;
+
         if (user.value?.id == lista.value.user_id) {
             isUserOwnList.value = true;
         }
 
     } catch (error) {
         console.error("Erro na comunicação com a API:", error);
+    } finally {
+        isSearching.value = false;
+    }
+};
+
+const likeLista = async () => {
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        if (!lista.value?.id) {
+            throw new Error('Lista não encontrada');
+        }
+        const likeResponse = await listaStore.likeLista(lista.value?.id);
+        lista.value.is_liked = likeResponse.is_liked;
+        lista.value.likes_count = likeResponse.likes_count;
+    } catch (error) {
+        console.error("Erro na operação:", error);
     } finally {
         isSearching.value = false;
     }
@@ -285,7 +305,26 @@ const getMovieParam = (movie: any) => {
     <Navbar />
     <div class="bg-hero min-h-screen pt-24 pb-10">
         <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-30">
+            <div class="flex items-center gap-2">
 
+                <!-- Ícone curtido -->
+                <div @click="likeLista"
+                    class="w-8 h-8 rounded-full flex items-center justify-center border transition-all" :class="lista?.is_liked
+                        ? 'bg-[#ff0077]/20 border-[#ff0077]/40 text-[#ff0077]'
+                        : 'bg-white/5 border-white/10 text-zinc-500'">
+                    <IconLike class='hover:text-red-500 w-5 h-5' />
+                </div>
+
+                <div class="flex flex-col leading-none">
+                    <span class="text-zinc-100 text-xs font-black">
+                        {{ lista?.likes_count || 0 }}
+                    </span>
+
+                    <span class="text-zinc-500 text-[9px] uppercase tracking-widest">
+                        Likes
+                    </span>
+                </div>
+            </div>
             <Transition name="fade-slide" mode="out-in">
                 <!-- MODO EDIÇÃO -->
                 <div v-if="isEditMode" key="edit" class="flex flex-col items-center">

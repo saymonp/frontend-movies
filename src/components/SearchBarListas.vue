@@ -8,21 +8,22 @@ export interface ListaFilters {
     search?: string
     tags?: string[]
     orderBy?: string
-    privacy?: string;
-    top_listas?: boolean
-    curadorias?: boolean
-    mais_ativas?: boolean
+    user_only?: boolean;
+    top_listas?: boolean;
+    curadorias?: boolean;
+    mais_ativas?: boolean;
+    filterValue?: number
 }
 
 const props = defineProps<{
     filters: ListaFilters
     isSearching: boolean
-    filterValue: number
+    maxLikes: number
 }>()
 
 const emit = defineEmits<{
     (e: 'update:filters', value: ListaFilters): void
-    (e: 'update:filterValue', value: number): void
+    //(e: 'update:filterValue', value: number): void
 }>()
 
 const target = ref(null)
@@ -43,6 +44,7 @@ const availableTags = [
 ]
 
 const updateFilter = (key: keyof ListaFilters, value: any) => {
+    console.log(props.maxLikes);
     emit('update:filters', {
         ...props.filters,
         [key]: value
@@ -63,9 +65,9 @@ const toggleTag = (tag: string) => {
     updateFilter('tags', currentTags)
 }
 
-const updateFilterValue = (value: string) => {
-    emit('update:filterValue', Number(value))
-}
+//const updateFilterValue = (value: string) => {
+//    emit('update:filterValue', Number(value))
+//}
 
 const toggleBooleanFilter = (tag: string) => {
     if (tag === 'Top Listas') {
@@ -176,16 +178,16 @@ const isFilterActive = (tag: string) => {
                             </span>
 
                             <span class="font-black px-2 py-0.5 rounded text-[#d919ff] bg-[#ff0077]/10">
-                                {{ filterValue }}
+                                {{ filters.filterValue }}
                             </span>
                         </div>
 
                         <input type="range"
                             min="0"
-                            max="1000"
-                            step="10"
-                            :value="filterValue"
-                            @input="e => updateFilterValue((e.target as HTMLInputElement).value)"
+                            :max="maxLikes"
+                            step="1"
+                            :value="filters.filterValue"
+                            @change="e => updateFilter('filterValue', (e.target as HTMLSelectElement).value)"
                             class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#d919ff]">
                     </div>
                 </div>
@@ -229,15 +231,15 @@ const isFilterActive = (tag: string) => {
                             </label>
 
                             <select
-                                :value="filters.privacy"
-                                @change="e => updateFilter('privacy', (e.target as HTMLSelectElement).value)"
+                                :value="filters.user_only"
+                                @change="e => updateFilter('user_only', (e.target as HTMLSelectElement).value)"
                                 class="bg-white/5 border border-white/10 p-2 rounded-lg text-[10px] text-white outline-none focus:border-[#ff0077] cursor-pointer">
 
-                                <option class="bg-zinc-900" value="publicas">
+                                <option class="bg-zinc-900" value=false>
                                     Públicas
                                 </option>
 
-                                <option class="bg-zinc-900" value="minhas">
+                                <option class="bg-zinc-900" value=true>
                                     Minhas Listas
                                 </option>
                             </select>

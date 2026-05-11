@@ -2,12 +2,13 @@ export interface ListaFilters {
     search?: string
     tags?: string[]
     orderBy?: string
-    privacy?: string;
+    user_only?: boolean;
     top_listas?: boolean;
     curadorias?: boolean;
     mais_ativas?: boolean;
     page?: number; 
     idioma?: string; // 'en', 'es'
+    filterValue: number;
 }
 
 export interface User {

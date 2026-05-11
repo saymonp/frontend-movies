@@ -3,6 +3,8 @@ import { ref, onMounted, watch, nextTick } from 'vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue'
 import IconStar from '@/components/icons/IconStar.vue';
 import IconReviewStar from '@/components/icons/IconReviewStar.vue';
+import IconLike from '@/components/icons/IconLike.vue';
+import IconMovie from '@/components/icons/IconMovie.vue';
 import TheFooter from '@/components/TheFooter.vue';
 import Navbar from '@/components/Navbar.vue';
 import { onClickOutside } from '@vueuse/core'
@@ -50,10 +52,11 @@ const filterListas = ref<ListaFilters>({
     search: '',
     tags: [],
     orderBy: 'likes',
-    privacy: 'publicas',
+    user_only: false,
     top_listas: false,
     curadorias: false,
-    mais_ativas: false
+    mais_ativas: false,
+    filterValue: 0
 })
 // Função que observa mudanças e recarrega os filmes
 watch(
@@ -187,14 +190,7 @@ async function loadListas(filters: ListaFilters) {
 
     isSearching.value = true;
     try {
-        let userListas = false;
-        if (filters.privacy == 'minhas') {
-            userListas = true;
-        }
-        if (filters.privacy == 'publicas') {
-            userListas = false;
-        }
-        const response = await listaStore.listListas({ search: filters, user_only: userListas });
+        const response = await listaStore.listListas({ search: filters, user_only: filters.user_only });
 
         listas.value = response;
     } catch (error) {
@@ -202,7 +198,8 @@ async function loadListas(filters: ListaFilters) {
     } finally {
         isSearching.value = false;
     }
-}
+};
+
 // Função para checar se a resposta é de importação
 function isImportingResponse(res: any): res is DinamicMovieInsertionResponse {
     return res && res.status === 'processando';
@@ -318,11 +315,12 @@ const getMovieParam = (movie: any) => {
 };
 
 const movieStyles = [
-  { zIndex: 'z-40', ml: '', opacity: 'opacity-100', hover: 'group-hover:-translate-y-2', ring: 'ring-2 ring-[#7075AB]' },
-  { zIndex: 'z-30', ml: '-ml-2 sm:-ml-14 lg:-ml-16', opacity: 'opacity-90', hover: 'group-hover:-translate-y-1', ring: 'ring-1 ring-white/20' },
-  { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-80', hover: '', ring: 'ring-1 ring-white/10' },
-  { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-70', hover: '', ring: 'ring-1 ring-white/5' },
+    { zIndex: 'z-40', ml: '', opacity: 'opacity-100', hover: 'group-hover:-translate-y-2', ring: 'ring-2 ring-[#7075AB]' },
+    { zIndex: 'z-30', ml: '-ml-2 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: 'group-hover:-translate-y-1', ring: 'ring-1 ring-white/20' },
+    { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/10' },
+    { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/5' },
 ];
+
 </script>
 
 <template>
@@ -403,7 +401,8 @@ const movieStyles = [
                         :diretores="diretores" :idiomas="idiomasDisponiveis" :isSearching="isSearching"
                         v-model:filterValue="filterValue" @search="loadMovies(filterMovies)" />
                     <SearchBarListas v-if="searchMode == 'lists'" v-model:filters="filterListas"
-                        :isSearching="isSearching" v-model:filterValue="filterValue" />
+                        :isSearching="isSearching" 
+                        :maxLikes="listas.data.length? Math.max(...listas.data.map((lista: { likes_count: any; })  => lista.likes_count)) : 0" />
                 </div>
                 <TransitionGroup v-if="searchMode == 'movies'" tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
@@ -491,38 +490,129 @@ const movieStyles = [
                         </div>
                     </div>
                 </TransitionGroup>
-                <TransitionGroup v-if="searchMode=='lists'" tag="section" name="list">
-                <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div v-for="lista in listas?.data">
-                        <RouterLink :to="{
-                            name: 'ListView',
-                            params: {
-                                id: lista.id,
-                                slug: lista.slug
-                            }
-                        }">
-                            <div class="cursor-pointer hover:scale-105 transition-transform">
-                                <div>
-                                    <h4 class="text-white font-bold text-md p-2">{{ lista.titulo }}</h4>
-                                    <div class="flex items-center justify-center pl-1">
-                                        <template v-for="(style, index) in movieStyles" :key="index">
-                                            <!-- Só renderiza se o filme existir na lista -->
-                                            <div v-if="lista.movies[index]"
-                                                class="relative w-28 sm:w-28 lg:w-32 transition-transform"
-                                                :class="[style.zIndex, style.ml, style.opacity, style.hover]">
-                                                <img :src="getImageUrl(lista.movies[index].poster_thumb_br)"
-                                                    class="w-full h-auto rounded-sm"
-                                                    :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
-                                            </div>
-                                        </template>
+                <!-- LISTAGEM DE LISTAS -->
+                <TransitionGroup v-if="searchMode == 'lists'" tag="section" name="list"
+                    class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-4 gap-6 max-w-3xl mx-auto pt-2.5">
+                    <RouterLink v-for="lista in listas?.data" :key="lista.id" :to="{
+                        name: 'ListView',
+                        params: {
+                            id: lista.id,
+                            slug: lista.slug
+                        }
+                    }" class="group">
+                        <div
+                            class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md hover:border-[#d919ff]/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(217,25,255,0.15)]">
 
+                            <!-- CAPAS -->
+                            <div class="relative h-40 flex items-center justify-center overflow-hidden px-4 pt-5">
+
+                                <template v-for="(style, index) in movieStyles" :key="index">
+                                    <div v-if="lista.movies[index]"
+                                        class="relative w-28 sm:w-28 lg:w-32 transition-transform"
+                                        :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+                                        <img :src="getImageUrl(lista.movies[index].poster_thumb_br)"
+                                            class="w-28 lg:w-32 rounded-xl object-cover shadow-2xl"
+                                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
                                     </div>
+
+                                </template>
+
+                                <!-- Overlay -->
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-t from-[#020036] via-transparent to-transparent">
                                 </div>
                             </div>
-                        </RouterLink>
-                    </div>
-                </div>
+
+                            <!-- CONTEÚDO -->
+                            <div class="p-3">
+
+                                <!-- Título -->
+                                <h4
+                                    class="text-zinc-100 font-black text-base line-clamp-2 group-hover:text-[#d919ff] transition-colors">
+                                    {{ lista.titulo }}
+                                </h4>
+
+                                <!-- Descrição -->
+                                <p v-if="lista.comentario" class="text-zinc-500 text-sm mt-1 line-clamp-1">
+                                    {{ lista.comentario }}
+                                </p>
+
+                                <!-- Tags -->
+                                <!--
+                                <div v-if="lista.tags?.length" class="flex flex-wrap gap-2 mt-2">
+                                    <span v-for="tag in lista.tags.slice(0, 3)" :key="tag.id"
+                                        class="px-2 py-1 rounded-full bg-[#d919ff]/10 border border-[#d919ff]/20 text-[#d919ff] text-[7px] uppercase tracking-widest font-black">
+                                        {{ tag.nome }}
+                                    </span>
+                                </div>
+                                -->
+
+                                <!-- Footer -->
+                                <div class="flex items-center justify-between mt-2">
+
+                                    <!-- Likes -->
+                                    <div class="flex items-center gap-2">
+
+                                        <!-- Ícone curtido -->
+                                        <div class="w-8 h-8 rounded-full flex items-center justify-center border transition-all"
+                                            :class="lista.is_liked
+                                                ? 'bg-[#ff0077]/20 border-[#ff0077]/40 text-[#ff0077]'
+                                                : 'bg-white/5 border-white/10 text-zinc-500'">
+                                            <IconLike class='w-5 h-5' />
+                                        </div>
+
+                                        <div class="flex flex-col leading-none">
+                                            <span class="text-zinc-100 text-xs font-black">
+                                                {{ lista.likes_count || 0 }}
+                                            </span>
+
+                                            <span class="text-zinc-500 text-[9px] uppercase tracking-widest">
+                                                Likes
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quantidade de filmes -->
+                                    <div
+                                        class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1">
+                                        <IconMovie class="text-zinc-300 w-4 h-4" />
+                                        <span class="text-zinc-300 text-xs font-bold">
+                                            {{ lista.movies.length }}
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </RouterLink>
                 </TransitionGroup>
+
+                <!-- PAGINAÇÃO LISTAS -->
+                <div v-if="searchMode == 'lists' && listas" class="flex items-center justify-center gap-2 mt-10 mb-12">
+
+                    <!-- VOLTAR -->
+                    <button @click="changeListaPage(listas.current_page - 1)" :disabled="listas.current_page === 1"
+                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        <IconChevronLeft class="w-4 h-4" />
+                    </button>
+
+                    <!-- PÁGINAS -->
+                    <div class="flex gap-1">
+                        <button v-for="page in listas.last_page" :key="page" @click="changeListaPage(page)"
+                            class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="listas.current_page === page
+                                ? 'bg-[#d919ff]/20 border-[#d919ff] text-[#d919ff]'
+                                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
+                            {{ page }}
+                        </button>
+                    </div>
+
+                    <!-- PRÓXIMO -->
+                    <button @click="changeListaPage(listas.current_page + 1)"
+                        :disabled="listas.current_page === listas.last_page"
+                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        <IconChevronRight class="w-4 h-4" />
+                    </button>
+                </div>
                 <!-- Paginação -->
                 <div v-if="searchMode == 'movies'" class="flex items-center justify-center gap-2 mt-8 mb-12">
                     <!-- Botão Voltar -->
