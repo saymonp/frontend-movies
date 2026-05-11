@@ -15,11 +15,12 @@ import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
 import { useMovieStore } from '@/stores/movie';
 import { onClickOutside, transition } from '@vueuse/core';
+import { useRouter } from 'vue-router';
 import i18n from '@/i18n';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
-
+const router = useRouter();
 const listaStore = useListaStore();
 const target = ref(null);
 const isSearching = ref(false);
@@ -42,8 +43,33 @@ const getInitialState = (): CreateLista => ({
 
 const listaData = ref<CreateLista>(getInitialState());
 
+function generateSlug(title: string) {
+  return title
+    .toLowerCase()
+    .normalize('NFD') // separa acentos
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[^a-z0-9\s-]/g, '') // remove caracteres especiais
+    .trim()
+    .replace(/\s+/g, '-') // espaços -> hífen
+    .replace(/-+/g, '-'); // evita múltiplos hífens
+}
+
 const criarLista = async () => {
-    console.log(listaData.value);
+    if (isSearching.value) return;
+
+    isSearching.value = true;
+    try {
+        listaData.value.slug = generateSlug(listaData.value.titulo);
+        const newList = await listaStore.createLista(listaData.value);
+        const link = `/lista/${newList.id}-${newList.slug}`;
+        router.push(link);
+    }catch(error){
+
+    }finally{
+        isSearching.value = false;
+    }
+
+    
 }
 // Para limpar o formulário após o sucesso:
 const resetForm = () => {
@@ -80,15 +106,23 @@ const searchQuery = ref('');
 const getImageUrl = (path: string) => {
     if (!path) return '/placeholder.png';
 
-    // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
+    // 1. Se já for uma URL absoluta (S3, Cloudinary, etc), retorna direto
     if (path.startsWith('http')) {
         return path;
     }
 
-    // Se for caminho relativo, remove uma possível barra extra no início para evitar //
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    // 2. Se o path começa com "/" ou "\/", identifica que é um caminho do TMDB
+    // Exemplo: /t4To8feUSysyBs4tlBAbXIrKlCv.jpg
+    if (path.startsWith('/') || path.startsWith('\\/')) {
+        const tmdbBaseUrl = 'https://image.tmdb.org/t/p/w500';
+        // Remove a barra invertida se ela existir para limpar o path
+        const cleanTmdbPath = path.replace('\\/', '/');
+        return `${tmdbBaseUrl}${cleanTmdbPath}`;
+    }
 
-    return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
+    // 3. Caso contrário, assume que é uma imagem local do seu storage
+    const cleanLocalPath = path.startsWith('/') ? path.substring(1) : path;
+    return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanLocalPath}`;
 };
 
 async function loadMovies() {
@@ -168,160 +202,123 @@ const getMovieParam = (movie: any) => {
     // Retorna o formato 235-nome-do-filme
     return `${movie.id}-${slug}`;
 };
+onClickOutside(target, () => {
+    searchQuery.value = '';
+    moviesList.value = [];
+});
 </script>
 <template>
     <Navbar />
     <div class="bg-hero min-h-screen pt-24 pb-10">
-        <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-30">
+        <div class="max-w-4xl mx-auto px-4 relative z-30">
 
-
-            <!-- MODO EDIÇÃO -->
-            <div key="edit" class="flex flex-col items-center">
-                <div class="relative w-full flex items-center justify-center mb-4">
+            <div class="flex flex-col items-center mb-12">
+                <div class="relative w-full flex items-center justify-center mb-6">
                     <input v-model="listaData.titulo" type="text"
-                        class="text-zinc-100 font-black text-3xl border bg-white/5 border-black p-2 rounded outline-none focus:border-[#00FCFF] drop-shadow-lg text-center w-full max-w-xl"
+                        class="text-zinc-100 font-black text-4xl lg:text-5xl bg-transparent border-none outline-none focus:ring-0 text-center w-full placeholder:text-zinc-700"
                         placeholder="Título da lista">
+                    
                     <button @click="criarLista"
-                        class="absolute right-0 hidden lg:block bg-[#00FCFF]/20 border border-[#00FCFF]/50 rounded-lg py-1.5 px-3 hover:bg-[#00FCFF]/30 cursor-pointer transition-all shadow-[0_0_15px_rgba(0,252,255,0.2)]">
-                        <p class="text-zinc-100 text-[9px] uppercase tracking-tighter font-bold">Salvar Lista</p>
+                        class="absolute -right-4 hidden lg:block bg-[#00FCFF]/10 border border-[#00FCFF]/30 rounded-xl py-2 px-4 hover:bg-[#00FCFF]/20 cursor-pointer transition-all shadow-[0_0_20px_rgba(0,252,255,0.1)]">
+                        <p class="text-[#00FCFF] text-[10px] uppercase tracking-widest font-black">Criar Lista</p>
                     </button>
-
                 </div>
 
                 <textarea v-model="listaData.comentario"
-                    class="w-full text-zinc-100 font-medium text-sm border bg-white/5 border-black p-4 rounded mb-8 outline-none focus:border-[#00FCFF] drop-shadow-lg text-center min-h-[100px]"
-                    placeholder="Adicione um comentário sobre esta lista..."></textarea>
-                <div class="w-full flex flex-col gap-2 mb-8">
-                    <label class="text-[#00FCFF] text-[10px] font-bold uppercase tracking-widest ml-1">
-                        Tags da Lista
-                    </label>
+                    class="w-full max-w-2xl text-zinc-400 font-medium text-base bg-transparent border-none outline-none focus:ring-0 text-center min-h-[80px] resize-none placeholder:text-zinc-800"
+                    placeholder="Adicione uma descrição para esta lista..."></textarea>
 
-                    <div
-                        class="flex flex-wrap items-center gap-2 p-2 bg-white/5 border border-white/10 rounded-xl focus-within:border-[#00FCFF]/50 transition-all">
-
-                        <!-- Badges das Tags já adicionadas -->
+                <div class="w-full max-w-xl flex flex-col items-center gap-3 mt-4">
+                    <div class="flex flex-wrap justify-center gap-2">
                         <span v-for="(tag, index) in listaData.tags" :key="index"
-                            class="flex items-center gap-1 bg-[#00FCFF]/10 border border-[#00FCFF]/30 text-[#00FCFF] text-[10px] font-bold py-1 px-2 rounded-lg uppercase">
+                            class="flex items-center gap-2 bg-[#00FCFF]/5 border border-[#00FCFF]/20 text-[#00FCFF] text-[10px] font-bold py-1.5 px-3 rounded-full uppercase tracking-wider">
                             {{ tag }}
-                            <button @click="removerTag(index)" class="hover:text-white transition-colors">
-                                <span class="text-xs">×</span>
-                            </button>
+                            <button @click="removerTag(index)" class="hover:text-white transition-colors text-xs">×</button>
                         </span>
-
-                        <!-- Input da Tag -->
+                    </div>
+                    
+                    <div class="relative w-full max-w-xs">
                         <input v-model="novaTag" @keydown.enter.prevent="adicionarTag" type="text"
-                            placeholder="Adicione uma tag e aperte Enter..."
-                            class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs p-1 min-w-[150px]" />
+                            placeholder="Adicionar tag..."
+                            class="w-full bg-white/5 border border-white/5 rounded-full px-4 py-1.5 text-zinc-100 text-[11px] text-center outline-none focus:border-[#00FCFF]/50 transition-all" />
                     </div>
-                    <p class="text-zinc-500 text-[9px] ml-1">Pressione Enter para adicionar cada tag.</p>
                 </div>
             </div>
 
-
-        </div>
-
-        <div
-            class="bg-white/5 backdrop-blur-xl border border-[#00FCFF]/20 rounded-2xl p-6 shadow-2xl relative z-50 mb-8">
-            <div class="flex flex-col gap-3">
-                <label class="text-[#00FCFF] text-xs font-bold uppercase tracking-wider ml-1">
-                    Adicionar Filme para sua lista
-                </label>
-                <div class="relative">
-                    <div
-                        class="flex items-center bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#00FCFF] transition-all">
-                        <input :value="searchQuery" @input="searchQuery = ($event.target as HTMLInputElement).value"
-                            type="text" placeholder="Busque um filme para adicionar..."
-                            class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm font-medium">
-                    </div>
-                    <div v-if="isSearching && searchQuery.length > 3"
-                        class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
-                        <p class="p-4 text-zinc-100 text-sm font-bold">Carregando...</p>
-                    </div>
-                    <div ref="target" v-if="moviesList.length > 0"
-                        class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
-                        <div v-for="movie in moviesList" :key="movie.id"
-                            @click="addMovie(movie.id, movie.poster_thumb_br)" class="p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
-                                    transition-colors group">
-                            <div class="flex">
-                                <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF]">{{
-                                    movie.titulo_br || movie.titulo_original
-                                    }}</p>
-                                <p class="ml-3 text-zinc-500 text-[12px] font-bold">{{ movie.rating || '' }}</p>
+            <div class="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 mb-12 shadow-2xl">
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between px-1">
+                        <label class="text-[#00FCFF] text-[10px] font-black uppercase tracking-[0.2em]">
+                            Explorar Filmes
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <span class="text-zinc-500 text-[10px] font-bold uppercase group-hover:text-zinc-300 transition-colors">Pública</span>
+                            <div class="relative">
+                                <input type="checkbox" v-model="listaData.publica" class="peer hidden">
+                                <div class="w-8 h-4 bg-zinc-800 rounded-full border border-white/10 peer-checked:bg-[#00FCFF]/20 peer-checked:border-[#00FCFF]/50 transition-all"></div>
+                                <div class="absolute left-1 top-1 w-2 h-2 bg-zinc-500 rounded-full peer-checked:left-5 peer-checked:bg-[#00FCFF] transition-all"></div>
                             </div>
-                            <p class="text-zinc-500 text-[10px]">{{movie.diretores?.map(diretor =>
-                                diretor.nome).join(', ') || ''}}</p>
+                        </label>
+                    </div>
 
+                    <div class="relative">
+                        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus-within:border-[#00FCFF]/40 focus-within:bg-white/10 transition-all">
+                            <input :value="searchQuery" @input="searchQuery = ($event.target as HTMLInputElement).value"
+                                type="text" placeholder="Digite o nome de um filme..."
+                                class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-lg placeholder:text-zinc-600">
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <div>
-                <label class="flex items-end gap-2 cursor-pointer">
-                    <p class="text-zinc-300 font-medium text-sm text-center italic opacity-80">Lista
-                        Pública</p>
-
-                    <div class="relative flex items-center">
-                        <input type="checkbox" v-model="listaData.publica"
-                            class="peer appearance-none w-4 h-4 border border-white/20 rounded transition-all checked:bg-[#00FCFF] checked:border-[#00FCFF]">
-
-                        <span
-                            class="absolute left-1 text-[10px] font-bold text-black opacity-0 peer-checked:opacity-100">
-                            ✓
-                        </span>
-                    </div>
-                </label>
-            </div>
-        </div>
-
-        <!-- LISTAGEM DE FILMES (DRAGGABLE) -->
-        <div class="flex justify-end mb-4">
-            <button @click="" class="lg:hidden bg-white/5 border border-white/10 rounded-lg py-1.5 px-3">
-                <p class="text-zinc-100 text-[9px] uppercase font-bold">Salvar</p>
-            </button>
-        </div>
-
-        <draggable v-model="listaData.movies" item-key="id" tag="section" handle=".drag-handle" ghost-class="opacity-50"
-            class="grid grid-cols-2 sm:grid-cols-4 mt-4 gap-6 relative z-10">
-            <template #item="{ element: movie }">
-
-                <div class="movie-card group">
-                    <div class="flex flex-col items-center">
-                        <RouterLink :to="{
-                            name: 'MovieView',
-                            params: {
-                                lang: $i18n.locale,
-                                slug: getMovieParam(movie)
-                            }
-                        }" class="relative">
-                            <img :src="getImageUrl(movie.poster_thumb_br)"
-                                class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg">
-                        </RouterLink>
-
-                        <div class="w-full mt-3 text-center">
-                            <p class="text-sm font-bold text-zinc-100 truncate px-1">
-                                {{ movie.titulo_br || movie.titulo_original }}
-                            </p>
-                            <div class="flex items-center justify-between mt-2 px-1">
-                                <IconDelete @click.stop="removerFilmeDaLista(movie.id)"
-                                    class="w-6 h-6 text-[#ff0077] hover:scale-110 active:scale-90 cursor-pointer transition-all" />
-
-                                <span class="text-[10px] font-black text-zinc-400">IMDb {{ movie.rating
-                                    }}</span>
-
-                                <IconDrag
-                                    class="drag-handle w-6 h-6 text-zinc-500 hover:text-[#00FCFF] cursor-grab active:cursor-grabbing transition-colors" />
+                        
+                        <div ref="target" v-if="moviesList.length > 0" 
+                            class="z-100 absolute left-0 top-full w-full mt-2 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-h-60 overflow-y-auto">
+                            <div v-for="movie in moviesList" :key="movie.id"
+                                @click="addMovie(movie.id, movie.poster_thumb_br)" 
+                                class="p-4 flex items-center gap-4 hover:bg-[#00FCFF]/5 cursor-pointer border-b border-white/5 last:border-none group">
+                                <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)" class="w-10 h-14 object-cover rounded-md shadow-md">
+                                <div class="flex-1">
+                                    <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
+                                        {{ movie.titulo_br || movie.titulo_original }}
+                                    </p>
+                                    <p class="text-zinc-500 text-xs mt-1">{{ movie.release_date?.split('-')[0] }}</p>
+                                </div>
+                                <span class="text-[#00FCFF] text-xs font-black opacity-0 group-hover:opacity-100 transition-all">+ Adicionar</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </template>
-        </draggable>
+            </div>
 
+            <draggable v-model="listaData.movies" item-key="id" tag="section" handle=".drag-handle" 
+                ghost-class="opacity-20"
+                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-6">
+                <template #item="{ element: movie }">
+                    <div class="relative group">
+                        <button @click.stop="removerFilmeDaLista(movie.id)" 
+                            class="absolute -top-2 -right-2 z-50 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-xl">
+                            <span class="text-xs">×</span>
+                        </button>
+
+                        <div class="flex flex-col gap-3">
+                            <div class="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-800 shadow-2xl ring-1 ring-white/10 group-hover:ring-[#00FCFF]/50 transition-all">
+                                <img :src="getImageUrl(movie.poster_thumb_br)"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                
+                                <div class="drag-handle absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+                                    <IconDrag class="w-8 h-8 text-[#00FCFF]" />
+                                </div>
+                            </div>
+
+                            <div class="px-1 text-center">
+                                <p class="text-[11px] font-black text-zinc-100 uppercase tracking-tighter line-clamp-1">
+                                    {{ movie.titulo_br || movie.titulo_original }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </draggable>
+
+        </div>
     </div>
-
     <TheFooter />
 </template>
 
