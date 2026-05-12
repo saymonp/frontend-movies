@@ -8,7 +8,7 @@ export interface ListaFilters {
     mais_ativas?: boolean;
     page?: number; 
     idioma?: string; // 'en', 'es'
-    filterValue: number;
+    filterValue?: number;
 }
 
 export interface User {

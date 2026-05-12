@@ -28,11 +28,6 @@ export interface ReviewSummary {
     rating: number;
     user_id: number;
     movie_id: number;
-    poster_thumb_br: string;
-    poster_thumb_us: string;
-    titulo_original: string; // Título do filme
-    titulo_br: string;
-    titulo_en: string;
     likes_count: number;
     is_liked: boolean;
     tags: Tag[];
@@ -41,6 +36,9 @@ export interface ReviewSummary {
         id: number;
         poster_thumb_br: string;
         poster_thumb_us: string;
+        titulo_original: string;
+        titulo_br: string;
+        titulo_en: string;
     }
 }
 

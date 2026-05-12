@@ -32,15 +32,11 @@ const getImageUrl = (path: string) => {
 };
 
 const filterListas = ref<ListaFilters>({
-  search: '',
-  tags: [],
-  orderBy: 'likes',
-  user_only: false,
-  top_listas: false,
-  curadorias: false,
-  mais_ativas: false,
-  filterValue: 0
+  page: 1
 })
+const filterReviews = ref({
+  page: 1
+});
 // Dados fictícios para o exemplo
 const stats = ref({ watched: 128, reviews: 42 });
 
@@ -75,7 +71,7 @@ async function loadListas() {
 };
 
 async function loadReviews() {
-  // if (isSearching.value) return;
+  //if (isSearching.value) return;
 
   isSearching.value = true;
   try {
@@ -109,6 +105,9 @@ const movieStyles = [
 
 const changeListaPage = (page: number) => {
   filterListas.value.page = page;
+};
+const changeReviewPage = (page: number) => {
+  filterReviews.value.page = page;
 };
 
 </script>
@@ -212,7 +211,7 @@ const changeListaPage = (page: number) => {
               class="w-12 h-18 object-cover rounded-md shadow-lg">
             <div class="flex-1">
               <div class="flex justify-between items-start">
-                <h4 class="text-white font-bold text-sm">{{ review.titulo_br || review.titulo_original }}</h4>
+                <h4 class="text-white font-bold text-sm">{{ review.movie.titulo_br || review.movie.titulo_original }}</h4>
                 <span class="text-[#00FCFF] text-xs font-black">★ {{ review.rating }}</span>
               </div>
               <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ review.comentario }}</p>
@@ -220,6 +219,31 @@ const changeListaPage = (page: number) => {
           </div>
 
 
+        </div>
+        <!-- PAGINAÇÃO LISTAS -->
+        <div v-if="reviews" class="flex items-center justify-center gap-2 mt-10 mb-12">
+
+          <!-- VOLTAR -->
+          <button @click="changeListaPage(reviews.current_page - 1)" :disabled="reviews.current_page === 1"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronLeft class="w-4 h-4" />
+          </button>
+
+          <!-- PÁGINAS -->
+          <div class="flex gap-1">
+            <button v-for="page in reviews.last_page" :key="page" @click="changeListaPage(page)"
+              class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="reviews.current_page === page
+                ? 'bg-[#d919ff]/20 border-[#d919ff] text-[#d919ff]'
+                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
+              {{ page }}
+            </button>
+          </div>
+
+          <!-- PRÓXIMO -->
+          <button @click="changeListaPage(reviews.current_page + 1)" :disabled="reviews.current_page === reviews.last_page"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronRight class="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
