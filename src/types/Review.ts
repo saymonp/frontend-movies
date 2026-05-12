@@ -23,15 +23,25 @@ export interface ReviewPaginada {
 
 export interface ReviewSummary {
     id: number;
-    titulo: string;
+    titulo: string; // Título da Review
     comentario: string;
     rating: number;
     user_id: number;
-    movie_id: number
+    movie_id: number;
+    poster_thumb_br: string;
+    poster_thumb_us: string;
+    titulo_original: string; // Título do filme
+    titulo_br: string;
+    titulo_en: string;
     likes_count: number;
     is_liked: boolean;
     tags: Tag[];
-    user: User;
+    user: { id: number, nome: string, avatar: string };
+    movie: {
+        id: number;
+        poster_thumb_br: string;
+        poster_thumb_us: string;
+    }
 }
 
 export interface User {

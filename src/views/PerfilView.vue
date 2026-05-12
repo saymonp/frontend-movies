@@ -7,44 +7,43 @@ import type { ListaFilters, ListaPaginada } from '@/types/Listas';
 import { useListaStore } from '@/stores/lista';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
+import { useReviewStore } from '@/stores/review';
+import type { ReviewPaginada } from '@/types/Review';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 const listaStore = useListaStore();
+const reviewStore = useReviewStore();
 const isSearching = ref(false);
 const listas = ref<ListaPaginada>();
+const reviews = ref<ReviewPaginada>();
 
 const getImageUrl = (path: string) => {
   if (!path) return '/placeholder.png';
-
   // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
   if (path.startsWith('http')) {
-    return path;
-  }
 
+    return path;
+
+  }
   // Se for caminho relativo, remove uma possível barra extra no início para evitar //
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-
   return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
 };
+
 const filterListas = ref<ListaFilters>({
-    search: '',
-    tags: [],
-    orderBy: 'likes',
-    user_only: false,
-    top_listas: false,
-    curadorias: false,
-    mais_ativas: false,
-    filterValue: 0
+  search: '',
+  tags: [],
+  orderBy: 'likes',
+  user_only: false,
+  top_listas: false,
+  curadorias: false,
+  mais_ativas: false,
+  filterValue: 0
 })
 // Dados fictícios para o exemplo
 const stats = ref({ watched: 128, reviews: 42 });
 
-
-const reviews = ref([
-  { id: 101, movie: 'Blade Runner 2049', rating: 5, date: '2026-04-01', text: 'Visual estonteante...', poster: '/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg' },
-  { id: 102, movie: 'Máquina de Guerra', rating: 3, date: '2026-02-21', text: 'legal, contudo...', poster: '/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg' },
-]);
 
 // Controle do Modal de Edição
 const isEditModalVisible = ref(false);
@@ -75,9 +74,27 @@ async function loadListas() {
   }
 };
 
+async function loadReviews() {
+  // if (isSearching.value) return;
+
+  isSearching.value = true;
+  try {
+
+    const response = await reviewStore.listReviews({ user_only: true });
+
+    reviews.value = response;
+
+  } catch (error) {
+    console.error("Erro na comunicação com a API:", error);
+  } finally {
+    isSearching.value = false;
+  }
+};
+
 onMounted(() => {
   try {
     loadListas();
+    loadReviews();
   } catch (error) {
     console.error("Erro ao carregar:", error);
   }
@@ -91,7 +108,7 @@ const movieStyles = [
 ];
 
 const changeListaPage = (page: number) => {
-    filterListas.value.page = page;
+  filterListas.value.page = page;
 };
 
 </script>
@@ -158,62 +175,51 @@ const changeListaPage = (page: number) => {
           </div>
         </div>
         <!-- PAGINAÇÃO LISTAS -->
-                <div v-if="listas" class="flex items-center justify-center gap-2 mt-10 mb-12">
+        <div v-if="listas" class="flex items-center justify-center gap-2 mt-10 mb-12">
 
-                    <!-- VOLTAR -->
-                    <button @click="changeListaPage(listas.current_page - 1)" :disabled="listas.current_page === 1"
-                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-                        <IconChevronLeft class="w-4 h-4" />
-                    </button>
+          <!-- VOLTAR -->
+          <button @click="changeListaPage(listas.current_page - 1)" :disabled="listas.current_page === 1"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronLeft class="w-4 h-4" />
+          </button>
 
-                    <!-- PÁGINAS -->
-                    <div class="flex gap-1">
-                        <button v-for="page in listas.last_page" :key="page" @click="changeListaPage(page)"
-                            class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="listas.current_page === page
-                                ? 'bg-[#d919ff]/20 border-[#d919ff] text-[#d919ff]'
-                                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
-                            {{ page }}
-                        </button>
-                    </div>
+          <!-- PÁGINAS -->
+          <div class="flex gap-1">
+            <button v-for="page in listas.last_page" :key="page" @click="changeListaPage(page)"
+              class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="listas.current_page === page
+                ? 'bg-[#d919ff]/20 border-[#d919ff] text-[#d919ff]'
+                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
+              {{ page }}
+            </button>
+          </div>
 
-                    <!-- PRÓXIMO -->
-                    <button @click="changeListaPage(listas.current_page + 1)"
-                        :disabled="listas.current_page === listas.last_page"
-                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-                        <IconChevronRight class="w-4 h-4" />
-                    </button>
-                </div>
+          <!-- PRÓXIMO -->
+          <button @click="changeListaPage(listas.current_page + 1)" :disabled="listas.current_page === listas.last_page"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronRight class="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div class="mt-10">
         <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest mb-6 border-b border-white/10 pb-2">Minhas
           Reviews</h3>
 
-        <div class="flex flex-col gap-4">
-          <div @click="abrirDetalheReview(reviews[0])"
+        <div v-for="review in reviews?.data" class="flex flex-col gap-4">
+          <div @click="abrirDetalheReview(review.id)"
             class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
-            <img v-if="reviews[0]?.poster" :src="getImageUrl(reviews[0].poster)"
+            <img v-if="review" :src="getImageUrl(review.movie.poster_thumb_br)"
               class="w-12 h-18 object-cover rounded-md shadow-lg">
             <div class="flex-1">
               <div class="flex justify-between items-start">
-                <h4 class="text-white font-bold text-sm">{{ reviews[0]?.movie }}</h4>
-                <span class="text-[#00FCFF] text-xs font-black">★ {{ reviews[0]?.rating }}</span>
+                <h4 class="text-white font-bold text-sm">{{ review.titulo_br || review.titulo_original }}</h4>
+                <span class="text-[#00FCFF] text-xs font-black">★ {{ review.rating }}</span>
               </div>
-              <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ reviews[0]?.text }}</p>
+              <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ review.comentario }}</p>
             </div>
           </div>
-          <div @click="abrirDetalheReview(reviews[1])"
-            class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
-            <img v-if="reviews[0]?.poster" :src="getImageUrl(reviews[0].poster)"
-              class="w-12 h-18 object-cover rounded-md shadow-lg">
-            <div class="flex-1">
-              <div class="flex justify-between items-start">
-                <h4 class="text-white font-bold text-sm">{{ reviews[1]?.movie }}</h4>
-                <span class="text-[#00FCFF] text-xs font-black">★ {{ reviews[1]?.rating }}</span>
-              </div>
-              <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ reviews[1]?.text }}</p>
-            </div>
-          </div>
+
+
         </div>
       </div>
     </div>
