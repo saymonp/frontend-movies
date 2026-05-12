@@ -8,7 +8,9 @@ import { useListaStore } from '@/stores/lista';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
 import { useReviewStore } from '@/stores/review';
-import type { ReviewPaginada } from '@/types/Review';
+import type { ReviewPaginada, ReviewSummary } from '@/types/Review';
+import ReviewDetalhe from '@/components/ReviewDetalhe.vue';
+import { onClickOutside } from '@vueuse/core';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
@@ -17,6 +19,8 @@ const reviewStore = useReviewStore();
 const isSearching = ref(false);
 const listas = ref<ListaPaginada>();
 const reviews = ref<ReviewPaginada>();
+const reviewSelecionada = ref<ReviewSummary>();
+const target = ref(null);
 
 const getImageUrl = (path: string) => {
   if (!path) return '/placeholder.png';
@@ -43,10 +47,9 @@ const stats = ref({ watched: 128, reviews: 42 });
 
 // Controle do Modal de Edição
 const isEditModalVisible = ref(false);
-const selectedReview = ref(null);
 
 const abrirDetalheReview = (review: any) => {
-  selectedReview.value = { ...review }; // Clonagem para não editar direto na lista antes de salvar
+  reviewSelecionada.value = { ...review };
   isEditModalVisible.value = true;
 };
 
@@ -110,6 +113,49 @@ const changeReviewPage = (page: number) => {
   filterReviews.value.page = page;
 };
 
+const handleLike = async (reviewId: number) => {
+  isSearching.value = true;
+  try {
+    const likeResponse = await reviewStore.likeReview(reviewId);
+
+    // 1. Encontra a review específica dentro do array data
+    const review = reviews.value?.data.find(r => r.id === reviewId);
+
+    // 2. Se encontrar, atualiza os campos reativamente
+    if (review) {
+      review.is_liked = likeResponse.is_liked;
+      review.likes_count = likeResponse.likes_count;
+    }
+
+    // Se você também tiver o estado do modal (reviewSelecionada), atualize-o
+    if (reviewSelecionada.value && reviewSelecionada.value.id === reviewId) {
+      reviewSelecionada.value.is_liked = likeResponse.is_liked;
+      reviewSelecionada.value.likes_count = likeResponse.likes_count;
+    }
+
+  } catch (error) {
+    console.error("Erro na operação:", error);
+  } finally {
+    isSearching.value = false;
+  }
+};
+
+const handleExcluir = async (reviewId: number) => {
+  isSearching.value = true;
+  try {
+
+    const response = await reviewStore.deleteReview(reviewId);
+
+    if (response.status == 200 && reviews.value) {
+      reviews.value.data = reviews.value?.data.filter(reviews => reviews.id !== reviewId);
+      isEditModalVisible.value = false;
+    }
+  } catch (error) {
+    console.error("Erro na operação:", error);
+  } finally {
+    isSearching.value = false;
+  }
+};
 </script>
 
 <template>
@@ -204,23 +250,34 @@ const changeReviewPage = (page: number) => {
         <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest mb-6 border-b border-white/10 pb-2">Minhas
           Reviews</h3>
 
-        <div v-for="review in reviews?.data" class="flex flex-col gap-4">
+        <div v-for="review in reviews?.data" :key="review.id" class="flex flex-col gap-4">
+          <ReviewDetalhe ref="target" :is-open="isEditModalVisible" :review="review" @close="isEditModalVisible = false"
+            @like="handleLike" @excluir="handleExcluir" />
           <div @click="abrirDetalheReview(review.id)"
             class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
+
             <img v-if="review" :src="getImageUrl(review.movie.poster_thumb_br)"
               class="w-12 h-18 object-cover rounded-md shadow-lg">
-            <div class="flex-1">
+
+            <div class="flex-1 flex flex-col">
               <div class="flex justify-between items-start">
-                <h4 class="text-white font-bold text-sm">{{ review.movie.titulo_br || review.movie.titulo_original }}</h4>
+                <h4 class="text-white font-bold text-sm">{{ review.movie.titulo_br || review.movie.titulo_original }}
+                </h4>
                 <span class="text-[#00FCFF] text-xs font-black">★ {{ review.rating }}</span>
               </div>
+
               <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ review.comentario }}</p>
+
+              <div class="flex justify-end mt-auto">
+                <p v-if="review.likes_count >= 1" class="text-zinc-500 text-[10px] uppercase">
+                  <span class="font-black text-zinc-300">{{ review.likes_count }}</span> Likes
+                </p>
+              </div>
+
             </div>
           </div>
-
-
         </div>
-        <!-- PAGINAÇÃO LISTAS -->
+        <!-- PAGINAÇÃO REVIEWS -->
         <div v-if="reviews" class="flex items-center justify-center gap-2 mt-10 mb-12">
 
           <!-- VOLTAR -->
@@ -240,7 +297,8 @@ const changeReviewPage = (page: number) => {
           </div>
 
           <!-- PRÓXIMO -->
-          <button @click="changeListaPage(reviews.current_page + 1)" :disabled="reviews.current_page === reviews.last_page"
+          <button @click="changeListaPage(reviews.current_page + 1)"
+            :disabled="reviews.current_page === reviews.last_page"
             class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
             <IconChevronRight class="w-4 h-4" />
           </button>

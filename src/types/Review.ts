@@ -31,7 +31,7 @@ export interface ReviewSummary {
     likes_count: number;
     is_liked: boolean;
     tags: Tag[];
-    user: { id: number, nome: string, avatar: string };
+    user: { id: number, name: string, avatar: string };
     movie: {
         id: number;
         poster_thumb_br: string;
@@ -72,9 +72,16 @@ export interface Review {
     movie_id: number;
     likes_count: number;
     is_liked: boolean;
-    user: User;
+    user:{ id: number, name: string, avatar: string };
     tags: Tag[];
-    movie: Movie;
+    movie: {
+        id: number;
+        poster_thumb_br: string;
+        poster_thumb_us: string;
+        titulo_original: string;
+        titulo_br: string;
+        titulo_en: string;
+    }
 }
 
 export interface CreateReview {
@@ -100,4 +107,5 @@ export interface LikeResponse {
 export interface ApiResponse<T = any> {
     message: string;
     data?: T;
+    status?: number;
 }
