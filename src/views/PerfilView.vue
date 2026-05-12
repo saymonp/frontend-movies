@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import Navbar from '@/components/Navbar.vue';
 import IconStar from '@/components/icons/IconStar.vue';
 import IconEditList from '@/components/icons/IconList.vue';
-import type { ListaPaginada } from '@/types/Listas';
+import type { ListaFilters, ListaPaginada } from '@/types/Listas';
 import { useListaStore } from '@/stores/lista';
 import { useAuthStore } from '@/stores/auth';
 import { storeToRefs } from 'pinia';
@@ -27,7 +27,16 @@ const getImageUrl = (path: string) => {
 
   return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
 };
-
+const filterListas = ref<ListaFilters>({
+    search: '',
+    tags: [],
+    orderBy: 'likes',
+    user_only: false,
+    top_listas: false,
+    curadorias: false,
+    mais_ativas: false,
+    filterValue: 0
+})
 // Dados fictícios para o exemplo
 const stats = ref({ watched: 128, reviews: 42 });
 
@@ -80,6 +89,11 @@ const movieStyles = [
   { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-80', hover: '', ring: 'ring-1 ring-white/10' },
   { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-70', hover: '', ring: 'ring-1 ring-white/5' },
 ];
+
+const changeListaPage = (page: number) => {
+    filterListas.value.page = page;
+};
+
 </script>
 
 <template>
@@ -143,6 +157,32 @@ const movieStyles = [
             </RouterLink>
           </div>
         </div>
+        <!-- PAGINAÇÃO LISTAS -->
+                <div v-if="listas" class="flex items-center justify-center gap-2 mt-10 mb-12">
+
+                    <!-- VOLTAR -->
+                    <button @click="changeListaPage(listas.current_page - 1)" :disabled="listas.current_page === 1"
+                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        <IconChevronLeft class="w-4 h-4" />
+                    </button>
+
+                    <!-- PÁGINAS -->
+                    <div class="flex gap-1">
+                        <button v-for="page in listas.last_page" :key="page" @click="changeListaPage(page)"
+                            class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="listas.current_page === page
+                                ? 'bg-[#d919ff]/20 border-[#d919ff] text-[#d919ff]'
+                                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
+                            {{ page }}
+                        </button>
+                    </div>
+
+                    <!-- PRÓXIMO -->
+                    <button @click="changeListaPage(listas.current_page + 1)"
+                        :disabled="listas.current_page === listas.last_page"
+                        class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                        <IconChevronRight class="w-4 h-4" />
+                    </button>
+                </div>
       </div>
 
       <div class="mt-10">
