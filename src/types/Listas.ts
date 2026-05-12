@@ -6,7 +6,7 @@ export interface ListaFilters {
     top_listas?: boolean;
     curadorias?: boolean;
     mais_ativas?: boolean;
-    page?: number; 
+    page?: number;
     idioma?: string; // 'en', 'es'
     filterValue?: number;
 }
@@ -165,4 +165,21 @@ export interface MovieWithDirectors {
     poster_thumb_br?: string;
     poster_thumb_us?: string;
     diretores?: MovieDirector[];
+}
+
+export interface ListasUser {
+    id: number;
+    titulo: string
+    movie_exists: boolean;
+
+}
+export interface ToggleResponse {
+    message: string;
+    attached: boolean;
+
+}
+
+export interface ToggleData {
+    lista_id: number;
+    movie_id: number;
 }

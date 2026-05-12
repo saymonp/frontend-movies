@@ -1,7 +1,7 @@
 // src/stores/auth.js
 import { defineStore } from 'pinia';
 import api from '@/services/api';
-import type { Lista, ListaFilters, ListaPaginada, ListaResponse, CreateLista, ApiResponse, LikeResponse, MovieWithDirectors, UpdateLista } from '@/types/Listas';
+import type { Lista, ListaFilters, ListaPaginada, ListaResponse, CreateLista, ApiResponse, LikeResponse, MovieWithDirectors, UpdateLista, ListasUser, ToggleResponse, ToggleData } from '@/types/Listas';
 
 
 export const useListaStore = defineStore('listas', {
@@ -58,6 +58,14 @@ export const useListaStore = defineStore('listas', {
         },
         async likeLista(listaId: number): Promise<LikeResponse> {
             const response = await api.post<LikeResponse>(`/listas/${listaId}/like`);
+            return response.data;
+        },
+        async indexUserListas(movieId: number): Promise<ListasUser> {
+            const response = await api.get<ListasUser>(`/listas/user/${movieId}`);
+            return response.data;
+        },
+        async toggleAddToList(toggleData: ToggleData): Promise<ToggleResponse> {
+            const response = await api.post<ToggleResponse>('/listas/toggle-movie', toggleData);
             return response.data;
         },
     }

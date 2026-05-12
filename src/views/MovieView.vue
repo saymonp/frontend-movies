@@ -212,6 +212,15 @@ const getMovieParam = (movie: any) => {
   return `${movie.id}-${slug}`;
 };
 
+const userListas = async () => {
+  try{
+
+  }catch(error){
+
+  }finally{
+    
+  }
+}
 const movieStyles = [
   { zIndex: 'z-40', ml: '', opacity: 'opacity-100', hover: 'group-hover:-translate-y-2', ring: 'ring-2 ring-[#7075AB]' },
   { zIndex: 'z-30', ml: '-ml-2 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: 'group-hover:-translate-y-1', ring: 'ring-1 ring-white/20' },
@@ -497,7 +506,7 @@ const movieStyles = [
           </h1>
 
           <!-- Container com Scroll Horizontal -->
-          <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pb-4 custom-scrollbar">
+          <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pt-5 pb-4 custom-scrollbar">
             <div v-for="movieRel in moviesRelacionados" :key="movieRel.id"
               class="movie-card flex flex-col items-center min-w-[130px] sm:min-w-[160px] lg:min-w-[150px] snap-start">
               <RouterLink :to="{
@@ -516,10 +525,10 @@ const movieStyles = [
                   {{ movieRel.titulo_br || movieRel.titulo_original }}
                 </p>
 
-                <div class="flex items-center justify-between mt-1 px-1">
+                <div class="flex items-center justify-center mt-1 px-1">
                   <IconAddReview class="w-4 h-4 text-[#97A7CB] hover:text-[#00FCFF]" />
                   <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
-                    {{ movieRel.rating }}
+                    IMDb {{ movieRel.rating }}
                   </span>
                 </div>
               </div>
