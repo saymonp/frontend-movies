@@ -1,7 +1,7 @@
 // src/stores/auth.js
 import { defineStore } from 'pinia';
 import api from '@/services/api';
-import type { MovieIndex, DinamicMovieInsertionResponse, DiretorResponse, MovieFilters, UpdateMovieRequest, MovieDetail, MovieIndexResponse, GeneroResponse, ApiResponse } from '@/types/Movies';
+import type { MovieIndex, DinamicMovieInsertionResponse, DiretorResponse, MovieFilters, UpdateMovieRequest, MovieDetail, MovieIndexResponse, GeneroResponse, ApiResponse, FullMovieDetailsResponse, MovieFullDetailsResponse } from '@/types/Movies';
 
 
 export const useMovieStore = defineStore('movies', {
@@ -17,6 +17,10 @@ export const useMovieStore = defineStore('movies', {
         },
         async detailMovie(movieIdSlug: string): Promise<MovieDetail> {
             const response = await api.get<MovieDetail>(`/movies/${movieIdSlug}`);
+            return response.data;
+        },
+        async fullDetailMovie(movieIdSlug: string): Promise<MovieFullDetailsResponse> {
+            const response = await api.get<MovieFullDetailsResponse>(`/movies/${movieIdSlug}/full-details`);
             return response.data;
         },
         async importSingleMovie(tmdbId: number): Promise<ApiResponse<{ tmdb_id: string }>> {

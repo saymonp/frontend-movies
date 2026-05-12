@@ -299,4 +299,341 @@ export interface TempMovieResult {
   vote_count: number;
 }
 
+export interface FullMovieDetailsResponse {
+    movie: {
+        id: number;
+        tmdb_id: number;
+        imdb_id: string | null;
 
+        titulo_original: string;
+        titulo_br: string | null;
+        titulo_en: string | null;
+
+        descricao_br: string | null;
+        descricao_en: string;
+
+        tagline_br: string | null;
+        tagline_en: string | null;
+
+        rating: number;
+        duracao: number;
+
+        lingua_origem: string;
+
+        revenue: number | null;
+        popularity: number | null;
+
+        poster_path_br: string | null;
+        poster_thumb_br: string | null;
+
+        backdrop_path: string | null;
+
+        poster_path_us: string | null;
+        poster_thumb_us: string | null;
+
+        homepage: string | null;
+
+        created_at: string;
+
+        colecao_id: number | null;
+
+        slug_pt: string | null;
+        slug_en: string;
+
+        release_date: string;
+
+        status: 'processando' | 'processado';
+
+        generos: {
+            id: number;
+            tmdb_id: number;
+
+            nome_pt: string;
+            nome_en: string;
+
+            pivot: {
+                movie_id: number;
+                genero_id: number;
+            };
+        }[];
+
+        diretores: {
+            id: number;
+            nome: string;
+
+            pivot: {
+                movie_id: number;
+                diretor_id: number;
+            };
+        }[];
+
+        estudios: {
+            id: number;
+            nome: string;
+
+            pivot: {
+                movie_id: number;
+                estudio_id: number;
+            };
+        }[];
+
+        paises: {
+            id: number;
+            nome: string;
+
+            pivot: {
+                movie_id: number;
+                pais_id: number;
+            };
+        }[];
+
+        colecao: {
+            id?: number;
+
+            nome?: string;
+
+            poster_path?: string | null;
+            poster_thumb?: string | null;
+            backdrop_path?: string | null;
+        } | null;
+    };
+
+    collection: {
+        id?: number;
+
+        nome?: string;
+
+        poster_path?: string | null;
+        poster_thumb?: string | null;
+        backdrop_path?: string | null;
+    }[];
+
+    related: {
+        id: number;
+
+        titulo_br: string | null;
+        titulo_original: string;
+
+        poster_thumb_br: string | null;
+
+        rating: number;
+
+        slug_pt: string | null;
+        slug_en: string;
+    }[];
+
+    lists: {
+        id: number;
+
+        titulo: string;
+        comentario: string;
+
+        user_id: number;
+
+        slug: string;
+
+        idioma: string;
+
+        publica: boolean;
+
+        movies: {
+            id: number;
+
+            poster_thumb_br: string | null;
+
+            pivot: {
+                list_id: number;
+                movie_id: number;
+                ordem: number;
+            };
+        }[];
+    }[];
+
+    reviews: {
+        id: number;
+
+        titulo: string;
+        comentario: string;
+
+        rating: number;
+
+        user_id: number;
+        movie_id: number;
+
+        likes_count: number;
+        is_liked: boolean;
+
+        user: {
+            id: number;
+            name: string;
+            avatar: string | null;
+        };
+
+        tags: {
+            id: number;
+
+            nome: string;
+
+            tag: {
+                review_id: number;
+                tag_id: number;
+            };
+        }[];
+    }[];
+}
+
+
+
+
+
+export interface MovieFullDetailsResponse {
+    movie: MovieDetails;
+    collection?: CollectionMovie[];
+    related: RelatedMovie[];
+    lists: MovieList[];
+    reviews: Review[];
+}
+
+export interface MovieDetails {
+    id: number;
+    tmdb_id: number;
+    imdb_id: string | null;
+
+    titulo_original: string;
+    titulo_br: string | null;
+    titulo_en: string | null;
+
+    descricao_br: string | null;
+    descricao_en: string;
+
+    tagline_br: string | null;
+    tagline_en: string | null;
+
+    rating: number;
+    duracao: number;
+
+    lingua_origem: string;
+
+    revenue: number | null;
+    popularity: number | null;
+
+    poster_path_br: string | null;
+    poster_thumb_br: string | null;
+
+    backdrop_path: string | null;
+
+    poster_path_us: string | null;
+    poster_thumb_us: string | null;
+
+    homepage: string | null;
+
+    created_at: string;
+
+    colecao_id: number | null;
+
+    slug_pt: string | null;
+    slug_en: string;
+
+    release_date: string;
+
+    status: 'processando' | 'processado';
+
+    generos: Genero[];
+    diretores: Diretor[];
+    estudios: Estudio[];
+    paises: Pais[];
+
+    colecao: CollectionMovie | null;
+}
+
+
+export interface CollectionMovie {
+    id?: number;
+
+    nome?: string;
+
+    poster_path?: string | null;
+    poster_thumb?: string | null;
+    backdrop_path?: string | null;
+}
+
+export interface RelatedMovie {
+    id: number;
+
+    titulo_br: string | null;
+    titulo_original: string;
+
+    poster_thumb_br: string | null;
+
+    rating: number;
+
+    slug_pt: string | null;
+    slug_en: string;
+}
+
+export interface MovieList {
+    id: number;
+
+    titulo: string;
+    comentario: string;
+
+    user_id: number;
+
+    slug: string;
+
+    idioma: string;
+
+    publica: boolean;
+
+    movies: MovieListItem[];
+}
+
+export interface MovieListItem {
+    id: number;
+
+    poster_thumb_br: string | null;
+
+    pivot: {
+        list_id: number;
+        movie_id: number;
+        ordem: number;
+    };
+}
+
+export interface Review {
+    id: number;
+
+    titulo: string;
+    comentario: string;
+
+    rating: number;
+
+    user_id: number;
+    movie_id: number;
+
+    likes_count: number;
+    is_liked: boolean;
+
+    user: ReviewUser;
+
+    tags: ReviewTag[];
+}
+
+export interface ReviewUser {
+    id: number;
+
+    name: string;
+
+    avatar: string | null;
+}
+
+export interface ReviewTag {
+    id: number;
+
+    nome: string;
+
+    tag: {
+        review_id: number;
+        tag_id: number;
+    };
+}

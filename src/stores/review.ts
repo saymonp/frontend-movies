@@ -24,7 +24,13 @@ export const useReviewStore = defineStore('reviews', {
             });
 
             return response.data;
-        },
+        }, 
+        async listReviewsByMovie(movieId: number): Promise<ReviewPaginada> {
+
+            const response = await api.get<ReviewPaginada>(`/movies/${movieId}/reviews`);
+
+            return response.data;
+        }, 
         async detailReview(reviewId: number): Promise<Review> {
             const response = await api.get<Review>(`/revews/${reviewId}`);
             return response.data;

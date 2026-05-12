@@ -10,30 +10,38 @@ import IconCheck from '@/components/icons/IconCheck.vue';
 import MovieDetailSkeleton from '@/components/MovieDetailSkeleton.vue';
 import movie_json from '../assets/movieDetalhes.json';
 import movies_json from '../assets/movies.json'
-import type { Movie, MoviePaginationResponse, DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse, UpdateMovieRequest, MovieDetail, ApiResponse, MovieCollection } from '@/types/Movies';
+import type { MovieDetails, CollectionMovie, RelatedMovie, MovieList, Review } from '@/types/Movies';
 import { useAuthStore } from '@/stores/auth';
 import { useMovieStore } from '@/stores/movie';
 import { storeToRefs } from 'pinia';
 import i18n from '@/i18n';
 import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
+import { useListaStore } from '@/stores/lista';
+import { useReviewStore } from '@/stores/review';
 
 const route = useRoute();
 const router = useRouter();
 const { locale } = useI18n();
-const movie = ref<Movie>();
-const collection = ref<MovieCollection[]>();
+const movie = ref<MovieDetails>();
+const collection = ref<CollectionMovie[]>();
+const reviews = ref<Review[]>();
+const moviesRelacionados = ref<RelatedMovie[]>();
+const listas = ref<MovieList[]>();
+
 const abaAtiva = ref('generos');
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 const movieStore = useMovieStore();
 const loggedIn = ref(true);
+const listaStore = useListaStore();
+const reviewStore = useReviewStore();
 const props = defineProps<{
   slug: string
 }>();
 const isSearching = ref(false);
 
-const maxRetries = 10;
+const maxRetries = 5;
 const retryDelay = 2500;
 
 async function sleep(ms: number) {
@@ -80,7 +88,7 @@ async function loadMovies(retryCount = 0) {
     }
 
     // Filme pronto
-    movie.value = movieData;
+    //movie.value = movieData;
     collection.value = response.collection;
     const definitiveSlug =
       (i18n as any).locale === 'br'
@@ -121,6 +129,94 @@ async function loadMovies(retryCount = 0) {
     }
   }
 }
+
+async function loadFullMovie(retryCount = 0) {
+
+  // Só bloqueia chamadas manuais
+  if (isSearching.value && retryCount === 0) return;
+
+  // Ativa loading apenas na primeira tentativa
+  if (retryCount === 0) {
+    isSearching.value = true;
+  }
+
+  try {
+
+    const response = await movieStore.fullDetailMovie(props.slug);
+
+    const movieData = response.movie;
+
+    // Filme ainda processando
+    const movieReady =
+      movieData.status === 'processado' &&
+      !!movieData.titulo_original &&
+      !!movieData.poster_path_br &&
+      !!movieData.backdrop_path &&
+      !!movieData.descricao_br;
+
+    if (
+      !movieReady &&
+      retryCount < maxRetries
+    ) {
+
+      console.log(
+        `Processando filme... tentativa ${retryCount + 1}/${maxRetries}`
+      );
+
+      // espera antes de tentar novamente
+      await sleep(retryDelay);
+
+      return await loadMovies(retryCount + 1);
+    }
+
+    // Filme pronto
+
+    movie.value = movieData;
+    collection.value = response.collection
+    reviews.value = response.reviews;
+    moviesRelacionados.value = response.related;
+    listas.value = response.lists;
+
+    const definitiveSlug =
+      (i18n as any).locale === 'br'
+        ? movieData.slug_pt
+        : movieData.slug_en;
+
+    const currentSlug = props.slug;
+
+    // evita replace desnecessário
+    if (
+      definitiveSlug &&
+      !currentSlug.includes(definitiveSlug)
+    ) {
+      router.replace({
+        name: 'MovieView',
+        params: {
+          lang: (i18n as any).locale,
+          slug: `${movieData.id}-${definitiveSlug}`
+        }
+      });
+    }
+    // Feedback opcional
+    if (movieData.status === 'processado') {
+      console.log('Filme processado com sucesso!', movie.value);
+    }
+
+  } catch (error) {
+
+    console.error("Erro na comunicação com a API:", error);
+
+  } finally {
+
+    // Só encerra loading quando:
+    // - terminou
+    // - OU falhou após máximo de tentativas
+    if (retryCount >= maxRetries || movie.value?.status !== 'processando') {
+      isSearching.value = false;
+    }
+  }
+}
+
 // Computed para encontrar o filme toda vez que o slug ou o idioma mudar
 //const movie = computed(() => {
 //const slugKey = locale.value === 'br' ? 'slug_pt' : 'slug_en';
@@ -129,9 +225,20 @@ async function loadMovies(retryCount = 0) {
 // Isso permite que o usuário acesse o link em EN mesmo estando no site em BR
 // return movie_json.find(m => m.slug_br === props.slug || m.slug_en === props.slug);
 //});
+async function loadAllData() {
+  isSearching.value = false;
+  try {
+    // 1. Carrega o filme primeiro (dependência central)
+    await loadFullMovie();
+  } finally {
+    isSearching.value = false;
+  }
+}
+
+onMounted(loadAllData);
 onMounted(() => {
   try {
-    loadMovies();
+    loadAllData();
   } catch (error) {
     console.error("Erro ao carregar:", error);
   }
@@ -141,10 +248,7 @@ onMounted(() => {
 //  return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
 //});
 // Observa mudanças no slug da URL (ex: clicar num filme da coleção)
-watch(() => props.slug, () => {
-  loadMovies();
-  window.scrollTo({ top: 0, behavior: 'smooth' }); // Opcional: volta ao topo ao trocar de filme
-});
+
 const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
 
@@ -152,15 +256,16 @@ const selectRating = (val: number) => {
   rating.value = val;
 };
 
+watch(() => props.slug, async () => {
+  // Limpa dados antigos para não mostrar filme errado enquanto carrega
+  movie.value = undefined;
+  reviews.value = undefined;
 
+  await loadAllData(); // Reutiliza a lógica de paralelismo
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 const limite = ref(1); // Quantas reviews aparecem inicialmente
-const reviews = ref([
-  { id: 1, autor: 'Boladotron', nota: 5, texto: 'Filme muito maneiro, é de temática vampiresca com uma abordagem diferente.', avatar: '/image.png' },
-  { id: 2, autor: 'StarConvoy', nota: 4, texto: 'A fotografia é incrível, mas o ritmo cansa um pouco no meio.', avatar: '/image.png' },
-  { id: 3, autor: 'OrionPax', nota: 5, texto: 'Melhor do gênero que vi esse ano!', avatar: '/image.png' },
-  { id: 4, autor: 'OptimusPrime', nota: 3, texto: 'Esperava mais do final.', avatar: '/image.png' },
-]);
 
 const mostrarMais = () => {
   limite.value += 3; // Carrega mais 3 por vez
@@ -173,7 +278,7 @@ const getTodayDate = () => {
   const today = new Date();
   return today.toISOString().split('T')[0];
 };
-const movies = ref(movies_json.movie);
+
 // Inicializamos o estado com a data de hoje
 const dataAssistido = ref(getTodayDate());
 
@@ -202,6 +307,13 @@ const getMovieParam = (movie: any) => {
   // Retorna o formato 235-nome-do-filme
   return `${movie.id}-${slug}`;
 };
+
+const movieStyles = [
+  { zIndex: 'z-40', ml: '', opacity: 'opacity-100', hover: 'group-hover:-translate-y-2', ring: 'ring-2 ring-[#7075AB]' },
+  { zIndex: 'z-30', ml: '-ml-2 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: 'group-hover:-translate-y-1', ring: 'ring-1 ring-white/20' },
+  { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/10' },
+  { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/5' },
+];
 </script>
 
 <template>
@@ -294,7 +406,8 @@ const getMovieParam = (movie: any) => {
 
 
 
-            <img :src="getImageUrl(movie.backdrop_path)" class="relative w-full h-full object-cover opacity-73" />
+            <img v-if="movie.backdrop_path" :src="getImageUrl(movie.backdrop_path)"
+              class="relative w-full h-full object-cover opacity-73" />
 
           </div>
         </div>
@@ -367,7 +480,7 @@ const getMovieParam = (movie: any) => {
               </div>
             </div>
             <div class="flex flex-col ">
-              <div class="shrink-0 ml-auto"><img :src="getImageUrl(movie.poster_path_br)"
+              <div class="shrink-0 ml-auto"><img v-if="movie.poster_path_br" :src="getImageUrl(movie.poster_path_br)"
                   class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
               </div>
 
@@ -454,13 +567,13 @@ const getMovieParam = (movie: any) => {
                   slug: getMovieParam(m)
                 }
               }" class="w-full">
-                <img :src="getImageUrl(m.poster_thumb_br)"
+                <img v-if="m.poster_thumb" :src="getImageUrl(m.poster_thumb)"
                   class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
               </RouterLink>
 
               <div class="w-full flex flex-col">
                 <p class="text-center text-[10px] sm:text-xs font-bold text-zinc-100 truncate leading-tight">
-                  {{ m.titulo_br }}
+                  {{ m.nome }}
                 </p>
 
                 <div class="flex items-center justify-between mt-1 px-0.5">
@@ -481,22 +594,22 @@ const getMovieParam = (movie: any) => {
 
           <div class="flex overflow-x-auto snap-x snap-mandatory gap-3 mt-3 px-4 pb-4 
            lg:grid lg:grid-cols-6 lg:gap-5 lg:px-2 lg:overflow-visible lg:pb-0">
-            <div v-for="movie in movies.slice(0, 6)" :key="movie.id"
+            <div v-for="movie in moviesRelacionados" :key="movie.id"
               class="movie-card flex flex-col items-center min-w-[120px] sm:min-w-[150px] lg:min-w-0 snap-start">
               <RouterLink :to="{
                 name: 'MovieView',
                 params: {
                   lang: $i18n.locale,
-                  slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
+                  slug: $i18n.locale === 'br' ? movie.slug_pt : movie.slug_en
                 }
               }" class="w-full">
-                <img :src="movie.poster_thumb_br"
+                <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)"
                   class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
               </RouterLink>
 
               <div class="w-full flex flex-col">
                 <p class="text-center text-[10px] sm:text-xs font-bold text-zinc-100 truncate leading-tight">
-                  {{ movie.titulo }}
+                  {{ movie.titulo_br || movie.titulo_original }}
                 </p>
 
                 <div class="flex items-center justify-between mt-1 px-0.5">
@@ -510,7 +623,7 @@ const getMovieParam = (movie: any) => {
 
           </div>
         </div>
-        <div class="max-w-[95%] mx-auto mb-20 lg:max-w-5xl">
+        <div v-if="listas" class="max-w-[95%] mx-auto mb-20 lg:max-w-5xl">
           <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
             Listas Relacionadas
           </h1>
@@ -518,162 +631,36 @@ const getMovieParam = (movie: any) => {
 
 
             <div class="flex lg:grid lg:grid-cols-4 gap-y-12 gap-x-6">
-              <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }" class="w-full">
-                <div class="group cursor-pointer">
-                  <p
-                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                    Comédia Romântica
-                  </p>
+              <div v-for="lista in listas">
+                <RouterLink :to="{
+                  name: 'ListView',
+                  params: {
+                    id: lista.id,
+                    slug: lista.slug
+                  }
+                }" class="w-full">
+                  <div class="group cursor-pointer">
 
-                  <div class="flex items-center justify-center pl-1">
-                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
+                    <p
+                      class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
+                      {{ lista.titulo }}</p>
+                    <div class="flex items-center justify-center pl-1">
+                      <template v-for="(style, index) in movieStyles" :key="index">
+                        <!-- Só renderiza se o filme existir na lista -->
+                        <div v-if="lista.movies[index]" class="relative w-28 sm:w-28 lg:w-32 transition-transform"
+                          :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+                          <img v-if="lista.movies[index].poster_thumb_br"
+                            :src="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
+                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
+                        </div>
+                      </template>
+
                     </div>
-
-                    <div
-                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                    </div>
-
-                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                    </div>
-
-                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                    </div>
-
+                    <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">{{ lista.movies.length }} filmes
+                      nesta lista</p>
                   </div>
-
-                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-                </div>
-              </RouterLink>
-              <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }" class="w-full">
-                <div class="group cursor-pointer">
-                  <p
-                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                    Adrenalina pura
-                  </p>
-
-                  <div class="flex items-center justify-center pl-1">
-                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                    </div>
-
-                    <div
-                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                    </div>
-
-                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                    </div>
-
-                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                    </div>
-
-                  </div>
-
-                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-                </div>
-              </RouterLink>
-              <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }" class="w-full">
-                <div class="group cursor-pointer">
-                  <p
-                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                    Adrenalina pura
-                  </p>
-
-                  <div class="flex items-center justify-center pl-1">
-                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                    </div>
-
-                    <div
-                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                    </div>
-
-                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                    </div>
-
-                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                    </div>
-
-                  </div>
-
-                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-                </div>
-              </RouterLink>
-              <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }" class="w-full">
-                <div class="group cursor-pointer">
-                  <p
-                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                    Comédia Romântica
-                  </p>
-
-                  <div class="flex items-center justify-center pl-1">
-                    <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                      <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                        class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                    </div>
-
-                    <div
-                      class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                      <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                        class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                    </div>
-
-                    <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                      <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                        class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                    </div>
-
-                    <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                      <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                        class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                    </div>
-
-                  </div>
-
-                  <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-                </div>
-              </RouterLink>
+                </RouterLink>
+              </div>
             </div>
           </div>
         </div>
@@ -687,7 +674,7 @@ const getMovieParam = (movie: any) => {
           </h1>
 
           <div class="flex flex-col gap-8">
-            <div v-for="review in reviews.slice(0, limite)" :key="review.id" class="flex gap-4 items-start group">
+            <div v-for="review in reviews" :key="review.id" class="flex gap-4 items-start group">
 
               <div class="shrink-0">
                 <div
@@ -699,25 +686,25 @@ const getMovieParam = (movie: any) => {
               <div class="flex-1 flex flex-col gap-1">
                 <div class="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3">
                   <p class="text-zinc-100 text-md font-light">
-                    Review de <span class="font-extrabold text-[#00FCFF]">{{ review.autor }}</span>
+                    Review de <span class="font-extrabold text-[#00FCFF]">{{ review.user.name }}</span>
                   </p>
 
                   <div class="flex">
-                    <IconStar v-for="i in 5" :key="i" :class="i <= review.nota ? 'text-[#00FCFF]' : 'text-zinc-700'"
+                    <IconStar v-for="i in 5" :key="i" :class="i <= review.rating ? 'text-[#00FCFF]' : 'text-zinc-700'"
                       class="w-3 h-3 lg:w-4 lg:h-4" />
                   </div>
                 </div>
 
                 <div class="mt-1">
                   <p class="text-zinc-400 text-sm lg:text-base leading-relaxed">
-                    {{ review.texto }}
+                    {{ review.comentario }}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div v-if="limite < reviews.length" class="mt-10 flex justify-center">
+          <div v-if="reviews && 5 < reviews.length" class="mt-10 flex justify-center">
             <button @click="mostrarMais"
               class="text-zinc-400 hover:text-[#00FCFF] text-sm font-bold uppercase tracking-widest transition-all border-b border-zinc-800 hover:border-[#00FCFF] pb-1">
               Mostrar mais reviews
@@ -748,5 +735,4 @@ const getMovieParam = (movie: any) => {
     /* Chrome, Safari and Opera */
   }
 }
-
 </style>
