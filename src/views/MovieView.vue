@@ -48,88 +48,6 @@ async function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function loadMovies(retryCount = 0) {
-
-  // Só bloqueia chamadas manuais
-  if (isSearching.value && retryCount === 0) return;
-
-  // Ativa loading apenas na primeira tentativa
-  if (retryCount === 0) {
-    isSearching.value = true;
-  }
-
-  try {
-
-    const response = await movieStore.detailMovie(props.slug);
-
-    const movieData = response.movie;
-
-    // Filme ainda processando
-    const movieReady =
-      movieData.status === 'processado' &&
-      !!movieData.titulo_original &&
-      !!movieData.poster_path_br &&
-      !!movieData.backdrop_path &&
-      !!movieData.descricao_br;
-
-    if (
-      !movieReady &&
-      retryCount < maxRetries
-    ) {
-
-      console.log(
-        `Processando filme... tentativa ${retryCount + 1}/${maxRetries}`
-      );
-
-      // espera antes de tentar novamente
-      await sleep(retryDelay);
-
-      return await loadMovies(retryCount + 1);
-    }
-
-    // Filme pronto
-    //movie.value = movieData;
-    collection.value = response.collection;
-    const definitiveSlug =
-      (i18n as any).locale === 'br'
-        ? movieData.slug_pt
-        : movieData.slug_en;
-
-    const currentSlug = props.slug;
-
-    // evita replace desnecessário
-    if (
-      definitiveSlug &&
-      !currentSlug.includes(definitiveSlug)
-    ) {
-      router.replace({
-        name: 'MovieView',
-        params: {
-          lang: (i18n as any).locale,
-          slug: `${movieData.id}-${definitiveSlug}`
-        }
-      });
-    }
-    // Feedback opcional
-    if (movieData.status === 'processado') {
-      console.log('Filme processado com sucesso!', movie.value);
-    }
-
-  } catch (error) {
-
-    console.error("Erro na comunicação com a API:", error);
-
-  } finally {
-
-    // Só encerra loading quando:
-    // - terminou
-    // - OU falhou após máximo de tentativas
-    if (retryCount >= maxRetries || movie.value?.status !== 'processando') {
-      isSearching.value = false;
-    }
-  }
-}
-
 async function loadFullMovie(retryCount = 0) {
 
   // Só bloqueia chamadas manuais
@@ -145,7 +63,7 @@ async function loadFullMovie(retryCount = 0) {
     const response = await movieStore.fullDetailMovie(props.slug);
 
     const movieData = response.movie;
-
+    console.log("Coleção filmes",retryCount,response);
     // Filme ainda processando
     const movieReady =
       movieData.status === 'processado' &&
@@ -166,7 +84,7 @@ async function loadFullMovie(retryCount = 0) {
       // espera antes de tentar novamente
       await sleep(retryDelay);
 
-      return await loadMovies(retryCount + 1);
+      return await loadFullMovie(retryCount + 1);
     }
 
     // Filme pronto
@@ -176,7 +94,7 @@ async function loadFullMovie(retryCount = 0) {
     reviews.value = response.reviews;
     moviesRelacionados.value = response.related;
     listas.value = response.lists;
-
+    console.log("Coleção filmes",collection.value);
     const definitiveSlug =
       (i18n as any).locale === 'br'
         ? movieData.slug_pt
@@ -217,14 +135,6 @@ async function loadFullMovie(retryCount = 0) {
   }
 }
 
-// Computed para encontrar o filme toda vez que o slug ou o idioma mudar
-//const movie = computed(() => {
-//const slugKey = locale.value === 'br' ? 'slug_pt' : 'slug_en';
-//loadMovies();
-// Buscamos o filme que contenha o slug da URL em qualquer uma das linguagens
-// Isso permite que o usuário acesse o link em EN mesmo estando no site em BR
-// return movie_json.find(m => m.slug_br === props.slug || m.slug_en === props.slug);
-//});
 async function loadAllData() {
   isSearching.value = false;
   try {
@@ -235,7 +145,6 @@ async function loadAllData() {
   }
 }
 
-onMounted(loadAllData);
 onMounted(() => {
   try {
     loadAllData();
@@ -243,11 +152,6 @@ onMounted(() => {
     console.error("Erro ao carregar:", error);
   }
 });
-// Opcional: Traduzir campos dinâmicos do JSON
-//const movieTitle = computed(() => {
-//  return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
-//});
-// Observa mudanças no slug da URL (ex: clicar num filme da coleção)
 
 const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
@@ -567,13 +471,13 @@ const movieStyles = [
                   slug: getMovieParam(m)
                 }
               }" class="w-full">
-                <img v-if="m.poster_thumb" :src="getImageUrl(m.poster_thumb)"
+                <img v-if="m.poster_thumb_br" :src="getImageUrl(m.poster_thumb_br)"
                   class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
               </RouterLink>
 
               <div class="w-full flex flex-col">
                 <p class="text-center text-[10px] sm:text-xs font-bold text-zinc-100 truncate leading-tight">
-                  {{ m.nome }}
+                  {{ m.titulo_br || m.titulo_original }}
                 </p>
 
                 <div class="flex items-center justify-between mt-1 px-0.5">
@@ -592,75 +496,70 @@ const movieStyles = [
             Filmes com a mesma pegada
           </h1>
 
-          <div class="flex overflow-x-auto snap-x snap-mandatory gap-3 mt-3 px-4 pb-4 
-           lg:grid lg:grid-cols-6 lg:gap-5 lg:px-2 lg:overflow-visible lg:pb-0">
-            <div v-for="movie in moviesRelacionados" :key="movie.id"
-              class="movie-card flex flex-col items-center min-w-[120px] sm:min-w-[150px] lg:min-w-0 snap-start">
+          <!-- Container com Scroll Horizontal -->
+          <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pb-4 custom-scrollbar">
+            <div v-for="movieRel in moviesRelacionados" :key="movieRel.id"
+              class="movie-card flex flex-col items-center min-w-[130px] sm:min-w-[160px] lg:min-w-[150px] snap-start">
               <RouterLink :to="{
                 name: 'MovieView',
                 params: {
                   lang: $i18n.locale,
-                  slug: $i18n.locale === 'br' ? movie.slug_pt : movie.slug_en
+                  slug: getMovieParam(movieRel)
                 }
               }" class="w-full">
-                <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)"
-                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
+                <img v-if="movieRel.poster_thumb_br" :src="getImageUrl(movieRel.poster_thumb_br)"
+                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
               </RouterLink>
 
               <div class="w-full flex flex-col">
                 <p class="text-center text-[10px] sm:text-xs font-bold text-zinc-100 truncate leading-tight">
-                  {{ movie.titulo_br || movie.titulo_original }}
+                  {{ movieRel.titulo_br || movieRel.titulo_original }}
                 </p>
 
-                <div class="flex items-center justify-between mt-1 px-0.5">
+                <div class="flex items-center justify-between mt-1 px-1">
                   <IconAddReview class="w-4 h-4 text-[#97A7CB] hover:text-[#00FCFF]" />
                   <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
-                    {{ movie.rating }}
+                    {{ movieRel.rating }}
                   </span>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
         <div v-if="listas" class="max-w-[95%] mx-auto mb-20 lg:max-w-5xl">
           <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
             Listas Relacionadas
           </h1>
-          <div class="overflow-x-auto snap-x snap-mandatory  ">
 
+          <!-- Container com Scroll Horizontal -->
+           <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pb-4 custom-scrollbar">
+            <div v-for="lista in listas" :key="lista.id" class="snap-start min-w-[280px] sm:min-w-[320px]">
+              <RouterLink :to="{
+                name: 'ListView',
+                params: { id: lista.id, slug: lista.slug }
+              }" class="w-full">
+                <div class="group cursor-pointer">
+                  <p
+                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-4 group-hover:text-[#00FCFF] transition-colors">
+                    {{ lista.titulo }}
+                  </p>
 
-            <div class="flex lg:grid lg:grid-cols-4 gap-y-12 gap-x-6">
-              <div v-for="lista in listas">
-                <RouterLink :to="{
-                  name: 'ListView',
-                  params: {
-                    id: lista.id,
-                    slug: lista.slug
-                  }
-                }" class="w-full">
-                  <div class="group cursor-pointer">
-
-                    <p
-                      class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                      {{ lista.titulo }}</p>
-                    <div class="flex items-center justify-center pl-1">
-                      <template v-for="(style, index) in movieStyles" :key="index">
-                        <!-- Só renderiza se o filme existir na lista -->
-                        <div v-if="lista.movies[index]" class="relative w-28 sm:w-28 lg:w-32 transition-transform"
-                          :class="[style.zIndex, style.ml, style.opacity, style.hover]">
-                          <img v-if="lista.movies[index].poster_thumb_br"
-                            :src="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
-                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
-                        </div>
-                      </template>
-
-                    </div>
-                    <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">{{ lista.movies.length }} filmes
-                      nesta lista</p>
+                  <div class="flex items-center justify-center pl-6">
+                    <template v-for="(style, index) in movieStyles" :key="index">
+                      <div v-if="lista.movies[index]" class="relative w-24 sm:w-28 transition-transform"
+                        :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+                        <img v-if="lista.movies[index].poster_thumb_br"
+                          :src="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
+                          :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
+                      </div>
+                    </template>
                   </div>
-                </RouterLink>
-              </div>
+
+                  <p class="text-zinc-500 text-[9px] text-center mt-6 uppercase">
+                    {{ lista.movies.length }} filmes nesta lista
+                  </p>
+                </div>
+              </RouterLink>
             </div>
           </div>
         </div>
@@ -711,6 +610,7 @@ const movieStyles = [
             </button>
           </div>
         </div>
+        
       </div>
       <div v-else class="text-white">
         Filme não encontrado.
@@ -734,5 +634,31 @@ const movieStyles = [
     display: none;
     /* Chrome, Safari and Opera */
   }
+}
+
+/* Estilização para Chrome, Edge e Safari */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px; /* Altura da barra horizontal */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02); /* Fundo da trilha quase invisível */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1); /* Cor da barra em si (bem discreta) */
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 252, 255, 0.4); /* Ganha destaque (e sua cor tema) no hover */
+}
+
+/* Suporte para Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) rgba(255, 255, 255, 0.02);
 }
 </style>
