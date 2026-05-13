@@ -14,9 +14,10 @@ import { useMovieStore } from '@/stores/movie';
 import SearchBarListas from '@/components/SearchBarListas.vue';
 import { storeToRefs } from 'pinia';
 import type { DinamicMovieInsertionResponse, GeneroResponse, DiretorResponse, MovieIndex, MovieFilters, MovieIndexResponse } from '@/types/Movies';
-import type { ListaFilters } from '@/types/Listas';
+import type { ListaFilters, ListasUser } from '@/types/Listas';
 import i18n from '@/i18n';
 import { useListaStore } from '@/stores/lista';
+import IconNoMovies from '@/components/icons/IconNoMovies.vue';
 
 
 const authStore = useAuthStore();
@@ -35,6 +36,9 @@ const diretores = ref<DiretorResponse[]>([]);
 const idiomasDisponiveis = ref<string[]>([]);
 const hasLoadedListas = ref(false);
 const searchMode = ref('movies')
+
+const userListas = ref<ListasUser[]>();
+const isSearchingUserListas = ref(false);
 
 const filterMovies = ref<MovieFilters>({
     destaque: true,
@@ -264,6 +268,7 @@ const toggleAddToList = (id: number) => {
     // Fecha o de review se estiver aberto e abre o de listas
     activeReviewId.value = null;
     activeListId.value = activeListId.value === id ? null : id;
+    getUserListas(id);
 };
 
 const getImageUrl = (path: string) => {
@@ -320,7 +325,39 @@ const movieStyles = [
     { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/10' },
     { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/5' },
 ];
+const getUserListas = async (movieId: number) => {
+  isSearchingUserListas.value = true;
+  try {
 
+    userListas.value = await listaStore.indexUserListas(movieId);
+
+  } catch (error) {
+
+  } finally {
+    isSearchingUserListas.value = false;
+  }
+}
+
+const toggleMovie = async (listaIndex: number, movieId: number) => {
+  //@ts-ignore
+  const lista = userListas.value[listaIndex] || null;
+
+  if (!lista || !movieId) {
+    return;
+  }
+
+  try {
+    const response = await listaStore.toggleAddToList({
+      lista_id: lista.id,
+      movie_id: movieId
+    });
+
+    lista.movie_exists = response.attached;
+
+  } catch (error) {
+    console.error("Erro ao alternar filme na lista:", error);
+  }
+}
 </script>
 
 <template>
@@ -475,11 +512,11 @@ const movieStyles = [
                                             Salvar
                                             em:</p>
                                         <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
-                                            <label v-for="lista in minhasListas" :key="lista.id"
+                                            <label v-for="(lista, index) in userListas" :key="lista.id"
                                                 class="flex items-center gap-2 cursor-pointer group">
-                                                <input type="checkbox" v-model="lista.selecionada"
+                                                <input type="checkbox" :checked="lista.movie_exists" @click.prevent="toggleMovie(index, movie.id)"
                                                     class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
-                                                <span class="text-zinc-300 text-[11px] truncate">{{ lista.nome }}</span>
+                                                <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo }}</span>
                                             </label>
                                         </div>
                                         <button @click="activeListId = null"
@@ -504,7 +541,7 @@ const movieStyles = [
                             class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md hover:border-[#d919ff]/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(217,25,255,0.15)]">
 
                             <!-- CAPAS -->
-                            <div class="relative h-40 flex items-center justify-center overflow-hidden px-4 pt-5">
+                            <div v-if="lista.movies && lista.movies.length > 0" class="relative h-40 flex items-center justify-center overflow-hidden px-4 pt-5">
 
                                 <template v-for="(style, index) in movieStyles" :key="index">
                                     <div v-if="lista.movies[index]"
@@ -514,15 +551,21 @@ const movieStyles = [
                                             class="w-28 lg:w-32 rounded-xl object-cover shadow-2xl"
                                             :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
                                     </div>
-
+                                    
                                 </template>
-
+                                <!-- 2. Placeholder (Caso a lista esteja vazia) -->
+                    
                                 <!-- Overlay -->
                                 <div
                                     class="absolute inset-0 bg-gradient-to-t from-[#020036] via-transparent to-transparent">
                                 </div>
                             </div>
+                            <div v-else 
+                      class="flex flex-col items-center justify-center w-full min-h-[160px] bg-white/5 border-2 border-dashed border-white/10 rounded-xl">
+                      <IconNoMovies />
+                      <span class="text-white/30 text-xs font-medium">Lista vazia</span>
 
+                    </div>
                             <!-- CONTEÚDO -->
                             <div class="p-3">
 

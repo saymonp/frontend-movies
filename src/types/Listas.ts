@@ -169,7 +169,9 @@ export interface MovieWithDirectors {
 
 export interface ListasUser {
     id: number;
-    titulo: string
+    titulo: string;
+    slug: string;
+    is_default: boolean;
     movie_exists: boolean;
 
 }

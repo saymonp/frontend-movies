@@ -20,6 +20,7 @@ import { useRouter } from 'vue-router';
 import { useListaStore } from '@/stores/lista';
 import { useReviewStore } from '@/stores/review';
 import type { ListasUser } from '@/types/Listas';
+import { onClickOutside } from '@vueuse/core';
 
 const route = useRoute();
 const router = useRouter();
@@ -41,6 +42,10 @@ const userListas = ref<ListasUser[]>();
 const isSearchingUserListas = ref(false);
 const activeReviewId = ref<number | null>(null);
 const activeList = ref(false);
+const target = ref(null);
+const isMovieAddWatchLater = ref<{ id: number, attached: boolean, isDefault: boolean }>();
+const isMovieWatched = ref<{ id: number, attached: boolean, isDefault: boolean }>();
+
 const props = defineProps<{
   slug: string
 }>();
@@ -145,6 +150,28 @@ async function loadAllData() {
   try {
     // 1. Carrega o filme primeiro (dependência central)
     await loadFullMovie();
+    if (isAuthenticated.value) {
+      // Extrai apenas o ID numérico do slug (ex: "25-apex" -> 25)
+      const movieId = parseInt(props.slug);
+
+      const listas = await listaStore.indexUserListas(movieId);
+      userListas.value = listas;
+
+      // 2. Usa um único loop para encontrar as listas padrão (melhor performance que múltiplos maps)
+      listas.forEach(l => {
+        const statusObj = {
+          id: l.id,
+          attached: l.movie_exists,
+          isDefault: l.is_default
+        };
+
+        if (l.slug === "watched" && l.is_default === true) {
+          isMovieWatched.value = statusObj;
+        } else if (l.slug === "watch-later" && l.is_default === true) {
+          isMovieAddWatchLater.value = statusObj;
+        }
+      });
+    }
   } finally {
     isSearching.value = false;
   }
@@ -223,9 +250,9 @@ const getUserListas = async () => {
     if (!movie.value?.id) {
       throw new Error('Filme não encontrado');
     }
-
-    userListas.value = await listaStore.indexUserListas(movie.value?.id);
-
+    if (!userListas.value) {
+      userListas.value = await listaStore.indexUserListas(movie.value?.id);
+    }
   } catch (error) {
 
   } finally {
@@ -242,6 +269,21 @@ const openListas = () => {
   activeList.value = true;
   getUserListas();
 };
+
+const toggleWatchedLista = async () => {
+  if (!isMovieWatched.value) {
+    throw new Error('Filme não encontrado');
+  }
+  const response = await listaStore.toggleAddToList({ lista_id: isMovieWatched.value?.id, movie_id: parseInt(props.slug) });
+  isMovieWatched.value.attached = response.attached;
+}
+const toggleWatchLaterLista = async () => {
+  if (!isMovieAddWatchLater.value) {
+    throw new Error('Filme não encontrado');
+  }
+  const response = await listaStore.toggleAddToList({ lista_id: isMovieAddWatchLater.value?.id, movie_id: parseInt(props.slug) });
+  isMovieAddWatchLater.value.attached = response.attached;
+}
 
 const toggleMovie = async (listaIndex: number) => {
   //@ts-ignore
@@ -264,6 +306,7 @@ const toggleMovie = async (listaIndex: number) => {
     console.error("Erro ao alternar filme na lista:", error);
   }
 }
+onClickOutside(target, () => (activeList.value = false));
 </script>
 
 <template>
@@ -406,39 +449,54 @@ const toggleMovie = async (listaIndex: number) => {
                 <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
 
                   <div class="flex flex-col items-center gap-2">
+                    <input v-if="isMovieAddWatchLater" type="checkbox" :checked="isMovieAddWatchLater.attached"
+                      @click.prevent="toggleWatchLaterLista"
+                      class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
                     <IconWatchLater class="w-10 h-10 text-zinc-100 opacity-80" />
                     <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
                       Assistir mais Tarde
                     </span>
                   </div>
 
-                  <div class="flex flex-col items-center gap-2">
-                    <IconAddToList @click.stop="openListas" class="w-10 h-10 text-zinc-100 opacity-80" />
+                  <!-- 1. Adicione 'relative' no container pai -->
+                  <div class="relative flex flex-col items-center gap-2">
+
+                    <IconAddToList @click.stop="openListas" class="w-10 h-10 text-zinc-100 opacity-80 cursor-pointer" />
+
                     <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
                       Salvar na Lista
                     </span>
-                  </div>
-                  <Transition name="fade-slide">
-                    <div v-if="activeList"
-                      class="absolute top-full w-56 z-[60] mt-2 bg-[#0f0f0f]/95 border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
-                      <div class="flex flex-col gap-3">
-                        <p class="text-[10px] text-zinc-500 uppercase font-black border-b border-white/5 pb-1">
-                          Salvar
-                          em:</p>
-                        <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
-                          <label v-for="(lista, index) in userListas" :key="lista.id"
-                            class="flex items-center gap-2 cursor-pointer group">
-                            <input type="checkbox" v-model="lista.movie_exists" @click.prevent="toggleMovie(index)"
-                              class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
-                            <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo }}</span>
-                          </label>
+
+                    <Transition name="fade-slide">
+                      <div v-if="activeList" ref="target" class="absolute top-full left-1/2 -translate-x-1/2 z-[60] mt-2 w-56 bg-[#0f0f0f]/95 border
+                        border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+
+                        <div class="flex flex-col gap-3">
+                          <p class="text-[10px] text-zinc-500 uppercase font-black border-b border-white/5 pb-1">
+                            Salvar em:
+                          </p>
+
+                          <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
+                            <label v-for="(lista, index) in userListas" :key="lista.id"
+                              class="flex items-center gap-2 cursor-pointer group">
+                              <input type="checkbox" :checked="lista.movie_exists" @click.prevent="toggleMovie(index)"
+                                class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
+                              <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo }}</span>
+                            </label>
+                          </div>
+
+                          <button @click="activeList = false"
+                            class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black py-2 rounded-md transition-all">
+                            Concluir
+                          </button>
                         </div>
-                        <button @click="activeList = false"
-                          class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black py-2 rounded-md transition-all">Concluir</button>
                       </div>
-                    </div>
-                  </Transition>
+                    </Transition>
+                  </div>
                   <div class="flex flex-col items-center gap-2">
+                    <input v-if="isMovieWatched" type="checkbox" :checked="isMovieWatched.attached"
+                      @click.prevent="toggleWatchedLista"
+                      class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
                     <IconCheck class="w-10 h-10 text-zinc-100 opacity-80" />
                     <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
                       Assistido

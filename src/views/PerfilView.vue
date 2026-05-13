@@ -11,6 +11,7 @@ import { useReviewStore } from '@/stores/review';
 import type { ReviewPaginada, ReviewSummary } from '@/types/Review';
 import ReviewDetalhe from '@/components/ReviewDetalhe.vue';
 import { onClickOutside } from '@vueuse/core';
+import IconNoMovies from '@/components/icons/IconNoMovies.vue';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
@@ -192,26 +193,34 @@ const handleExcluir = async (reviewId: number) => {
         </div>
 
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="lista in listas?.data">
+          <div v-for="lista in listas?.data" :key="lista.id">
             <RouterLink :to="{
               name: 'ListView',
-              params: {
-                id: lista.id,
-                slug: lista.slug
-              }
+              params: { id: lista.id, slug: lista.slug }
             }">
               <div class="cursor-pointer hover:scale-105 transition-transform">
                 <div>
                   <h4 class="text-white font-bold text-md p-2">{{ lista.titulo }}</h4>
+
                   <div class="flex items-center justify-center pl-1">
-                    <template v-for="(style, index) in movieStyles" :key="index">
-                      <!-- Só renderiza se o filme existir na lista -->
-                      <div v-if="lista.movies[index]" class="relative w-28 sm:w-28 lg:w-32 transition-transform"
-                        :class="[style.zIndex, style.ml, style.opacity, style.hover]">
-                        <img :src="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
-                          :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
-                      </div>
+                    <!-- 1. Caso existam filmes -->
+                    <template v-if="lista.movies && lista.movies.length > 0">
+                      <template v-for="(style, index) in movieStyles" :key="index">
+                        <div v-if="lista.movies[index]" class="relative w-28 sm:w-28 lg:w-32 transition-transform"
+                          :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+                          <img :src="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
+                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
+                        </div>
+                      </template>
                     </template>
+
+                    <!-- 2. Placeholder (Caso a lista esteja vazia) -->
+                    <div v-else
+                      class="flex flex-col items-center justify-center w-full min-h-[160px] bg-white/5 border-2 border-dashed border-white/10 rounded-xl">
+                      <IconNoMovies />
+                      <span class="text-white/30 text-xs font-medium">Lista vazia</span>
+
+                    </div>
 
                   </div>
                 </div>
