@@ -35,8 +35,8 @@ export const useReviewStore = defineStore('reviews', {
             const response = await api.get<Review>(`/revews/${reviewId}`);
             return response.data;
         },
-        async createReview(reviewData: CreateReview): Promise<Review> {
-            const response = await api.post<Review>('/reviews', reviewData);
+        async createReview(reviewData: CreateReview, movieId: number): Promise<Review> {
+            const response = await api.post<Review>(`/movies/${movieId}/reviews`, reviewData);
             return response.data;
         },
         async updateReview(id: number, reviewData: UpdateReview): Promise<Review> {

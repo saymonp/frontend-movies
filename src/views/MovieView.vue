@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watchEffect, watch } from 'vue';
+import { computed, onMounted, ref, watchEffect, watch, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Navbar from '@/components/Navbar.vue';
 import TheFooter from '@/components/TheFooter.vue';
@@ -49,8 +49,10 @@ const isMovieAddWatchLater = ref<{ id: number, attached: boolean, isDefault: boo
 const isMovieWatched = ref<{ id: number, attached: boolean, isDefault: boolean }>();
 
 const props = defineProps<{
-  slug: string
+  slug: string;
+  lang?: string;
 }>();
+
 const isSearching = ref(false);
 
 const maxRetries = 5;
@@ -159,7 +161,7 @@ async function loadAllData() {
       const listas = await listaStore.indexUserListas(movieId);
       userListas.value = listas;
 
-      // 2. Usa um único loop para encontrar as listas padrão (melhor performance que múltiplos maps)
+      // 2. Usa um único loop para encontrar as listas padrão
       listas.forEach(l => {
         const statusObj = {
           id: l.id,
@@ -173,6 +175,7 @@ async function loadAllData() {
           isMovieAddWatchLater.value = statusObj;
         }
       });
+
     }
   } finally {
     isSearching.value = false;
@@ -190,9 +193,9 @@ onMounted(() => {
 const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
 
-const selectRating = (val: number) => {
-  rating.value = val;
-};
+//const selectRating = (val: number) => {
+//  rating.value = val;
+//};
 
 watch(() => props.slug, async () => {
   // Limpa dados antigos para não mostrar filme errado enquanto carrega
@@ -209,7 +212,7 @@ const mostrarMais = () => {
   limite.value += 3; // Carrega mais 3 por vez
 };
 
-const isCardReviewVisible = ref(false)
+const isCardReviewVisible = ref(false);
 
 // Função para pegar a data de hoje formatada (YYYY-MM-DD)
 const getTodayDate = () => {
@@ -296,9 +299,93 @@ const toggleMovie = async (listaIndex: number) => {
   }
 }
 onClickOutside(target, () => (activeList.value = false));
+
+const isSubmitting = ref(false);
+const tagInput = ref('');
+const formReview = reactive({
+    titulo: '',
+    comentario: '',
+    rating: 0,
+    tags: [] as string[],
+});
+
+// Resetar formulário ao abrir
+//watch(isCardReviewVisible, (visible) => {
+//    if (visible) {
+//        formReview.titulo = '';
+//        formReview.comentario = '';
+//        formReview.rating = 0;
+//        formReview.tags = [];
+//        dataAssistido.value = getTodayDate();
+//    }
+//});
+
+const addTag = () => {
+    const val = tagInput.value.trim();
+    if (val && !formReview.tags.includes(val)) {
+        formReview.tags.push(val);
+        tagInput.value = '';
+    }
+};
+
+const removeTag = (index: number) => {
+    formReview.tags.splice(index, 1);
+};
+
+const handleSubmitReview = async () => {
+    if (!movie.value?.id) return;
+    if (formReview.rating === 0) return alert('Selecione uma nota antes de publicar.');
+
+    isSubmitting.value = true;
+    try {
+        const payload = {
+            movie_id: movie.value.id, // ID extraído do filme carregado
+            titulo: formReview.titulo,
+            comentario: formReview.comentario,
+            rating: formReview.rating,
+            tags: formReview.tags,
+            data_assistido: dataAssistido.value
+        };
+
+        await reviewStore.createReview(payload as any, parseInt(props.slug));
+        
+        // Opcional: Recarregar as reviews da tela após postar
+        await loadFullMovie(); 
+        
+        isCardReviewVisible.value = false;
+    } catch (error) {
+        console.error("Erro ao publicar review:", error);
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+const selectRating = (val: number) => {
+    formReview.rating = val;
+};
+
+const userReview = computed(() => {
+  if (!reviews.value || !user.value?.id) return null;
+  
+  // Procura nas reviews carregadas aquela que pertence ao usuário
+  return reviews.value.find(review => review.user_id === user.value?.id) || null;
+});
+
+// Quando a review do usuário for encontrada, preenchemos o formulário
+watch(userReview, (newReview) => {
+  console.log("review do user", newReview);
+  if (newReview) {
+    // Aqui você preenche as refs do seu formulário de edição
+    formReview.comentario = newReview.comentario;
+    formReview.rating = newReview.rating;
+    formReview.tags = newReview.tags.map(t => t.nome);
+    formReview.titulo = newReview.titulo;
+  }
+}, { immediate: true });
 </script>
 
 <template>
+  <!-- Modal de Review -->
   <div v-show="isCardReviewVisible" class="fixed z-50 bg-[#0a0a0a]/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 sm:p-8 
             top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
             shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_20px_rgba(0,252,255,0.1)] w-[92%] max-w-[450px]">
@@ -312,7 +399,7 @@ onClickOutside(target, () => (activeList.value = false));
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Título da Review</label>
-          <input type="text" placeholder="Ex: Incrível!"
+          <input type="text" v-model="formReview.titulo" placeholder="Ex: Incrível!"
             class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all">
         </div>
 
@@ -323,6 +410,7 @@ onClickOutside(target, () => (activeList.value = false));
         </div>
       </div>
 
+      <!-- Rating -->
       <div class="flex flex-col items-center bg-white/5 p-4 rounded-xl border border-white/5">
         <label class="text-zinc-400 text-[10px] uppercase font-bold mb-2">Sua Nota</label>
         <div class="flex items-center gap-2">
@@ -331,31 +419,40 @@ onClickOutside(target, () => (activeList.value = false));
               @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
               class="p-1 transition-all active:scale-125 cursor-pointer">
               <IconStar class="w-6 h-6 transition-colors duration-200"
-                :class="star <= (hoverRating || rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
+                :class="star <= (hoverRating || formReview.rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
             </button>
           </div>
-          <span class="text-[#00FCFF] font-black text-xl italic ml-2 w-10">{{ rating }}<span
+          <span class="text-[#00FCFF] font-black text-xl italic ml-2 w-10">{{ formReview.rating }}<span
               class="text-zinc-600 text-sm">/5</span></span>
         </div>
       </div>
 
       <div class="flex flex-col gap-1">
         <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Sua Mensagem</label>
-        <textarea rows="4" placeholder="O que você achou da fotografia, roteiro e atuação?"
+        <textarea v-model="formReview.comentario" rows="4" placeholder="O que você achou da fotografia, roteiro e atuação?"
           class="w-full bg-white/5 border border-white/10 p-3 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all resize-none"></textarea>
       </div>
 
+      <!-- Tags com Feedback Visual -->
       <div class="flex flex-col gap-1">
         <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Tags <span
             class="lowercase font-normal opacity-50">(pressione enter)</span></label>
-        <input type="text" placeholder="Ex: Masterpiece, Terror, Favorito"
+        <input type="text" v-model="tagInput" @keydown.enter.prevent="addTag" placeholder="Ex: Masterpiece, Terror, Favorito"
           class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
+        
+        <div v-if="formReview.tags.length > 0" class="flex flex-wrap gap-1.5 mt-2">
+          <span v-for="(tag, index) in formReview.tags" :key="index" 
+            class="bg-[#00FCFF]/10 text-[#00FCFF] text-[9px] uppercase font-bold px-2 py-1 rounded-md border border-[#00FCFF]/20 flex items-center gap-1">
+            {{ tag }}
+            <button @click="removeTag(index)" class="hover:text-white ml-1">×</button>
+          </span>
+        </div>
       </div>
 
       <div class="flex flex-col gap-3 mt-2">
-        <button @click="isCardReviewVisible = false"
-          class="w-full bg-[#00FCFF] text-black font-black uppercase tracking-widest py-3 rounded-lg hover:bg-[#00f2f5] hover:shadow-[0_0_20px_rgba(0,252,255,0.4)] transition-all cursor-pointer active:scale-95">
-          Publicar Review
+        <button @click="handleSubmitReview" :disabled="isSubmitting"
+          class="w-full bg-[#00FCFF] text-black font-black uppercase tracking-widest py-3 rounded-lg hover:bg-[#00f2f5] hover:shadow-[0_0_20px_rgba(0,252,255,0.4)] transition-all cursor-pointer active:scale-95 disabled:opacity-50">
+          {{ isSubmitting ? 'Publicando...' : 'Publicar Review' }}
         </button>
 
         <button @click="isCardReviewVisible = false"
@@ -365,8 +462,10 @@ onClickOutside(target, () => (activeList.value = false));
       </div>
     </div>
   </div>
+
+  <!-- Overlay de fundo -->
   <div v-if="isCardReviewVisible" @click="isCardReviewVisible = false"
-    class="fixed inset-0 bg-black/10 backdrop-blur-xs z-40">
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40">
   </div>
   <div class="bg-zinc-50 dark:bg-zinc-900">
     <Navbar />
@@ -416,7 +515,7 @@ onClickOutside(target, () => (activeList.value = false));
                   {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
                 </p>
               </div>
-              <button @click="isCardReviewVisible = true"
+              <button @click="isCardReviewVisible = true" 
                 class="mt-2 w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 Fazer Review
               </button>
