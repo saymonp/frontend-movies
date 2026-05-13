@@ -47,4 +47,5 @@ html, body {
   max-width: 100%;
   overflow-x: hidden; /* Impede o arrasto lateral */
   position: relative;
+  background-color: #09090b;
 }
