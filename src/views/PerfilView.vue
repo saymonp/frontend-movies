@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Navbar from '@/components/Navbar.vue';
 import IconStar from '@/components/icons/IconStar.vue';
 import IconEditList from '@/components/icons/IconList.vue';
@@ -146,6 +146,25 @@ const handleExcluir = async (reviewId: number) => {
     isSearching.value = false;
   }
 };
+
+// Conta filmes na lista padrão "watched"
+const watchedCount = computed(() => {
+  // Busca a lista que tem o slug 'watched' e is_default true
+  if (!listas.value) {
+    return 0;
+  }
+  const watchedList = listas.value.data.find(
+    lista => lista.slug === 'watched' && lista.is_default
+  );
+
+  // Retorna a contagem de filmes dentro dessa lista (ajuste 'movies' para o nome da sua relação)
+  return watchedList?.movies?.length || 0;
+});
+
+// Conta o total de reviews do usuário
+const reviewsCount = computed(() => {
+  return reviews.value?.data.length || 0;
+});
 </script>
 
 <template>
@@ -161,11 +180,15 @@ const handleExcluir = async (reviewId: number) => {
           <h2 class="text-xl font-black text-white uppercase tracking-tighter">{{ user?.name }}</h2>
           <div class="flex gap-4">
             <div class="text-center">
-              <p class="text-[#00FCFF] font-black text-lg">128</p>
+              <p class="text-[#00FCFF] font-black text-lg">
+                {{ isSearching && !listas?.data.length ? '...' : watchedCount }}
+              </p>
               <p class="text-zinc-500 text-[10px] uppercase font-bold">Assistidos</p>
             </div>
             <div class="text-center border-l border-white/10 pl-4">
-              <p class="text-[#00FCFF] font-black text-lg">42</p>
+              <p class="text-[#00FCFF] font-black text-lg">
+                {{ isSearching && !reviews?.data.length ? '...' : reviewsCount }}
+              </p>
               <p class="text-zinc-500 text-[10px] uppercase font-bold">Reviews</p>
             </div>
           </div>
@@ -197,7 +220,8 @@ const handleExcluir = async (reviewId: number) => {
                       <template v-for="(style, index) in movieStyles" :key="index">
                         <div v-if="lista.movies[index]" class="relative w-28 sm:w-28 lg:w-32 transition-transform"
                           :class="[style.zIndex, style.ml, style.opacity, style.hover]">
-                          <MoviePoster :path="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
+                          <MoviePoster :path="getImageUrl(lista.movies[index].poster_thumb_br)"
+                            class="w-full h-auto rounded-sm"
                             :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']" />
                         </div>
                       </template>

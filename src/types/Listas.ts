@@ -87,6 +87,7 @@ export interface ListaSummary {
     user_id: number;
     likes_count: number;
     slug: string;
+    is_default: boolean;
     tags: Tag[];
     movies: MovieListItem[];
 }

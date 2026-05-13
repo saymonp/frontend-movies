@@ -46,14 +46,14 @@ const getInitialState = (): CreateLista => ({
 const listaData = ref<CreateLista>(getInitialState());
 
 function generateSlug(title: string) {
-  return title
-    .toLowerCase()
-    .normalize('NFD') // separa acentos
-    .replace(/[\u0300-\u036f]/g, '') // remove acentos
-    .replace(/[^a-z0-9\s-]/g, '') // remove caracteres especiais
-    .trim()
-    .replace(/\s+/g, '-') // espaços -> hífen
-    .replace(/-+/g, '-'); // evita múltiplos hífens
+    return title
+        .toLowerCase()
+        .normalize('NFD') // separa acentos
+        .replace(/[\u0300-\u036f]/g, '') // remove acentos
+        .replace(/[^a-z0-9\s-]/g, '') // remove caracteres especiais
+        .trim()
+        .replace(/\s+/g, '-') // espaços -> hífen
+        .replace(/-+/g, '-'); // evita múltiplos hífens
 }
 
 const criarLista = async () => {
@@ -65,13 +65,13 @@ const criarLista = async () => {
         const newList = await listaStore.createLista(listaData.value);
         const link = `/lista/${newList.id}-${newList.slug}`;
         router.push(link);
-    }catch(error){
+    } catch (error) {
 
-    }finally{
+    } finally {
         isSearching.value = false;
     }
 
-    
+
 }
 // Para limpar o formulário após o sucesso:
 const resetForm = () => {
@@ -196,9 +196,12 @@ onClickOutside(target, () => {
                     <input v-model="listaData.titulo" type="text"
                         class="text-zinc-100 font-black text-4xl lg:text-5xl bg-transparent border-none outline-none focus:ring-0 text-center w-full placeholder:text-zinc-700"
                         placeholder="Título da lista">
-                    
-                    <button @click="criarLista"
-                        class="absolute -right-4 hidden lg:block bg-[#00FCFF]/10 border border-[#00FCFF]/30 rounded-xl py-2 px-4 hover:bg-[#00FCFF]/20 cursor-pointer transition-all shadow-[0_0_20px_rgba(0,252,255,0.1)]">
+
+                    <button @click="criarLista" :disabled="!listaData.titulo || listaData.titulo.trim() === ''" :class="[
+                        !listaData.titulo || listaData.titulo.trim() === ''
+                            ? 'bg-zinc-800 border-zinc-700 opacity-50 cursor-not-allowed text-zinc-500'
+                            : 'bg-[#00FCFF]/10 border-[#00FCFF]/30 hover:bg-[#00FCFF]/20 cursor-pointer text-[#00FCFF]'
+                    ]" class="absolute -right-4 hidden lg:block bg-[#00FCFF]/10 border border-[#00FCFF]/30 rounded-xl py-2 px-4 hover:bg-[#00FCFF]/20 cursor-pointer transition-all shadow-[0_0_20px_rgba(0,252,255,0.1)]">
                         <p class="text-[#00FCFF] text-[10px] uppercase tracking-widest font-black">Criar Lista</p>
                     </button>
                 </div>
@@ -212,10 +215,11 @@ onClickOutside(target, () => {
                         <span v-for="(tag, index) in listaData.tags" :key="index"
                             class="flex items-center gap-2 bg-[#00FCFF]/5 border border-[#00FCFF]/20 text-[#00FCFF] text-[10px] font-bold py-1.5 px-3 rounded-full uppercase tracking-wider">
                             {{ tag }}
-                            <button @click="removerTag(index)" class="hover:text-white transition-colors text-xs">×</button>
+                            <button @click="removerTag(index)"
+                                class="hover:text-white transition-colors text-xs">×</button>
                         </span>
                     </div>
-                    
+
                     <div class="relative w-full max-w-xs">
                         <input v-model="novaTag" @keydown.enter.prevent="adicionarTag" type="text"
                             placeholder="Adicionar tag..."
@@ -224,76 +228,91 @@ onClickOutside(target, () => {
                 </div>
             </div>
 
-            <div class="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 mb-12 shadow-2xl relative z-50">
+            <div
+                class="bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 mb-12 shadow-2xl relative z-50">
                 <div class="flex flex-col gap-4">
                     <div class="flex items-center justify-between px-1">
                         <label class="text-[#00FCFF] text-[10px] font-black uppercase tracking-[0.2em]">
                             Explorar Filmes
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer group">
-                            <span class="text-zinc-500 text-[10px] font-bold uppercase group-hover:text-zinc-300 transition-colors">Pública</span>
+                            <span
+                                class="text-zinc-500 text-[10px] font-bold uppercase group-hover:text-zinc-300 transition-colors">Pública</span>
                             <div class="relative">
                                 <input type="checkbox" v-model="listaData.publica" class="peer hidden">
-                                <div class="w-8 h-4 bg-zinc-800 rounded-full border border-white/10 peer-checked:bg-[#00FCFF]/20 peer-checked:border-[#00FCFF]/50 transition-all"></div>
-                                <div class="absolute left-1 top-1 w-2 h-2 bg-zinc-500 rounded-full peer-checked:left-5 peer-checked:bg-[#00FCFF] transition-all"></div>
+                                <div
+                                    class="w-8 h-4 bg-zinc-800 rounded-full border border-white/10 peer-checked:bg-[#00FCFF]/20 peer-checked:border-[#00FCFF]/50 transition-all">
+                                </div>
+                                <div
+                                    class="absolute left-1 top-1 w-2 h-2 bg-zinc-500 rounded-full peer-checked:left-5 peer-checked:bg-[#00FCFF] transition-all">
+                                </div>
                             </div>
                         </label>
                     </div>
 
                     <div class="relative">
-                        <div class="flex items-center bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#00FCFF] transition-all">
-                            <input :value="searchQuery"
-                                @input="searchQuery = ($event.target as HTMLInputElement).value" type="text"
-                                placeholder="Busque um filme para adicionar..."
+                        <div
+                            class="flex items-center bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus-within:border-[#00FCFF] transition-all">
+                            <input :value="searchQuery" @input="searchQuery = ($event.target as HTMLInputElement).value"
+                                type="text" placeholder="Busque um filme para adicionar..."
                                 class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-sm font-medium">
                         </div>
 
                         <div ref="target" v-if="(isSearching && searchQuery.length > 3) || moviesList.length > 0"
                             class="absolute left-0 top-full w-full mt-2 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,1)] max-h-80 overflow-y-auto z-[100] backdrop-blur-xl">
-                            
+
                             <div v-if="isSearching" class="p-4 text-zinc-100 text-sm font-bold flex items-center gap-2">
-                                <div class="w-4 h-4 border-2 border-[#00FCFF] border-t-transparent rounded-full animate-spin"></div>
+                                <div
+                                    class="w-4 h-4 border-2 border-[#00FCFF] border-t-transparent rounded-full animate-spin">
+                                </div>
                                 Carregando...
                             </div>
 
-                            <div v-else v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id, movie.poster_thumb_br)" 
+                            <div v-else v-for="movie in moviesList" :key="movie.id"
+                                @click="addMovie(movie.id, movie.poster_thumb_br)"
                                 class="flex p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer transition-colors group items-center">
-                                
-                                <MoviePoster v-if="movie.poster_thumb_br" :path="getImageUrl(movie.poster_thumb_br)" class="w-10 h-14 object-cover rounded-md shadow-md" />
-                                
+
+                                <MoviePoster v-if="movie.poster_thumb_br" :path="getImageUrl(movie.poster_thumb_br)"
+                                    class="w-10 h-14 object-cover rounded-md shadow-md" />
+
                                 <div class="ml-3 flex-1">
-                                    <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
+                                    <p
+                                        class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
                                         {{ movie.titulo_br || movie.titulo_original }}
                                     </p>
                                     <p class="text-zinc-500 text-xs mt-1">{{ movie.release_date?.split('-')[0] }}</p>
                                     <p class="text-zinc-500 text-[10px] line-clamp-1">
-                                        {{ movie.diretores?.map(d => d.nome).join(', ') || '' }}
+                                        {{movie.diretores?.map(d => d.nome).join(', ') || ''}}
                                     </p>
                                 </div>
-                                
-                                <span class="text-[#00FCFF] text-xs font-black opacity-0 group-hover:opacity-100 transition-all">+ Adicionar</span>
+
+                                <span
+                                    class="text-[#00FCFF] text-xs font-black opacity-0 group-hover:opacity-100 transition-all">+
+                                    Adicionar</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <draggable v-model="listaData.movies" item-key="id" tag="section" handle=".drag-handle" 
+            <draggable v-model="listaData.movies" item-key="id" tag="section" handle=".drag-handle"
                 ghost-class="opacity-20"
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-6 relative z-0">
                 <template #item="{ element: movie }">
                     <div class="relative group">
-                        <button @click.stop="removerFilmeDaLista(movie.id)" 
+                        <button @click.stop="removerFilmeDaLista(movie.id)"
                             class="absolute -top-2 -right-2 z-20 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-xl">
                             <span class="text-xs">×</span>
                         </button>
 
                         <div class="flex flex-col gap-3">
-                            <div class="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-800 shadow-2xl ring-1 ring-white/10 group-hover:ring-[#00FCFF]/50 transition-all">
+                            <div
+                                class="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-800 shadow-2xl ring-1 ring-white/10 group-hover:ring-[#00FCFF]/50 transition-all">
                                 <MoviePoster :path="getImageUrl(movie.poster_thumb_br)"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                
-                                <div class="drag-handle absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
+
+                                <div
+                                    class="drag-handle absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
                                     <IconDrag class="w-8 h-8 text-[#00FCFF]" />
                                 </div>
                             </div>

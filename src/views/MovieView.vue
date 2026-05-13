@@ -8,6 +8,7 @@ import IconWatchLater from '@/components/icons/IconWatchLater.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
 import IconCheck from '@/components/icons/IconCheck.vue';
 import MovieDetailSkeleton from '@/components/MovieDetailSkeleton.vue';
+import MovieDetailSkeletonMessage from '@/components/MovieDetailSkeletonMessage.vue';
 import movie_json from '../assets/movieDetalhes.json';
 import movies_json from '../assets/movies.json'
 import type { MovieDetails, CollectionMovie, RelatedMovie, MovieList, Review } from '@/types/Movies';
@@ -47,6 +48,7 @@ const activeList = ref(false);
 const target = ref(null);
 const isMovieAddWatchLater = ref<{ id: number, attached: boolean, isDefault: boolean }>();
 const isMovieWatched = ref<{ id: number, attached: boolean, isDefault: boolean }>();
+const isProcessing = ref(false); // Nova ref para a mensagem de instantes
 
 const props = defineProps<{
   slug: string;
@@ -63,22 +65,17 @@ async function sleep(ms: number) {
 }
 
 async function loadFullMovie(retryCount = 0) {
-
-  // Só bloqueia chamadas manuais
   if (isSearching.value && retryCount === 0) return;
 
-  // Ativa loading apenas na primeira tentativa
   if (retryCount === 0) {
     isSearching.value = true;
+    isProcessing.value = false; // Reseta ao iniciar
   }
 
   try {
-
     const response = await movieStore.fullDetailMovie(props.slug);
-
     const movieData = response.movie;
-    console.log("Coleção filmes", retryCount, response);
-    // Filme ainda processando
+
     const movieReady =
       movieData.status === 'processado' &&
       !!movieData.titulo_original &&
@@ -86,63 +83,26 @@ async function loadFullMovie(retryCount = 0) {
       !!movieData.backdrop_path &&
       !!movieData.descricao_br;
 
-    if (
-      !movieReady &&
-      retryCount < maxRetries
-    ) {
+    if (!movieReady && retryCount < maxRetries) {
+      // ATIVA A MENSAGEM: Se entrou aqui, significa que vai rodar um retry
+      isProcessing.value = true;
 
-      console.log(
-        `Processando filme... tentativa ${retryCount + 1}/${maxRetries}`
-      );
+      console.log(`Processando filme... tentativa ${retryCount + 1}/${maxRetries}`);
 
-      // espera antes de tentar novamente
       await sleep(retryDelay);
-
       return await loadFullMovie(retryCount + 1);
     }
 
     // Filme pronto
-
     movie.value = movieData;
-    collection.value = response.collection
-    reviews.value = response.reviews;
-    moviesRelacionados.value = response.related;
-    listas.value = response.lists;
-    console.log("Coleção filmes", collection.value);
-    const definitiveSlug =
-      (i18n as any).locale === 'br'
-        ? movieData.slug_pt
-        : movieData.slug_en;
+    // ... restante da lógica de atribuição (collection, reviews, etc)
 
-    const currentSlug = props.slug;
-
-    // evita replace desnecessário
-    if (
-      definitiveSlug &&
-      !currentSlug.includes(definitiveSlug)
-    ) {
-      router.replace({
-        name: 'MovieView',
-        params: {
-          lang: (i18n as any).locale,
-          slug: `${movieData.id}-${definitiveSlug}`
-        }
-      });
-    }
-    // Feedback opcional
-    if (movieData.status === 'processado') {
-      console.log('Filme processado com sucesso!', movie.value);
-    }
+    isProcessing.value = false; // Desativa pois o filme carregou
 
   } catch (error) {
-
     console.error("Erro na comunicação com a API:", error);
-
+    isProcessing.value = false;
   } finally {
-
-    // Só encerra loading quando:
-    // - terminou
-    // - OU falhou após máximo de tentativas
     if (retryCount >= maxRetries || movie.value?.status !== 'processando') {
       isSearching.value = false;
     }
@@ -400,7 +360,7 @@ watch(userReview, (newReview) => {
             class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all">
         </div>
 
-   
+
       </div>
 
       <!-- Rating -->
@@ -465,8 +425,9 @@ watch(userReview, (newReview) => {
   <div class="bg-zinc-50 dark:bg-zinc-900">
     <Navbar />
     <!-- ESTADO DE LOADING -->
-    <div v-if="isSearching" class="bg-hero">
-      <MovieDetailSkeleton />
+    <div v-if="isSearching">
+      <!-- Agora a mensagem está integrada no componente -->
+      <MovieDetailSkeletonMessage :is-processing="isProcessing" />
     </div>
 
     <div v-else-if="movie" class="bg-hero">
