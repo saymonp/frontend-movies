@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
 import Navbar from '@/components/Navbar.vue';
 import AdminMoviesTable from '@/components/AdminMoviesTable.vue';
+import AdminUsersTable from '@/components/AdminUsersTable.vue';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
@@ -58,8 +59,14 @@ const tabs = ['Filmes', 'Listas', 'Reviews', 'Usuários'];
         </div>
 
         <div v-if="activeTab === 'Usuários'">
-          <h2 class="text-xl font-bold mb-4">Controle de Usuários</h2>
-          <p class="text-zinc-400">Gerencie permissões, banimentos e dados dos usuários.</p>
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h2 class="text-xl font-bold">Controle de Usuários</h2>
+              <p class="text-zinc-400 text-sm">Gerencie permissões, papéis administrativos e acesso dos membros.</p>
+            </div>
+          </div>
+
+          <AdminUsersTable />
         </div>
 
       </section>
