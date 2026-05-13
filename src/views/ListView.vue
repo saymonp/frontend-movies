@@ -17,6 +17,8 @@ import { storeToRefs } from 'pinia';
 import { useMovieStore } from '@/stores/movie';
 import { onClickOutside, transition } from '@vueuse/core';
 import i18n from '@/i18n';
+import MoviePoster from '@/components/MoviePoster.vue';
+import { getImageUrl } from '@/utils/imageHelper';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
@@ -133,20 +135,6 @@ onMounted(() => {
         console.error("Erro ao carregar:", error);
     }
 });
-
-const getImageUrl = (path: string) => {
-    if (!path) return '/placeholder.png';
-
-    // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
-    if (path.startsWith('http')) {
-        return path;
-    }
-
-    // Se for caminho relativo, remove uma possível barra extra no início para evitar //
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-
-    return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
-};
 
 const handleDragEnd = async () => {
     if (!lista.value) return;
@@ -434,8 +422,8 @@ const getMovieParam = (movie: any) => {
                                 class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
                                 <div v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id)" class="flex p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
                                     transition-colors group">
-                                    <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)"
-                                        class="w-10 h-14 object-cover rounded-md shadow-md">
+                                    <MoviePoster v-if="movie.poster_thumb_br"  :path="getImageUrl(movie.poster_thumb_br)"
+                                        class="w-10 h-14 object-cover rounded-md shadow-md" />
                                     <div class="ml-3 flex-1">
                                         <p
                                             class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
@@ -478,8 +466,8 @@ const getMovieParam = (movie: any) => {
                                     slug: getMovieParam(movie)
                                 }
                             }" class="relative">
-                                <img :src="getImageUrl(movie.poster_thumb_br)"
-                                    class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg">
+                                <MoviePoster :path="getImageUrl(movie.poster_thumb_br)"
+                                    class="w-full aspect-[2/3] object-cover ring-2 ring-white/10 group-hover:ring-[#00FCFF] rounded-lg transition-all duration-300 shadow-lg" />
                             </RouterLink>
 
                             <div class="w-full mt-3 text-center align-middle">

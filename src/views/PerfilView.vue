@@ -12,6 +12,8 @@ import type { ReviewPaginada, ReviewSummary } from '@/types/Review';
 import ReviewDetalhe from '@/components/ReviewDetalhe.vue';
 import { onClickOutside } from '@vueuse/core';
 import IconNoMovies from '@/components/icons/IconNoMovies.vue';
+import MoviePoster from '@/components/MoviePoster.vue';
+import { getImageUrl } from '@/utils/imageHelper';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
@@ -22,19 +24,6 @@ const listas = ref<ListaPaginada>();
 const reviews = ref<ReviewPaginada>();
 const reviewSelecionada = ref<ReviewSummary>();
 const target = ref(null);
-
-const getImageUrl = (path: string) => {
-  if (!path) return '/placeholder.png';
-  // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
-  if (path.startsWith('http')) {
-
-    return path;
-
-  }
-  // Se for caminho relativo, remove uma possível barra extra no início para evitar //
-  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-  return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
-};
 
 const filterListas = ref<ListaFilters>({
   page: 1
@@ -208,8 +197,8 @@ const handleExcluir = async (reviewId: number) => {
                       <template v-for="(style, index) in movieStyles" :key="index">
                         <div v-if="lista.movies[index]" class="relative w-28 sm:w-28 lg:w-32 transition-transform"
                           :class="[style.zIndex, style.ml, style.opacity, style.hover]">
-                          <img :src="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
-                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
+                          <MoviePoster :path="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
+                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']" />
                         </div>
                       </template>
                     </template>
@@ -265,8 +254,8 @@ const handleExcluir = async (reviewId: number) => {
           <div @click="abrirDetalheReview(review.id)"
             class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
 
-            <img v-if="review" :src="getImageUrl(review.movie.poster_thumb_br)"
-              class="w-12 h-18 object-cover rounded-md shadow-lg">
+            <MoviePoster v-if="review" :path="getImageUrl(review.movie.poster_thumb_br)"
+              class="w-12 h-18 object-cover rounded-md shadow-lg" />
 
             <div class="flex-1 flex flex-col">
               <div class="flex justify-between items-start">

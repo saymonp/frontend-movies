@@ -17,6 +17,8 @@ import { useMovieStore } from '@/stores/movie';
 import { onClickOutside, transition } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 import i18n from '@/i18n';
+import MoviePoster from '@/components/MoviePoster.vue';
+import { getImageUrl } from '@/utils/imageHelper';
 
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
@@ -101,29 +103,6 @@ const removerFilmeDaLista = (movieId: number) => {
 
 
 const searchQuery = ref('');
-
-
-const getImageUrl = (path: string) => {
-    if (!path) return '/placeholder.png';
-
-    // 1. Se já for uma URL absoluta (S3, Cloudinary, etc), retorna direto
-    if (path.startsWith('http')) {
-        return path;
-    }
-
-    // 2. Se o path começa com "/" ou "\/", identifica que é um caminho do TMDB
-    // Exemplo: /t4To8feUSysyBs4tlBAbXIrKlCv.jpg
-    if (path.startsWith('/') || path.startsWith('\\/')) {
-        const tmdbBaseUrl = 'https://image.tmdb.org/t/p/w500';
-        // Remove a barra invertida se ela existir para limpar o path
-        const cleanTmdbPath = path.replace('\\/', '/');
-        return `${tmdbBaseUrl}${cleanTmdbPath}`;
-    }
-
-    // 3. Caso contrário, assume que é uma imagem local do seu storage
-    const cleanLocalPath = path.startsWith('/') ? path.substring(1) : path;
-    return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanLocalPath}`;
-};
 
 async function loadMovies() {
     if (isSearching.value) return;
@@ -280,7 +259,7 @@ onClickOutside(target, () => {
                             <div v-else v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id, movie.poster_thumb_br)" 
                                 class="flex p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer transition-colors group items-center">
                                 
-                                <img v-if="movie.poster_thumb_br" :src="getImageUrl(movie.poster_thumb_br)" class="w-10 h-14 object-cover rounded-md shadow-md">
+                                <MoviePoster v-if="movie.poster_thumb_br" :path="getImageUrl(movie.poster_thumb_br)" class="w-10 h-14 object-cover rounded-md shadow-md" />
                                 
                                 <div class="ml-3 flex-1">
                                     <p class="text-zinc-100 text-sm font-bold group-hover:text-[#00FCFF] transition-colors">
@@ -311,8 +290,8 @@ onClickOutside(target, () => {
 
                         <div class="flex flex-col gap-3">
                             <div class="relative aspect-[2/3] overflow-hidden rounded-xl bg-zinc-800 shadow-2xl ring-1 ring-white/10 group-hover:ring-[#00FCFF]/50 transition-all">
-                                <img :src="getImageUrl(movie.poster_thumb_br)"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <MoviePoster :path="getImageUrl(movie.poster_thumb_br)"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                 
                                 <div class="drag-handle absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing">
                                     <IconDrag class="w-8 h-8 text-[#00FCFF]" />

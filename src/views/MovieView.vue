@@ -21,6 +21,8 @@ import { useListaStore } from '@/stores/lista';
 import { useReviewStore } from '@/stores/review';
 import type { ListasUser } from '@/types/Listas';
 import { onClickOutside } from '@vueuse/core';
+import MoviePoster from '@/components/MoviePoster.vue';
+import { getImageUrl } from '@/utils/imageHelper';
 
 const route = useRoute();
 const router = useRouter();
@@ -218,19 +220,6 @@ const getTodayDate = () => {
 // Inicializamos o estado com a data de hoje
 const dataAssistido = ref(getTodayDate());
 
-const getImageUrl = (path: string) => {
-  if (!path) return '/placeholder.png';
-
-  // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
-  if (path.startsWith('http')) {
-    return path;
-  }
-
-  // Se for caminho relativo, remove uma possível barra extra no início para evitar //
-  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-
-  return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
-};
 const getMovieParam = (movie: any) => {
   // Pega o slug de acordo com o idioma
   const slug = (i18n as any).locale === 'br' ? movie.slug_pt : movie.slug_en;
@@ -399,7 +388,7 @@ onClickOutside(target, () => (activeList.value = false));
 
 
 
-            <img v-if="movie.backdrop_path" :src="getImageUrl(movie.backdrop_path)"
+            <MoviePoster v-if="movie.backdrop_path" :path="getImageUrl(movie.backdrop_path)"
               class="relative w-full h-full object-cover opacity-73" />
 
           </div>
@@ -449,12 +438,18 @@ onClickOutside(target, () => (activeList.value = false));
                 <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
 
                   <div class="flex flex-col items-center gap-2">
-                    <input v-if="isMovieAddWatchLater" type="checkbox" :checked="isMovieAddWatchLater.attached"
-                      @click.prevent="toggleWatchLaterLista"
-                      class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
-                    <IconWatchLater class="w-10 h-10 text-zinc-100 opacity-80" />
-                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-                      Assistir mais Tarde
+                    <button @click="toggleWatchLaterLista"
+                      class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500"
+                      :class="isMovieAddWatchLater?.attached
+                        ? 'bg-[#00FCFF] border-[#00FCFF] shadow-[0_0_15px_rgba(0,252,255,0.4)]'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10'">
+                      <IconWatchLater class="w-6 h-6 transition-colors"
+                        :class="isMovieAddWatchLater?.attached ? 'text-black' : 'text-zinc-100'" />
+                    </button>
+
+                    <span class="text-[10px] lg:text-xs text-center max-w-[80px] transition-colors"
+                      :class="isMovieAddWatchLater?.attached ? 'text-[#00FCFF] font-bold' : 'text-zinc-400'">
+                      {{ isMovieAddWatchLater?.attached ? 'Na Lista' : 'Ver Depois' }}
                     </span>
                   </div>
 
@@ -494,12 +489,19 @@ onClickOutside(target, () => (activeList.value = false));
                     </Transition>
                   </div>
                   <div class="flex flex-col items-center gap-2">
-                    <input v-if="isMovieWatched" type="checkbox" :checked="isMovieWatched.attached"
-                      @click.prevent="toggleWatchedLista"
-                      class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
-                    <IconCheck class="w-10 h-10 text-zinc-100 opacity-80" />
-                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-                      Assistido
+                    <button @click="toggleWatchedLista"
+                      class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500 group"
+                      :class="isMovieWatched?.attached
+                        ? 'bg-[#00FCFF] border-[#00FCFF] shadow-[0_0_15px_rgba(0,252,255,0.4)]'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'">
+                      <IconCheck class="w-6 h-6 transition-all duration-300" :class="isMovieWatched?.attached
+                        ? 'text-black scale-110'
+                        : 'text-zinc-100 opacity-60 group-hover:opacity-100'" />
+                    </button>
+
+                    <span class="text-[10px] lg:text-xs text-center max-w-[80px] transition-colors duration-300"
+                      :class="isMovieWatched?.attached ? 'text-[#00FCFF] font-bold' : 'text-zinc-100 opacity-80'">
+                      {{ isMovieWatched?.attached ? 'Assistido' : 'Marcar visto' }}
                     </span>
                   </div>
 
@@ -507,8 +509,8 @@ onClickOutside(target, () => (activeList.value = false));
               </div>
             </div>
             <div class="flex flex-col ">
-              <div class="shrink-0 ml-auto"><img v-if="movie.poster_path_br" :src="getImageUrl(movie.poster_path_br)"
-                  class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
+              <div class="shrink-0 ml-auto"><MoviePoster v-if="movie.poster_path_br" :path="getImageUrl(movie.poster_path_br)"
+                  class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10" />
               </div>
 
 
@@ -594,8 +596,8 @@ onClickOutside(target, () => (activeList.value = false));
                   slug: getMovieParam(m)
                 }
               }" class="w-full">
-                <img v-if="m.poster_thumb_br" :src="getImageUrl(m.poster_thumb_br)"
-                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
+                <MoviePoster v-if="m.poster_thumb_br" :path="getImageUrl(m.poster_thumb_br)"
+                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105" />
               </RouterLink>
 
               <div class="w-full flex flex-col">
@@ -630,8 +632,8 @@ onClickOutside(target, () => (activeList.value = false));
                   slug: getMovieParam(movieRel)
                 }
               }" class="w-full">
-                <img v-if="movieRel.poster_thumb_br" :src="getImageUrl(movieRel.poster_thumb_br)"
-                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
+                <MoviePoster v-if="movieRel.poster_thumb_br" :path="getImageUrl(movieRel.poster_thumb_br)"
+                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105" />
               </RouterLink>
 
               <div class="w-full flex flex-col">
@@ -671,9 +673,9 @@ onClickOutside(target, () => (activeList.value = false));
                     <template v-for="(style, index) in movieStyles" :key="index">
                       <div v-if="lista.movies[index]" class="relative w-24 sm:w-28 transition-transform"
                         :class="[style.zIndex, style.ml, style.opacity, style.hover]">
-                        <img v-if="lista.movies[index].poster_thumb_br"
-                          :src="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
-                          :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
+                        <MoviePoster v-if="lista.movies[index].poster_thumb_br"
+                          :path="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
+                          :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']" />
                       </div>
                     </template>
                   </div>

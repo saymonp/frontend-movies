@@ -18,7 +18,8 @@ import type { ListaFilters, ListasUser } from '@/types/Listas';
 import i18n from '@/i18n';
 import { useListaStore } from '@/stores/lista';
 import IconNoMovies from '@/components/icons/IconNoMovies.vue';
-
+import MoviePoster from '@/components/MoviePoster.vue';
+import { getImageUrl } from '@/utils/imageHelper';
 
 const authStore = useAuthStore();
 const movieStore = useMovieStore();
@@ -271,8 +272,8 @@ const toggleAddToList = (id: number) => {
     getUserListas(id);
 };
 
-const getImageUrl = (path: string) => {
-    if (!path) return '/placeholder.png';
+const getImageUrl1 = (path: string) => {
+    if (!path) return null;
 
     // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
     if (path.startsWith('http')) {
@@ -326,37 +327,37 @@ const movieStyles = [
     { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/5' },
 ];
 const getUserListas = async (movieId: number) => {
-  isSearchingUserListas.value = true;
-  try {
+    isSearchingUserListas.value = true;
+    try {
 
-    userListas.value = await listaStore.indexUserListas(movieId);
+        userListas.value = await listaStore.indexUserListas(movieId);
 
-  } catch (error) {
+    } catch (error) {
 
-  } finally {
-    isSearchingUserListas.value = false;
-  }
+    } finally {
+        isSearchingUserListas.value = false;
+    }
 }
 
 const toggleMovie = async (listaIndex: number, movieId: number) => {
-  //@ts-ignore
-  const lista = userListas.value[listaIndex] || null;
+    //@ts-ignore
+    const lista = userListas.value[listaIndex] || null;
 
-  if (!lista || !movieId) {
-    return;
-  }
+    if (!lista || !movieId) {
+        return;
+    }
 
-  try {
-    const response = await listaStore.toggleAddToList({
-      lista_id: lista.id,
-      movie_id: movieId
-    });
+    try {
+        const response = await listaStore.toggleAddToList({
+            lista_id: lista.id,
+            movie_id: movieId
+        });
 
-    lista.movie_exists = response.attached;
+        lista.movie_exists = response.attached;
 
-  } catch (error) {
-    console.error("Erro ao alternar filme na lista:", error);
-  }
+    } catch (error) {
+        console.error("Erro ao alternar filme na lista:", error);
+    }
 }
 </script>
 
@@ -438,8 +439,8 @@ const toggleMovie = async (listaIndex: number, movieId: number) => {
                         :diretores="diretores" :idiomas="idiomasDisponiveis" :isSearching="isSearching"
                         v-model:filterValue="filterValue" @search="loadMovies(filterMovies)" />
                     <SearchBarListas v-if="searchMode == 'lists'" v-model:filters="filterListas"
-                        :isSearching="isSearching" 
-                        :maxLikes="listas.data.length? Math.max(...listas.data.map((lista: { likes_count: any; })  => lista.likes_count)) : 0" />
+                        :isSearching="isSearching"
+                        :maxLikes="listas.data.length ? Math.max(...listas.data.map((lista: { likes_count: any; }) => lista.likes_count)) : 0" />
                 </div>
                 <TransitionGroup v-if="searchMode == 'movies'" tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
@@ -455,8 +456,7 @@ const toggleMovie = async (listaIndex: number, movieId: number) => {
                                 slug: getMovieParam(movie)
                             }
                         }" class="w-full">
-                            <img :src="getImageUrl(movie.poster_thumb_br)"
-                                class="w-full aspect-[2/3] object-cover ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-lg">
+                            <MoviePoster :path="getImageUrl(movie.poster_thumb_br)" />
                         </RouterLink>
 
                         <div class="relative w-full">
@@ -514,9 +514,11 @@ const toggleMovie = async (listaIndex: number, movieId: number) => {
                                         <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
                                             <label v-for="(lista, index) in userListas" :key="lista.id"
                                                 class="flex items-center gap-2 cursor-pointer group">
-                                                <input type="checkbox" :checked="lista.movie_exists" @click.prevent="toggleMovie(index, movie.id)"
+                                                <input type="checkbox" :checked="lista.movie_exists"
+                                                    @click.prevent="toggleMovie(index, movie.id)"
                                                     class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
-                                                <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo }}</span>
+                                                <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo
+                                                }}</span>
                                             </label>
                                         </div>
                                         <button @click="activeListId = null"
@@ -541,31 +543,35 @@ const toggleMovie = async (listaIndex: number, movieId: number) => {
                             class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md hover:border-[#d919ff]/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(217,25,255,0.15)]">
 
                             <!-- CAPAS -->
-                            <div v-if="lista.movies && lista.movies.length > 0" class="relative h-40 flex items-center justify-center overflow-hidden px-4 pt-5">
+                            <div v-if="lista.movies && lista.movies.length > 0"
+                                class="relative h-40 flex items-center justify-center overflow-hidden px-4 pt-5 ">
 
                                 <template v-for="(style, index) in movieStyles" :key="index">
                                     <div v-if="lista.movies[index]"
                                         class="relative w-28 sm:w-28 lg:w-32 transition-transform"
                                         :class="[style.zIndex, style.ml, style.opacity, style.hover]">
-                                        <img :src="getImageUrl(lista.movies[index].poster_thumb_br)"
-                                            class="w-28 lg:w-32 rounded-xl object-cover shadow-2xl"
-                                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']">
+                                        <MoviePoster :path="getImageUrl(lista.movies[index].poster_thumb_br)"
+                                            class="rounded-xl transition-transform max-w-[80px]" :class="[
+                                                style.ring,
+                                                index === 0 ? 'shadow-2xl scale-105' : 'shadow-lg opacity-90'
+                                            ]" />
+
                                     </div>
-                                    
+
                                 </template>
                                 <!-- 2. Placeholder (Caso a lista esteja vazia) -->
-                    
+
                                 <!-- Overlay -->
                                 <div
                                     class="absolute inset-0 bg-gradient-to-t from-[#020036] via-transparent to-transparent">
                                 </div>
                             </div>
-                            <div v-else 
-                      class="flex flex-col items-center justify-center w-full min-h-[160px] bg-white/5 border-2 border-dashed border-white/10 rounded-xl">
-                      <IconNoMovies />
-                      <span class="text-white/30 text-xs font-medium">Lista vazia</span>
+                            <div v-else
+                                class="flex flex-col items-center justify-center w-full min-h-[160px] bg-white/5 border-2 border-dashed border-white/10 rounded-xl">
+                                <IconNoMovies />
+                                <span class="text-white/30 text-xs font-medium">Lista vazia</span>
 
-                    </div>
+                            </div>
                             <!-- CONTEÚDO -->
                             <div class="p-3">
 
