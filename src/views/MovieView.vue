@@ -19,6 +19,7 @@ import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { useListaStore } from '@/stores/lista';
 import { useReviewStore } from '@/stores/review';
+import type { ListasUser } from '@/types/Listas';
 
 const route = useRoute();
 const router = useRouter();
@@ -36,6 +37,10 @@ const movieStore = useMovieStore();
 const loggedIn = ref(true);
 const listaStore = useListaStore();
 const reviewStore = useReviewStore();
+const userListas = ref<ListasUser[]>();
+const isSearchingUserListas = ref(false);
+const activeReviewId = ref<number | null>(null);
+const activeList = ref(false);
 const props = defineProps<{
   slug: string
 }>();
@@ -63,7 +68,7 @@ async function loadFullMovie(retryCount = 0) {
     const response = await movieStore.fullDetailMovie(props.slug);
 
     const movieData = response.movie;
-    console.log("Coleção filmes",retryCount,response);
+    console.log("Coleção filmes", retryCount, response);
     // Filme ainda processando
     const movieReady =
       movieData.status === 'processado' &&
@@ -94,7 +99,7 @@ async function loadFullMovie(retryCount = 0) {
     reviews.value = response.reviews;
     moviesRelacionados.value = response.related;
     listas.value = response.lists;
-    console.log("Coleção filmes",collection.value);
+    console.log("Coleção filmes", collection.value);
     const definitiveSlug =
       (i18n as any).locale === 'br'
         ? movieData.slug_pt
@@ -212,13 +217,19 @@ const getMovieParam = (movie: any) => {
   return `${movie.id}-${slug}`;
 };
 
-const userListas = async () => {
-  try{
+const getUserListas = async () => {
+  isSearchingUserListas.value = true;
+  try {
+    if (!movie.value?.id) {
+      throw new Error('Filme não encontrado');
+    }
 
-  }catch(error){
+    userListas.value = await listaStore.indexUserListas(movie.value?.id);
 
-  }finally{
-    
+  } catch (error) {
+
+  } finally {
+    isSearchingUserListas.value = false;
   }
 }
 const movieStyles = [
@@ -227,6 +238,32 @@ const movieStyles = [
   { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/10' },
   { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/5' },
 ];
+const openListas = () => {
+  activeList.value = true;
+  getUserListas();
+};
+
+const toggleMovie = async (listaIndex: number) => {
+  //@ts-ignore
+  const lista = userListas.value[listaIndex] || null;
+  const movieId = movie.value?.id;
+
+  if (!lista || !movieId) {
+    return;
+  }
+
+  try {
+    const response = await listaStore.toggleAddToList({
+      lista_id: lista.id,
+      movie_id: movieId
+    });
+
+    lista.movie_exists = response.attached;
+
+  } catch (error) {
+    console.error("Erro ao alternar filme na lista:", error);
+  }
+}
 </script>
 
 <template>
@@ -376,12 +413,31 @@ const movieStyles = [
                   </div>
 
                   <div class="flex flex-col items-center gap-2">
-                    <IconAddToList class="w-10 h-10 text-zinc-100 opacity-80" />
+                    <IconAddToList @click.stop="openListas" class="w-10 h-10 text-zinc-100 opacity-80" />
                     <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
                       Salvar na Lista
                     </span>
                   </div>
-
+                  <Transition name="fade-slide">
+                    <div v-if="activeList"
+                      class="absolute top-full w-56 z-[60] mt-2 bg-[#0f0f0f]/95 border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                      <div class="flex flex-col gap-3">
+                        <p class="text-[10px] text-zinc-500 uppercase font-black border-b border-white/5 pb-1">
+                          Salvar
+                          em:</p>
+                        <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
+                          <label v-for="(lista, index) in userListas" :key="lista.id"
+                            class="flex items-center gap-2 cursor-pointer group">
+                            <input type="checkbox" v-model="lista.movie_exists" @click.prevent="toggleMovie(index)"
+                              class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
+                            <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo }}</span>
+                          </label>
+                        </div>
+                        <button @click="activeList = false"
+                          class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black py-2 rounded-md transition-all">Concluir</button>
+                      </div>
+                    </div>
+                  </Transition>
                   <div class="flex flex-col items-center gap-2">
                     <IconCheck class="w-10 h-10 text-zinc-100 opacity-80" />
                     <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
@@ -541,7 +597,7 @@ const movieStyles = [
           </h1>
 
           <!-- Container com Scroll Horizontal -->
-           <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pb-4 custom-scrollbar">
+          <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pb-4 custom-scrollbar">
             <div v-for="lista in listas" :key="lista.id" class="snap-start min-w-[280px] sm:min-w-[320px]">
               <RouterLink :to="{
                 name: 'ListView',
@@ -619,7 +675,7 @@ const movieStyles = [
             </button>
           </div>
         </div>
-        
+
       </div>
       <div v-else class="text-white">
         Filme não encontrado.
@@ -647,22 +703,26 @@ const movieStyles = [
 
 /* Estilização para Chrome, Edge e Safari */
 .custom-scrollbar::-webkit-scrollbar {
-  height: 4px; /* Altura da barra horizontal */
+  height: 4px;
+  /* Altura da barra horizontal */
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02); /* Fundo da trilha quase invisível */
+  background: rgba(255, 255, 255, 0.02);
+  /* Fundo da trilha quase invisível */
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1); /* Cor da barra em si (bem discreta) */
+  background: rgba(255, 255, 255, 0.1);
+  /* Cor da barra em si (bem discreta) */
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 252, 255, 0.4); /* Ganha destaque (e sua cor tema) no hover */
+  background: rgba(0, 252, 255, 0.4);
+  /* Ganha destaque (e sua cor tema) no hover */
 }
 
 /* Suporte para Firefox */

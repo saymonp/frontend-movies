@@ -60,8 +60,13 @@ export const useListaStore = defineStore('listas', {
             const response = await api.post<LikeResponse>(`/listas/${listaId}/like`);
             return response.data;
         },
-        async indexUserListas(movieId: number): Promise<ListasUser> {
-            const response = await api.get<ListasUser>(`/listas/user/${movieId}`);
+        async indexUserListas(movieId: number): Promise<ListasUser[]> {
+            const response = await api.get<ListasUser[]>('/listas/user/',
+                {
+                    params:
+                        { movie_id: movieId }
+                }
+            );
             return response.data;
         },
         async toggleAddToList(toggleData: ToggleData): Promise<ToggleResponse> {
