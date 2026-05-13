@@ -190,12 +190,7 @@ onMounted(() => {
   }
 });
 
-const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
-
-//const selectRating = (val: number) => {
-//  rating.value = val;
-//};
 
 watch(() => props.slug, async () => {
   // Limpa dados antigos para não mostrar filme errado enquanto carrega
@@ -309,17 +304,6 @@ const formReview = reactive({
   tags: [] as string[],
 });
 
-// Resetar formulário ao abrir
-//watch(isCardReviewVisible, (visible) => {
-//    if (visible) {
-//        formReview.titulo = '';
-//        formReview.comentario = '';
-//        formReview.rating = 0;
-//        formReview.tags = [];
-//        dataAssistido.value = getTodayDate();
-//    }
-//});
-
 const addTag = () => {
   const val = tagInput.value.trim();
   if (val && !formReview.tags.includes(val)) {
@@ -344,7 +328,6 @@ const handleSubmitReview = async () => {
       comentario: formReview.comentario,
       rating: formReview.rating,
       tags: formReview.tags,
-      data_assistido: dataAssistido.value
     };
 
     await reviewStore.createReview(payload as any, parseInt(props.slug));
@@ -373,7 +356,6 @@ const selectRatingOutForm = async (val: number) => {
     comentario: formReview.comentario,
     rating: formReview.rating,
     tags: formReview.tags,
-    data_assistido: dataAssistido.value
   };
 
   await reviewStore.createReview(payload as any, parseInt(props.slug));

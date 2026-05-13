@@ -20,10 +20,13 @@ import { useListaStore } from '@/stores/lista';
 import IconNoMovies from '@/components/icons/IconNoMovies.vue';
 import MoviePoster from '@/components/MoviePoster.vue';
 import { getImageUrl } from '@/utils/imageHelper';
+import type { CreateReview } from '@/types/Review';
+import { useReviewStore } from '@/stores/review';
 
 const authStore = useAuthStore();
 const movieStore = useMovieStore();
 const listaStore = useListaStore();
+const reviewStore = useReviewStore();
 // transforma as propriedades em Refs, permitindo o uso de .value
 const { isAuthenticated, user } = storeToRefs(authStore);
 
@@ -247,43 +250,17 @@ const selectRating = (star: number) => {
     rating.value = star;
 };
 
-const activeReviewId = ref<number | null>(null);
-const rating = ref(0);
-
-const toggleQuickReview = (id: number) => {
-    // Se clicar no mesmo, fecha. Se clicar em outro, abre o novo.
-    activeReviewId.value = activeReviewId.value === id ? null : id;
-    rating.value = 0; // Reseta a nota ao abrir
-};
 const changeListaPage = (page: number) => {
     filterListas.value.page = page;
 };
 const activeListId = ref<number | null>(null);
-const minhasListas = ref([
-    { id: 1, nome: 'Adrenalina Pura', selecionada: false },
-    { id: 2, nome: 'Filmes de Conforto', selecionada: false },
-    { id: 3, nome: 'Para ver depois', selecionada: true }
-]);
+
 
 const toggleAddToList = (id: number) => {
     // Fecha o de review se estiver aberto e abre o de listas
     activeReviewId.value = null;
     activeListId.value = activeListId.value === id ? null : id;
     getUserListas(id);
-};
-
-const getImageUrl1 = (path: string) => {
-    if (!path) return null;
-
-    // Verifica se o path já é uma URL absoluta (começa com http:// ou https://)
-    if (path.startsWith('http')) {
-        return path;
-    }
-
-    // Se for caminho relativo, remove uma possível barra extra no início para evitar //
-    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-
-    return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
 };
 
 const movieListSection = ref<HTMLElement | null>(null);
@@ -359,6 +336,60 @@ const toggleMovie = async (listaIndex: number, movieId: number) => {
         console.error("Erro ao alternar filme na lista:", error);
     }
 }
+
+const activeReviewId = ref<number | null>(null);
+const rating = ref(0);
+const comentario = ref(''); // Novo: armazena o texto da review rápida
+const isSubmitting = ref(false);
+
+const toggleQuickReview = async (id: number) => {
+    if (activeReviewId.value === id) {
+        activeReviewId.value = null;
+        return;
+    }
+
+    activeReviewId.value = id;
+    rating.value = 0;
+    comentario.value = '';
+
+    try {
+        // Busca se o usuário já tem uma review para este filme
+        const existingReview = await reviewStore.showMovieReview(id);
+
+        // Se retornar a review (e não a mensagem de erro), preenchemos os campos
+        if (existingReview && 'id' in existingReview) {
+            rating.value = existingReview.rating;
+            comentario.value = existingReview.comentario || '';
+        }
+    } catch (error) {
+        // Se cair no 404 (Review não encontrada), mantemos os campos zerados
+        console.log("Iniciando nova review rápida");
+    }
+};
+
+const saveQuickReview = async (movieId: number) => {
+    if (rating.value === 0) return; // Validação básica
+
+    isSubmitting.value = true;
+    try {
+        const reviewData: CreateReview = {
+            titulo: '', // Review rápida geralmente não tem título
+            comentario: comentario.value,
+            rating: rating.value,
+            tags: [] // Mantém tags vazias na review rápida ou herda as existentes
+        };
+
+        await reviewStore.createReview(reviewData, movieId);
+
+        // Feedback visual e fecha o painel
+        activeReviewId.value = null;
+        // Opcional: Recarregar a lista ou atualizar o estado local do filme
+    } catch (error) {
+        console.error("Erro ao salvar review rápida", error);
+    } finally {
+        isSubmitting.value = false;
+    }
+};
 </script>
 
 <template>
@@ -485,18 +516,29 @@ const toggleMovie = async (listaIndex: number, movieId: number) => {
                                 <div v-if="activeReviewId === movie.id"
                                     class="absolute top-full left-0 right-0 z-[60] mt-2 bg-[#0f0f0f]/95 border border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
                                     <div class="flex flex-col gap-3">
+                                        <!-- Estrelas -->
                                         <div class="flex justify-center gap-0.5">
                                             <button v-for="star in 5" :key="star" @click="rating = star" class="p-0.5">
                                                 <IconStar class="w-5 h-5 transition-colors"
                                                     :class="star <= rating ? 'text-[#00FCFF]' : 'text-zinc-800'" />
                                             </button>
                                         </div>
-                                        <input type="text" placeholder="Review rápida..."
+
+                                        <!-- Input de Texto -->
+                                        <input v-model="comentario" type="text" placeholder="Review rápida..."
+                                            @keyup.enter="saveQuickReview(movie.id)"
                                             class="w-full bg-white/5 border border-white/10 p-2 rounded-md text-[11px] text-white outline-none focus:border-[#00FCFF]/50">
+
+                                        <!-- Ações -->
                                         <div class="flex gap-2">
-                                            <button @click="toggleQuickReview(movie.id)"
-                                                class="flex-1 bg-[#00FCFF] text-black text-[10px] font-black uppercase py-2 rounded-md">OK</button>
-                                            <button @click="toggleQuickReview(movie.id)"
+                                            <button @click="saveQuickReview(movie.id)"
+                                                :disabled="isSubmitting || rating === 0"
+                                                class="flex-1 bg-[#00FCFF] disabled:bg-zinc-700 disabled:text-zinc-500 text-black text-[10px] font-black uppercase py-2 rounded-md transition-all">
+                                                <span v-if="!isSubmitting">OK</span>
+                                                <span v-else>...</span>
+                                            </button>
+
+                                            <button @click="activeReviewId = null"
                                                 class="px-2 text-zinc-500 hover:text-white text-[10px]">✕</button>
                                         </div>
                                     </div>
@@ -518,7 +560,7 @@ const toggleMovie = async (listaIndex: number, movieId: number) => {
                                                     @click.prevent="toggleMovie(index, movie.id)"
                                                     class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
                                                 <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo
-                                                }}</span>
+                                                    }}</span>
                                             </label>
                                         </div>
                                         <button @click="activeListId = null"
