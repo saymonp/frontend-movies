@@ -303,10 +303,10 @@ onClickOutside(target, () => (activeList.value = false));
 const isSubmitting = ref(false);
 const tagInput = ref('');
 const formReview = reactive({
-    titulo: '',
-    comentario: '',
-    rating: 0,
-    tags: [] as string[],
+  titulo: '',
+  comentario: '',
+  rating: 0,
+  tags: [] as string[],
 });
 
 // Resetar formulário ao abrir
@@ -321,52 +321,67 @@ const formReview = reactive({
 //});
 
 const addTag = () => {
-    const val = tagInput.value.trim();
-    if (val && !formReview.tags.includes(val)) {
-        formReview.tags.push(val);
-        tagInput.value = '';
-    }
+  const val = tagInput.value.trim();
+  if (val && !formReview.tags.includes(val)) {
+    formReview.tags.push(val);
+    tagInput.value = '';
+  }
 };
 
 const removeTag = (index: number) => {
-    formReview.tags.splice(index, 1);
+  formReview.tags.splice(index, 1);
 };
 
 const handleSubmitReview = async () => {
-    if (!movie.value?.id) return;
-    if (formReview.rating === 0) return alert('Selecione uma nota antes de publicar.');
+  if (!movie.value?.id) return;
+  if (formReview.rating === 0) return alert('Selecione uma nota antes de publicar.');
 
-    isSubmitting.value = true;
-    try {
-        const payload = {
-            movie_id: movie.value.id, // ID extraído do filme carregado
-            titulo: formReview.titulo,
-            comentario: formReview.comentario,
-            rating: formReview.rating,
-            tags: formReview.tags,
-            data_assistido: dataAssistido.value
-        };
+  isSubmitting.value = true;
+  try {
+    const payload = {
+      movie_id: movie.value.id, // ID extraído do filme carregado
+      titulo: formReview.titulo,
+      comentario: formReview.comentario,
+      rating: formReview.rating,
+      tags: formReview.tags,
+      data_assistido: dataAssistido.value
+    };
 
-        await reviewStore.createReview(payload as any, parseInt(props.slug));
-        
-        // Opcional: Recarregar as reviews da tela após postar
-        await loadFullMovie(); 
-        
-        isCardReviewVisible.value = false;
-    } catch (error) {
-        console.error("Erro ao publicar review:", error);
-    } finally {
-        isSubmitting.value = false;
-    }
+    await reviewStore.createReview(payload as any, parseInt(props.slug));
+
+    // Opcional: Recarregar as reviews da tela após postar
+    await loadFullMovie();
+
+    isCardReviewVisible.value = false;
+  } catch (error) {
+    console.error("Erro ao publicar review:", error);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const selectRating = (val: number) => {
-    formReview.rating = val;
+  formReview.rating = val;
+};
+
+const selectRatingOutForm = async (val: number) => {
+  if (!movie.value?.id) return;
+  formReview.rating = val;
+  const payload = {
+    movie_id: movie.value.id, // ID extraído do filme carregado
+    titulo: formReview.titulo,
+    comentario: formReview.comentario,
+    rating: formReview.rating,
+    tags: formReview.tags,
+    data_assistido: dataAssistido.value
+  };
+
+  await reviewStore.createReview(payload as any, parseInt(props.slug));
 };
 
 const userReview = computed(() => {
   if (!reviews.value || !user.value?.id) return null;
-  
+
   // Procura nas reviews carregadas aquela que pertence ao usuário
   return reviews.value.find(review => review.user_id === user.value?.id) || null;
 });
@@ -396,18 +411,14 @@ watch(userReview, (newReview) => {
         <p class="text-zinc-500 text-xs mt-1 italic">Compartilhe sua opinião sobre o filme</p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-1 gap-4">
         <div class="flex flex-col gap-1">
           <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Título da Review</label>
           <input type="text" v-model="formReview.titulo" placeholder="Ex: Incrível!"
             class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all">
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Assistido em</label>
-          <input type="date" v-model="dataAssistido"
-            class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
-        </div>
+   
       </div>
 
       <!-- Rating -->
@@ -429,7 +440,8 @@ watch(userReview, (newReview) => {
 
       <div class="flex flex-col gap-1">
         <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Sua Mensagem</label>
-        <textarea v-model="formReview.comentario" rows="4" placeholder="O que você achou da fotografia, roteiro e atuação?"
+        <textarea v-model="formReview.comentario" rows="4"
+          placeholder="O que você achou da fotografia, roteiro e atuação?"
           class="w-full bg-white/5 border border-white/10 p-3 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all resize-none"></textarea>
       </div>
 
@@ -437,11 +449,12 @@ watch(userReview, (newReview) => {
       <div class="flex flex-col gap-1">
         <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Tags <span
             class="lowercase font-normal opacity-50">(pressione enter)</span></label>
-        <input type="text" v-model="tagInput" @keydown.enter.prevent="addTag" placeholder="Ex: Masterpiece, Terror, Favorito"
+        <input type="text" v-model="tagInput" @keydown.enter.prevent="addTag"
+          placeholder="Ex: Masterpiece, Terror, Favorito"
           class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
-        
+
         <div v-if="formReview.tags.length > 0" class="flex flex-wrap gap-1.5 mt-2">
-          <span v-for="(tag, index) in formReview.tags" :key="index" 
+          <span v-for="(tag, index) in formReview.tags" :key="index"
             class="bg-[#00FCFF]/10 text-[#00FCFF] text-[9px] uppercase font-bold px-2 py-1 rounded-md border border-[#00FCFF]/20 flex items-center gap-1">
             {{ tag }}
             <button @click="removeTag(index)" class="hover:text-white ml-1">×</button>
@@ -515,21 +528,20 @@ watch(userReview, (newReview) => {
                   {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
                 </p>
               </div>
-              <button @click="isCardReviewVisible = true" 
+              <button @click="isCardReviewVisible = true"
                 class="mt-2 w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 Fazer Review
               </button>
               <!-- Estrelas -->
               <div class="mt-4 flex lg:basis-full lg:items-center">
-                <button v-for="star in 5" :key="star" type="button" @click="selectRating(star)"
+                <button v-for="star in 5" :key="star" type="button" @click="selectRatingOutForm(star)"
                   @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
-                  class="p-1 transition-transform active:scale-90 cursor-pointer">
-                  <IconStar class="w-4 h-4 lg:w-6 lg:h-6 transition-colors duration-200" :class="star <= (hoverRating || rating)
-                    ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]'
-                    : 'text-zinc-600'" />
+                  class="p-1 transition-all active:scale-125 cursor-pointer">
+                  <IconStar class="w-6 h-6 transition-colors duration-200"
+                    :class="star <= (hoverRating || formReview.rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
                 </button>
                 <span class="text-[#00FCFF] font-black text-l italic">
-                  {{ rating }}/5
+                  {{ formReview.rating }}/5
                 </span>
               </div>
               <!-- PC -->
@@ -608,7 +620,8 @@ watch(userReview, (newReview) => {
               </div>
             </div>
             <div class="flex flex-col ">
-              <div class="shrink-0 ml-auto"><MoviePoster v-if="movie.poster_path_br" :path="getImageUrl(movie.poster_path_br)"
+              <div class="shrink-0 ml-auto">
+                <MoviePoster v-if="movie.poster_path_br" :path="getImageUrl(movie.poster_path_br)"
                   class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10" />
               </div>
 
