@@ -1,309 +1,332 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Navbar from '@/components/Navbar.vue';
 import IconStar from '@/components/icons/IconStar.vue';
 import IconEditList from '@/components/icons/IconList.vue';
+import type { ListaFilters, ListaPaginada } from '@/types/Listas';
+import { useListaStore } from '@/stores/lista';
+import { useAuthStore } from '@/stores/auth';
+import { storeToRefs } from 'pinia';
+import { useReviewStore } from '@/stores/review';
+import type { ReviewPaginada, ReviewSummary } from '@/types/Review';
+import ReviewDetalhe from '@/components/ReviewDetalhe.vue';
+import { onClickOutside } from '@vueuse/core';
+import IconNoMovies from '@/components/icons/IconNoMovies.vue';
+import MoviePoster from '@/components/MoviePoster.vue';
+import { getImageUrl } from '@/utils/imageHelper';
 
-const getImageUrl = (path: string) => {
-  // Isso converte o caminho relativo em um caminho que o navegador entende
-  return new URL(path, import.meta.url).href;
-};
+const authStore = useAuthStore();
+const { isAuthenticated, user } = storeToRefs(authStore);
+const listaStore = useListaStore();
+const reviewStore = useReviewStore();
+const isSearching = ref(false);
+const listas = ref<ListaPaginada>();
+const reviews = ref<ReviewPaginada>();
+const reviewSelecionada = ref<ReviewSummary>();
+const target = ref(null);
 
+const filterListas = ref<ListaFilters>({
+  page: 1
+})
+const filterReviews = ref({
+  page: 1
+});
 // Dados fictícios para o exemplo
 const stats = ref({ watched: 128, reviews: 42 });
-const listas = ref([
-  { id: 1, nome: 'Favoritos de Terror', filmes: 12, capas: ['url1', 'url2', 'url3', 'url4'] },
-  { id: 2, nome: 'Clássicos anos 90', filmes: 8, capas: ['url5', 'url6', 'url7', 'url8'] }
-]);
 
-const reviews = ref([
-  { id: 101, movie: 'Blade Runner 2049', rating: 5, date: '2026-04-01', text: 'Visual estonteante...', poster: '/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg' },
-  { id: 102, movie: 'Máquina de Guerra', rating: 3, date: '2026-02-21', text: 'legal, contudo...', poster: '/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg' },
-]);
 
 // Controle do Modal de Edição
 const isEditModalVisible = ref(false);
-const selectedReview = ref(null);
 
 const abrirDetalheReview = (review: any) => {
-  selectedReview.value = { ...review }; // Clonagem para não editar direto na lista antes de salvar
+  reviewSelecionada.value = { ...review };
   isEditModalVisible.value = true;
 };
+
+
+async function loadListas() {
+  if (isSearching.value) return;
+
+  isSearching.value = true;
+  try {
+
+    const response = await listaStore.listListas({ user_only: true });
+
+    const listaData = response;
+
+    listas.value = listaData;
+
+  } catch (error) {
+    console.error("Erro na comunicação com a API:", error);
+  } finally {
+    isSearching.value = false;
+  }
+};
+
+async function loadReviews() {
+  //if (isSearching.value) return;
+
+  isSearching.value = true;
+  try {
+
+    const response = await reviewStore.listReviews({ user_only: true });
+
+    reviews.value = response;
+
+  } catch (error) {
+    console.error("Erro na comunicação com a API:", error);
+  } finally {
+    isSearching.value = false;
+  }
+};
+
+onMounted(() => {
+  try {
+    loadListas();
+    loadReviews();
+  } catch (error) {
+    console.error("Erro ao carregar:", error);
+  }
+});
+
+const movieStyles = [
+  { zIndex: 'z-40', ml: '', opacity: 'opacity-100', hover: 'group-hover:-translate-y-2', ring: 'ring-2 ring-[#7075AB]' },
+  { zIndex: 'z-30', ml: '-ml-2 sm:-ml-14 lg:-ml-16', opacity: 'opacity-90', hover: 'group-hover:-translate-y-1', ring: 'ring-1 ring-white/20' },
+  { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-80', hover: '', ring: 'ring-1 ring-white/10' },
+  { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-70', hover: '', ring: 'ring-1 ring-white/5' },
+];
+
+const changeListaPage = (page: number) => {
+  filterListas.value.page = page;
+};
+const changeReviewPage = (page: number) => {
+  filterReviews.value.page = page;
+};
+
+const handleLike = async (reviewId: number) => {
+  isSearching.value = true;
+  try {
+    const likeResponse = await reviewStore.likeReview(reviewId);
+
+    // 1. Encontra a review específica dentro do array data
+    const review = reviews.value?.data.find(r => r.id === reviewId);
+
+    // 2. Se encontrar, atualiza os campos reativamente
+    if (review) {
+      review.is_liked = likeResponse.is_liked;
+      review.likes_count = likeResponse.likes_count;
+    }
+
+    // Se você também tiver o estado do modal (reviewSelecionada), atualize-o
+    if (reviewSelecionada.value && reviewSelecionada.value.id === reviewId) {
+      reviewSelecionada.value.is_liked = likeResponse.is_liked;
+      reviewSelecionada.value.likes_count = likeResponse.likes_count;
+    }
+
+  } catch (error) {
+    console.error("Erro na operação:", error);
+  } finally {
+    isSearching.value = false;
+  }
+};
+
+const handleExcluir = async (reviewId: number) => {
+  isSearching.value = true;
+  try {
+
+    const response = await reviewStore.deleteReview(reviewId);
+
+    if (response.status == 200 && reviews.value) {
+      reviews.value.data = reviews.value?.data.filter(reviews => reviews.id !== reviewId);
+      isEditModalVisible.value = false;
+    }
+  } catch (error) {
+    console.error("Erro na operação:", error);
+  } finally {
+    isSearching.value = false;
+  }
+};
+
+// Conta filmes na lista padrão "watched"
+const watchedCount = computed(() => {
+  // Busca a lista que tem o slug 'watched' e is_default true
+  if (!listas.value) {
+    return 0;
+  }
+  const watchedList = listas.value.data.find(
+    lista => lista.slug === 'watched' && lista.is_default
+  );
+
+  // Retorna a contagem de filmes dentro dessa lista (ajuste 'movies' para o nome da sua relação)
+  return watchedList?.movies?.length || 0;
+});
+
+// Conta o total de reviews do usuário
+const reviewsCount = computed(() => {
+  return reviews.value?.data.length || 0;
+});
 </script>
 
 <template>
-    <Navbar />
-    <div class="bg-hero min-h-screen pt-24 pb-10">
-        <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-30">
-<div class="flex items-center gap-6 p-6 bg-white/5 border border-white/10 rounded-2xl">
-  <div class="w-20 h-20 rounded-full border-2 border-[#00FCFF] overflow-hidden">
-    <img src="/image.png" class="object-cover w-full h-full">
-  </div>
-  
-  <div class="flex flex-col gap-2">
-    <h2 class="text-xl font-black text-white uppercase tracking-tighter">Boladotron</h2>
-    <div class="flex gap-4">
-      <div class="text-center">
-        <p class="text-[#00FCFF] font-black text-lg">128</p>
-        <p class="text-zinc-500 text-[10px] uppercase font-bold">Assistidos</p>
+  <Navbar />
+  <div class="bg-hero min-h-screen pt-24 pb-10">
+    <div class="lg:max-w-3xl max-w-[95%] mx-auto relative z-30">
+      <div class="flex items-center gap-6 p-6 bg-white/5 border border-white/10 rounded-2xl">
+        <div class="w-20 h-20 rounded-full border-2 border-[#00FCFF] overflow-hidden">
+          <img src="/image.png" class="object-cover w-full h-full">
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <h2 class="text-xl font-black text-white uppercase tracking-tighter">{{ user?.name }}</h2>
+          <div class="flex gap-4">
+            <div class="text-center">
+              <p class="text-[#00FCFF] font-black text-lg">
+                {{ isSearching && !listas?.data.length ? '...' : watchedCount }}
+              </p>
+              <p class="text-zinc-500 text-[10px] uppercase font-bold">Assistidos</p>
+            </div>
+            <div class="text-center border-l border-white/10 pl-4">
+              <p class="text-[#00FCFF] font-black text-lg">
+                {{ isSearching && !reviews?.data.length ? '...' : reviewsCount }}
+              </p>
+              <p class="text-zinc-500 text-[10px] uppercase font-bold">Reviews</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="text-center border-l border-white/10 pl-4">
-        <p class="text-[#00FCFF] font-black text-lg">42</p>
-        <p class="text-zinc-500 text-[10px] uppercase font-bold">Reviews</p>
+
+      <div class="mt-10">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest">Minhas Listas</h3>
+          <RouterLink to="/lista/criar"
+            class="text-[#00FCFF] text-[10px] font-black uppercase border border-[#00FCFF]/30 px-3 py-1 rounded-full hover:bg-[#00FCFF]/10 transition-all">
+            + Nova Lista
+          </RouterLink>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-for="lista in listas?.data" :key="lista.id">
+            <RouterLink :to="{
+              name: 'ListView',
+              params: { id: lista.id, slug: lista.slug }
+            }">
+              <div class="cursor-pointer hover:scale-105 transition-transform">
+                <div>
+                  <h4 class="text-white font-bold text-md p-2">{{ lista.titulo }}</h4>
+
+                  <div class="flex items-center justify-center pl-1">
+                    <!-- 1. Caso existam filmes -->
+                    <template v-if="lista.movies && lista.movies.length > 0">
+                      <template v-for="(style, index) in movieStyles" :key="index">
+                        <div v-if="lista.movies[index]" class="relative w-28 sm:w-28 lg:w-32 transition-transform"
+                          :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+                          <MoviePoster :path="getImageUrl(lista.movies[index].poster_thumb_br)"
+                            class="w-full h-auto rounded-sm"
+                            :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']" />
+                        </div>
+                      </template>
+                    </template>
+
+                    <!-- 2. Placeholder (Caso a lista esteja vazia) -->
+                    <div v-else
+                      class="flex flex-col items-center justify-center w-full min-h-[160px] bg-white/5 border-2 border-dashed border-white/10 rounded-xl">
+                      <IconNoMovies />
+                      <span class="text-white/30 text-xs font-medium">Lista vazia</span>
+
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </RouterLink>
+          </div>
+        </div>
+        <!-- PAGINAÇÃO LISTAS -->
+        <div v-if="listas" class="flex items-center justify-center gap-2 mt-10 mb-12">
+
+          <!-- VOLTAR -->
+          <button @click="changeListaPage(listas.current_page - 1)" :disabled="listas.current_page === 1"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronLeft class="w-4 h-4" />
+          </button>
+
+          <!-- PÁGINAS -->
+          <div class="flex gap-1">
+            <button v-for="page in listas.last_page" :key="page" @click="changeListaPage(page)"
+              class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="listas.current_page === page
+                ? 'bg-[#d919ff]/20 border-[#d919ff] text-[#d919ff]'
+                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
+              {{ page }}
+            </button>
+          </div>
+
+          <!-- PRÓXIMO -->
+          <button @click="changeListaPage(listas.current_page + 1)" :disabled="listas.current_page === listas.last_page"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronRight class="w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 
-<div class="mt-10">
-  <div class="flex items-center justify-between mb-6">
-    <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest">Minhas Listas</h3>
-    <RouterLink to="/criar-lista" class="text-[#00FCFF] text-[10px] font-black uppercase border border-[#00FCFF]/30 px-3 py-1 rounded-full hover:bg-[#00FCFF]/10 transition-all">
-      + Nova Lista
-    </RouterLink>
-  </div>
+      <div class="mt-10">
+        <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest mb-6 border-b border-white/10 pb-2">Minhas
+          Reviews</h3>
 
-  <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
-    <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }">
-    <div class="cursor-pointer hover:scale-105 transition-transform">
-        <div>
-        <h4 class="text-white font-bold text-md p-2">Adrenalina Pura</h4>
-        <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
+        <div v-for="review in reviews?.data" :key="review.id" class="flex flex-col gap-4">
+          <ReviewDetalhe ref="target" :is-open="isEditModalVisible" :review="review" @close="isEditModalVisible = false"
+            @like="handleLike" @excluir="handleExcluir" />
+          <div @click="abrirDetalheReview(review.id)"
+            class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
 
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
+            <MoviePoster v-if="review" :path="getImageUrl(review.movie.poster_thumb_br)"
+              class="w-12 h-18 object-cover rounded-md shadow-lg" />
 
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
+            <div class="flex-1 flex flex-col">
+              <div class="flex justify-between items-start">
+                <h4 class="text-white font-bold text-sm">{{ review.movie.titulo_br || review.movie.titulo_original }}
+                </h4>
+                <span class="text-[#00FCFF] text-xs font-black">★ {{ review.rating }}</span>
+              </div>
 
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
+              <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ review.comentario }}</p>
 
+              <div class="flex justify-end mt-auto">
+                <p v-if="review.likes_count >= 1" class="text-zinc-500 text-[10px] uppercase">
+                  <span class="font-black text-zinc-300">{{ review.likes_count }}</span> Likes
+                </p>
+              </div>
+
+            </div>
+          </div>
         </div>
+        <!-- PAGINAÇÃO REVIEWS -->
+        <div v-if="reviews" class="flex items-center justify-center gap-2 mt-10 mb-12">
+
+          <!-- VOLTAR -->
+          <button @click="changeListaPage(reviews.current_page - 1)" :disabled="reviews.current_page === 1"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronLeft class="w-4 h-4" />
+          </button>
+
+          <!-- PÁGINAS -->
+          <div class="flex gap-1">
+            <button v-for="page in reviews.last_page" :key="page" @click="changeListaPage(page)"
+              class="w-8 h-8 rounded-lg text-[10px] font-bold transition-all border" :class="reviews.current_page === page
+                ? 'bg-[#d919ff]/20 border-[#d919ff] text-[#d919ff]'
+                : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10'">
+              {{ page }}
+            </button>
+          </div>
+
+          <!-- PRÓXIMO -->
+          <button @click="changeListaPage(reviews.current_page + 1)"
+            :disabled="reviews.current_page === reviews.last_page"
+            class="p-2 rounded-lg bg-white/5 border border-white/10 text-zinc-400 hover:text-[#d919ff] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+            <IconChevronRight class="w-4 h-4" />
+          </button>
         </div>
-        </div>
-        </RouterLink>
-        <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }">
-<div class="cursor-pointer hover:scale-105 transition-transform">
-          <div>
-        <h4 class="text-white font-bold text-md p-2">Emocionante</h4>
-        <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-        </div>
-        </div>
-        </div>
-</RouterLink>
-<RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }">
-        <div class="cursor-pointer hover:scale-105 transition-transform">
-          <div>
-        <h4 class="text-white font-bold text-md p-2">Chorar no Banho</h4>
-        <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-        </div>
-        </div>
-        </div>
-</RouterLink>
-<RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }">
-        <div class="cursor-pointer hover:scale-105 transition-transform">
-          <div>
-        <h4 class="text-white font-bold text-md p-2">Guilt Pleasure</h4>
-        <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_jYpk5Zun4VTWrplO3m9BHANi4S5.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-        </div>
-        </div>
-        </div>
-        </RouterLink>
-        <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }">
-        <div class="cursor-pointer hover:scale-105 transition-transform">
-          <div>
-        <h4 class="text-white font-bold text-md p-2">Filmes de Conforto</h4>
-        <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_ftPFJBGbldoWiiPrmesW96zBzdH.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-        </div>
-        </div>
-        </div>
-        </RouterLink>
-        <RouterLink :to="{
-                name: 'ListView',
-                params: {
-                  id: 1
-                }
-              }">
-        <div class="cursor-pointer hover:scale-105 transition-transform">
-          <div>
-        <h4 class="text-white font-bold text-md p-2">Assistir com a Morena</h4>
-        <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_bOzG3SG6gBxHGGHYiq7xXeNb1bG.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-        </div>
-        </div>
-        </div>
-        </RouterLink>
-  </div>
-</div>
-
-<div class="mt-10">
-  <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest mb-6 border-b border-white/10 pb-2">Minhas Reviews</h3>
-  
-  <div class="flex flex-col gap-4">
-    <div @click="abrirDetalheReview(reviews[0])" class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
-      <img v-if="reviews[0]?.poster" :src="getImageUrl(reviews[0].poster)" class="w-12 h-18 object-cover rounded-md shadow-lg">
-      <div class="flex-1">
-        <div class="flex justify-between items-start">
-          <h4 class="text-white font-bold text-sm">{{ reviews[0]?.movie }}</h4>
-          <span class="text-[#00FCFF] text-xs font-black">★ {{ reviews[0]?.rating }}</span>
-        </div>
-        <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ reviews[0]?.text }}</p>
-      </div>
-    </div>
-    <div @click="abrirDetalheReview(reviews[1])" class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
-      <img v-if="reviews[0]?.poster" :src="getImageUrl(reviews[0].poster)" class="w-12 h-18 object-cover rounded-md shadow-lg">
-      <div class="flex-1">
-        <div class="flex justify-between items-start">
-          <h4 class="text-white font-bold text-sm">{{ reviews[1]?.movie }}</h4>
-          <span class="text-[#00FCFF] text-xs font-black">★ {{ reviews[1]?.rating }}</span>
-        </div>
-        <p class="text-zinc-400 text-xs line-clamp-2 mt-1">{{ reviews[1]?.text }}</p>
       </div>
     </div>
   </div>
-</div>
-</div>
-</div>
 
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue';
+import { computed, onMounted, ref, watchEffect, watch, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Navbar from '@/components/Navbar.vue';
 import TheFooter from '@/components/TheFooter.vue';
@@ -7,57 +7,167 @@ import IconStar from '@/components/icons/IconStar.vue';
 import IconWatchLater from '@/components/icons/IconWatchLater.vue';
 import IconAddToList from '@/components/icons/IconAddToList.vue';
 import IconCheck from '@/components/icons/IconCheck.vue';
-
+import MovieDetailSkeleton from '@/components/MovieDetailSkeleton.vue';
+import MovieDetailSkeletonMessage from '@/components/MovieDetailSkeletonMessage.vue';
 import movie_json from '../assets/movieDetalhes.json';
 import movies_json from '../assets/movies.json'
+import type { MovieDetails, CollectionMovie, RelatedMovie, MovieList, Review } from '@/types/Movies';
+import { useAuthStore } from '@/stores/auth';
+import { useMovieStore } from '@/stores/movie';
+import { storeToRefs } from 'pinia';
+import i18n from '@/i18n';
+import { useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
+import { useListaStore } from '@/stores/lista';
+import { useReviewStore } from '@/stores/review';
+import type { ListasUser } from '@/types/Listas';
+import { onClickOutside } from '@vueuse/core';
+import MoviePoster from '@/components/MoviePoster.vue';
+import { getImageUrl } from '@/utils/imageHelper';
+
+const route = useRoute();
+const router = useRouter();
+const { locale } = useI18n();
+const movie = ref<MovieDetails>();
+const collection = ref<CollectionMovie[]>();
+const reviews = ref<Review[]>();
+const moviesRelacionados = ref<RelatedMovie[]>();
+const listas = ref<MovieList[]>();
 
 const abaAtiva = ref('generos');
-
+const authStore = useAuthStore();
+const { isAuthenticated, user } = storeToRefs(authStore);
+const movieStore = useMovieStore();
 const loggedIn = ref(true);
+const listaStore = useListaStore();
+const reviewStore = useReviewStore();
+const userListas = ref<ListasUser[]>();
+const isSearchingUserListas = ref(false);
+const activeReviewId = ref<number | null>(null);
+const activeList = ref(false);
+const target = ref(null);
+const isMovieAddWatchLater = ref<{ id: number, attached: boolean, isDefault: boolean }>();
+const isMovieWatched = ref<{ id: number, attached: boolean, isDefault: boolean }>();
+const isProcessing = ref(false); // Nova ref para a mensagem de instantes
+
 const props = defineProps<{
-  slug: string
+  slug: string;
+  lang?: string;
 }>();
 
-const { locale } = useI18n();
+const isSearching = ref(false);
 
-// Computed para encontrar o filme toda vez que o slug ou o idioma mudar
-const movie = computed(() => {
-  const slugKey = locale.value === 'br' ? 'slug_pt' : 'slug_en';
+const maxRetries = 5;
+const retryDelay = 2500;
 
-  // Buscamos o filme que contenha o slug da URL em qualquer uma das linguagens
-  // Isso permite que o usuário acesse o link em EN mesmo estando no site em BR
-  return movie_json.find(m => m.slug_br === props.slug || m.slug_en === props.slug);
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function loadFullMovie(retryCount = 0) {
+  if (isSearching.value && retryCount === 0) return;
+
+  if (retryCount === 0) {
+    isSearching.value = true;
+    isProcessing.value = false; // Reseta ao iniciar
+  }
+
+  try {
+    const response = await movieStore.fullDetailMovie(props.slug);
+    const movieData = response.movie;
+
+    const movieReady =
+      movieData.status === 'processado' &&
+      !!movieData.titulo_original &&
+      !!movieData.poster_path_br &&
+      !!movieData.backdrop_path &&
+      !!movieData.descricao_br;
+
+    if (!movieReady && retryCount < maxRetries) {
+      // ATIVA A MENSAGEM: Se entrou aqui, significa que vai rodar um retry
+      isProcessing.value = true;
+
+      console.log(`Processando filme... tentativa ${retryCount + 1}/${maxRetries}`);
+
+      await sleep(retryDelay);
+      return await loadFullMovie(retryCount + 1);
+    }
+
+    // Filme pronto
+    movie.value = movieData;
+    // ... restante da lógica de atribuição (collection, reviews, etc)
+
+    isProcessing.value = false; // Desativa pois o filme carregou
+
+  } catch (error) {
+    console.error("Erro na comunicação com a API:", error);
+    isProcessing.value = false;
+  } finally {
+    if (retryCount >= maxRetries || movie.value?.status !== 'processando') {
+      isSearching.value = false;
+    }
+  }
+}
+
+async function loadAllData() {
+  isSearching.value = false;
+  try {
+    // 1. Carrega o filme primeiro (dependência central)
+    await loadFullMovie();
+    if (isAuthenticated.value) {
+      // Extrai apenas o ID numérico do slug (ex: "25-apex" -> 25)
+      const movieId = parseInt(props.slug);
+
+      const listas = await listaStore.indexUserListas(movieId);
+      userListas.value = listas;
+
+      // 2. Usa um único loop para encontrar as listas padrão
+      listas.forEach(l => {
+        const statusObj = {
+          id: l.id,
+          attached: l.movie_exists,
+          isDefault: l.is_default
+        };
+
+        if (l.slug === "watched" && l.is_default === true) {
+          isMovieWatched.value = statusObj;
+        } else if (l.slug === "watch-later" && l.is_default === true) {
+          isMovieAddWatchLater.value = statusObj;
+        }
+      });
+
+    }
+  } finally {
+    isSearching.value = false;
+  }
+}
+
+onMounted(() => {
+  try {
+    loadAllData();
+  } catch (error) {
+    console.error("Erro ao carregar:", error);
+  }
 });
 
-// Opcional: Traduzir campos dinâmicos do JSON
-const movieTitle = computed(() => {
-  return locale.value === 'br' ? movie.value?.nome_br : movie.value?.nome_en;
-});
-
-const rating = ref(0); // Valor inicial
 const hoverRating = ref(0); // Para efeito visual ao passar o mouse
 
-const selectRating = (val: number) => {
-  rating.value = val;
-};
+watch(() => props.slug, async () => {
+  // Limpa dados antigos para não mostrar filme errado enquanto carrega
+  movie.value = undefined;
+  reviews.value = undefined;
 
-
-const movies = ref(movies_json.movie);
-
+  await loadAllData(); // Reutiliza a lógica de paralelismo
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 const limite = ref(1); // Quantas reviews aparecem inicialmente
-const reviews = ref([
-  { id: 1, autor: 'Boladotron', nota: 5, texto: 'Filme muito maneiro, é de temática vampiresca com uma abordagem diferente.', avatar: '/image.png' },
-  { id: 2, autor: 'StarConvoy', nota: 4, texto: 'A fotografia é incrível, mas o ritmo cansa um pouco no meio.', avatar: '/image.png' },
-  { id: 3, autor: 'OrionPax', nota: 5, texto: 'Melhor do gênero que vi esse ano!', avatar: '/image.png' },
-  { id: 4, autor: 'OptimusPrime', nota: 3, texto: 'Esperava mais do final.', avatar: '/image.png' },
-]);
 
 const mostrarMais = () => {
   limite.value += 3; // Carrega mais 3 por vez
 };
 
-const isCardReviewVisible = ref(false)
+const isCardReviewVisible = ref(false);
 
 // Função para pegar a data de hoje formatada (YYYY-MM-DD)
 const getTodayDate = () => {
@@ -67,9 +177,172 @@ const getTodayDate = () => {
 
 // Inicializamos o estado com a data de hoje
 const dataAssistido = ref(getTodayDate());
+
+const getMovieParam = (movie: any) => {
+  // Pega o slug de acordo com o idioma
+  const slug = (i18n as any).locale === 'br' ? movie.slug_pt : movie.slug_en;
+
+  // Se não houver slug (nulo ou vazio), retorna apenas o ID
+  if (!slug || slug.trim() === '') {
+    return String(movie.id);
+  }
+
+  // Retorna o formato 235-nome-do-filme
+  return `${movie.id}-${slug}`;
+};
+
+const getUserListas = async () => {
+  isSearchingUserListas.value = true;
+  try {
+    if (!movie.value?.id) {
+      throw new Error('Filme não encontrado');
+    }
+    if (!userListas.value) {
+      userListas.value = await listaStore.indexUserListas(movie.value?.id);
+    }
+  } catch (error) {
+
+  } finally {
+    isSearchingUserListas.value = false;
+  }
+}
+const movieStyles = [
+  { zIndex: 'z-40', ml: '', opacity: 'opacity-100', hover: 'group-hover:-translate-y-2', ring: 'ring-2 ring-[#7075AB]' },
+  { zIndex: 'z-30', ml: '-ml-2 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: 'group-hover:-translate-y-1', ring: 'ring-1 ring-white/20' },
+  { zIndex: 'z-20', ml: '-ml-4 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/10' },
+  { zIndex: 'z-10', ml: '-ml-5 sm:-ml-14 lg:-ml-16', opacity: 'opacity-100', hover: '', ring: 'ring-1 ring-white/5' },
+];
+const openListas = () => {
+  activeList.value = true;
+  getUserListas();
+};
+
+const toggleWatchedLista = async () => {
+  if (!isMovieWatched.value) {
+    throw new Error('Filme não encontrado');
+  }
+  const response = await listaStore.toggleAddToList({ lista_id: isMovieWatched.value?.id, movie_id: parseInt(props.slug) });
+  isMovieWatched.value.attached = response.attached;
+}
+const toggleWatchLaterLista = async () => {
+  if (!isMovieAddWatchLater.value) {
+    throw new Error('Filme não encontrado');
+  }
+  const response = await listaStore.toggleAddToList({ lista_id: isMovieAddWatchLater.value?.id, movie_id: parseInt(props.slug) });
+  isMovieAddWatchLater.value.attached = response.attached;
+}
+
+const toggleMovie = async (listaIndex: number) => {
+  //@ts-ignore
+  const lista = userListas.value[listaIndex] || null;
+  const movieId = movie.value?.id;
+
+  if (!lista || !movieId) {
+    return;
+  }
+
+  try {
+    const response = await listaStore.toggleAddToList({
+      lista_id: lista.id,
+      movie_id: movieId
+    });
+
+    lista.movie_exists = response.attached;
+
+  } catch (error) {
+    console.error("Erro ao alternar filme na lista:", error);
+  }
+}
+onClickOutside(target, () => (activeList.value = false));
+
+const isSubmitting = ref(false);
+const tagInput = ref('');
+const formReview = reactive({
+  titulo: '',
+  comentario: '',
+  rating: 0,
+  tags: [] as string[],
+});
+
+const addTag = () => {
+  const val = tagInput.value.trim();
+  if (val && !formReview.tags.includes(val)) {
+    formReview.tags.push(val);
+    tagInput.value = '';
+  }
+};
+
+const removeTag = (index: number) => {
+  formReview.tags.splice(index, 1);
+};
+
+const handleSubmitReview = async () => {
+  if (!movie.value?.id) return;
+  if (formReview.rating === 0) return alert('Selecione uma nota antes de publicar.');
+
+  isSubmitting.value = true;
+  try {
+    const payload = {
+      movie_id: movie.value.id, // ID extraído do filme carregado
+      titulo: formReview.titulo,
+      comentario: formReview.comentario,
+      rating: formReview.rating,
+      tags: formReview.tags,
+    };
+
+    await reviewStore.createReview(payload as any, parseInt(props.slug));
+
+    // Opcional: Recarregar as reviews da tela após postar
+    await loadFullMovie();
+
+    isCardReviewVisible.value = false;
+  } catch (error) {
+    console.error("Erro ao publicar review:", error);
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const selectRating = (val: number) => {
+  formReview.rating = val;
+};
+
+const selectRatingOutForm = async (val: number) => {
+  if (!movie.value?.id) return;
+  formReview.rating = val;
+  const payload = {
+    movie_id: movie.value.id, // ID extraído do filme carregado
+    titulo: formReview.titulo,
+    comentario: formReview.comentario,
+    rating: formReview.rating,
+    tags: formReview.tags,
+  };
+
+  await reviewStore.createReview(payload as any, parseInt(props.slug));
+};
+
+const userReview = computed(() => {
+  if (!reviews.value || !user.value?.id) return null;
+
+  // Procura nas reviews carregadas aquela que pertence ao usuário
+  return reviews.value.find(review => review.user_id === user.value?.id) || null;
+});
+
+// Quando a review do usuário for encontrada, preenchemos o formulário
+watch(userReview, (newReview) => {
+  console.log("review do user", newReview);
+  if (newReview) {
+    // Aqui você preenche as refs do seu formulário de edição
+    formReview.comentario = newReview.comentario;
+    formReview.rating = newReview.rating;
+    formReview.tags = newReview.tags.map(t => t.nome);
+    formReview.titulo = newReview.titulo;
+  }
+}, { immediate: true });
 </script>
 
 <template>
+  <!-- Modal de Review -->
   <div v-show="isCardReviewVisible" class="fixed z-50 bg-[#0a0a0a]/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 sm:p-8 
             top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
             shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_20px_rgba(0,252,255,0.1)] w-[92%] max-w-[450px]">
@@ -80,20 +353,17 @@ const dataAssistido = ref(getTodayDate());
         <p class="text-zinc-500 text-xs mt-1 italic">Compartilhe sua opinião sobre o filme</p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-1 gap-4">
         <div class="flex flex-col gap-1">
           <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Título da Review</label>
-          <input type="text" placeholder="Ex: Incrível!"
+          <input type="text" v-model="formReview.titulo" placeholder="Ex: Incrível!"
             class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all">
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Assistido em</label>
-          <input type="date" v-model="dataAssistido"
-            class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
-        </div>
+
       </div>
 
+      <!-- Rating -->
       <div class="flex flex-col items-center bg-white/5 p-4 rounded-xl border border-white/5">
         <label class="text-zinc-400 text-[10px] uppercase font-bold mb-2">Sua Nota</label>
         <div class="flex items-center gap-2">
@@ -102,31 +372,42 @@ const dataAssistido = ref(getTodayDate());
               @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
               class="p-1 transition-all active:scale-125 cursor-pointer">
               <IconStar class="w-6 h-6 transition-colors duration-200"
-                :class="star <= (hoverRating || rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
+                :class="star <= (hoverRating || formReview.rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
             </button>
           </div>
-          <span class="text-[#00FCFF] font-black text-xl italic ml-2 w-10">{{ rating }}<span
+          <span class="text-[#00FCFF] font-black text-xl italic ml-2 w-10">{{ formReview.rating }}<span
               class="text-zinc-600 text-sm">/5</span></span>
         </div>
       </div>
 
       <div class="flex flex-col gap-1">
         <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Sua Mensagem</label>
-        <textarea rows="4" placeholder="O que você achou da fotografia, roteiro e atuação?"
+        <textarea v-model="formReview.comentario" rows="4"
+          placeholder="O que você achou da fotografia, roteiro e atuação?"
           class="w-full bg-white/5 border border-white/10 p-3 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] focus:ring-1 focus:ring-[#00FCFF]/50 transition-all resize-none"></textarea>
       </div>
 
+      <!-- Tags com Feedback Visual -->
       <div class="flex flex-col gap-1">
         <label class="text-zinc-400 text-[10px] uppercase font-bold ml-1">Tags <span
             class="lowercase font-normal opacity-50">(pressione enter)</span></label>
-        <input type="text" placeholder="Ex: Masterpiece, Terror, Favorito"
+        <input type="text" v-model="tagInput" @keydown.enter.prevent="addTag"
+          placeholder="Ex: Masterpiece, Terror, Favorito"
           class="w-full bg-white/5 border border-white/10 p-2.5 rounded-lg text-white text-sm outline-none focus:border-[#00FCFF] transition-all">
+
+        <div v-if="formReview.tags.length > 0" class="flex flex-wrap gap-1.5 mt-2">
+          <span v-for="(tag, index) in formReview.tags" :key="index"
+            class="bg-[#00FCFF]/10 text-[#00FCFF] text-[9px] uppercase font-bold px-2 py-1 rounded-md border border-[#00FCFF]/20 flex items-center gap-1">
+            {{ tag }}
+            <button @click="removeTag(index)" class="hover:text-white ml-1">×</button>
+          </span>
+        </div>
       </div>
 
       <div class="flex flex-col gap-3 mt-2">
-        <button @click="isCardReviewVisible = false"
-          class="w-full bg-[#00FCFF] text-black font-black uppercase tracking-widest py-3 rounded-lg hover:bg-[#00f2f5] hover:shadow-[0_0_20px_rgba(0,252,255,0.4)] transition-all cursor-pointer active:scale-95">
-          Publicar Review
+        <button @click="handleSubmitReview" :disabled="isSubmitting"
+          class="w-full bg-[#00FCFF] text-black font-black uppercase tracking-widest py-3 rounded-lg hover:bg-[#00f2f5] hover:shadow-[0_0_20px_rgba(0,252,255,0.4)] transition-all cursor-pointer active:scale-95 disabled:opacity-50">
+          {{ isSubmitting ? 'Publicando...' : 'Publicar Review' }}
         </button>
 
         <button @click="isCardReviewVisible = false"
@@ -136,12 +417,20 @@ const dataAssistido = ref(getTodayDate());
       </div>
     </div>
   </div>
+
+  <!-- Overlay de fundo -->
   <div v-if="isCardReviewVisible" @click="isCardReviewVisible = false"
-    class="fixed inset-0 bg-black/10 backdrop-blur-xs z-40">
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40">
   </div>
   <div class="bg-zinc-50 dark:bg-zinc-900">
-    <Navbar :loggedIn="loggedIn" />
-    <div class="bg-hero">
+    <Navbar />
+    <!-- ESTADO DE LOADING -->
+    <div v-if="isSearching">
+      <!-- Agora a mensagem está integrada no componente -->
+      <MovieDetailSkeletonMessage :is-processing="isProcessing" />
+    </div>
+
+    <div v-else-if="movie" class="bg-hero">
       <div v-if="movie" class="relative z-10 w-full h-auto">
 
         <div class="relative w-full h-auto overflow-hidden">
@@ -151,13 +440,11 @@ const dataAssistido = ref(getTodayDate());
           <div
             class="relative w-full h-auto mx-auto max-w-[1440px] h-auto lg:max-w-[400%] lg:max-h-[450px] object-cover object-top mask-[linear-gradient(to_bottom,black_55%,transparent_100%)] sm:mask-[linear-gradient(to_bottom,black_70%,transparent_100%)]">
 
-            <div class="absolute inset-0 bg-[#CC00CC] opacity-20"></div>
-
-            <div class="absolute inset-0 bg-[#CC00CC]"></div>
 
 
 
-            <img :src="movie.backdrop_path_br" class="relative w-full h-full object-cover opacity-73" />
+            <MoviePoster v-if="movie.backdrop_path" :path="getImageUrl(movie.backdrop_path)"
+              class="relative w-full h-full object-cover opacity-73" />
 
           </div>
         </div>
@@ -170,13 +457,13 @@ const dataAssistido = ref(getTodayDate());
             <div
               class="flex-1 flex flex-col gap-1 lg:flex-row lg:flex-wrap lg:items-baseline lg:gap-x-4 h-fit lg:max-w-[800px]">
               <h1 class="text-zinc-100 font-black text-2xl uppercase drop-shadow-md">
-                {{ movieTitle }}
+                {{ movie.titulo_br }}
               </h1>
               <p class="items-center justify-center text-zinc-300 font-bold leading-relaxed">{{
                 movie.release_date?.slice(0, 4) }}
               </p>
               <p class="text-zinc-400 leading-relaxed">Dirigido por <span class="font-bold text-zinc-300">{{
-                movie.diretores }}</span></p>
+                movie.diretores?.map(diretor => diretor.nome).join(', ') || 'Diretor desconhecido'}}</span></p>
               <p class="text-zinc-400 leading-relaxed drop-shadow-sm basis-full">{{ movie.tagline_br }}</p>
               <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
               <div class="mt-2 hidden lg:block">
@@ -190,48 +477,95 @@ const dataAssistido = ref(getTodayDate());
               </button>
               <!-- Estrelas -->
               <div class="mt-4 flex lg:basis-full lg:items-center">
-                <button v-for="star in 5" :key="star" type="button" @click="selectRating(star)"
+                <button v-for="star in 5" :key="star" type="button" @click="selectRatingOutForm(star)"
                   @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
-                  class="p-1 transition-transform active:scale-90 cursor-pointer">
-                  <IconStar class="w-4 h-4 lg:w-6 lg:h-6 transition-colors duration-200" :class="star <= (hoverRating || rating)
-                    ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]'
-                    : 'text-zinc-600'" />
+                  class="p-1 transition-all active:scale-125 cursor-pointer">
+                  <IconStar class="w-6 h-6 transition-colors duration-200"
+                    :class="star <= (hoverRating || formReview.rating) ? 'text-[#00FCFF] drop-shadow-[0_0_8px_#00FCFF]' : 'text-zinc-700'" />
                 </button>
                 <span class="text-[#00FCFF] font-black text-l italic">
-                  {{ rating }}/5
+                  {{ formReview.rating }}/5
                 </span>
               </div>
               <!-- PC -->
               <div class="hidden lg:flex lg:w-full mt-8 lg:justify-around">
-  <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
+                <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
 
-    <div class="flex flex-col items-center gap-2">
-      <IconWatchLater class="w-10 h-10 text-zinc-100 opacity-80" />
-      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-        Assistir mais Tarde
-      </span>
-    </div>
+                  <div class="flex flex-col items-center gap-2">
+                    <button @click="toggleWatchLaterLista"
+                      class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500"
+                      :class="isMovieAddWatchLater?.attached
+                        ? 'bg-[#00FCFF] border-[#00FCFF] shadow-[0_0_15px_rgba(0,252,255,0.4)]'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10'">
+                      <IconWatchLater class="w-6 h-6 transition-colors"
+                        :class="isMovieAddWatchLater?.attached ? 'text-black' : 'text-zinc-100'" />
+                    </button>
 
-    <div class="flex flex-col items-center gap-2">
-      <IconAddToList class="w-10 h-10 text-zinc-100 opacity-80" />
-      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-        Salvar na Lista
-      </span>
-    </div>
+                    <span class="text-[10px] lg:text-xs text-center max-w-[80px] transition-colors"
+                      :class="isMovieAddWatchLater?.attached ? 'text-[#00FCFF] font-bold' : 'text-zinc-400'">
+                      {{ isMovieAddWatchLater?.attached ? 'Na Lista' : 'Ver Depois' }}
+                    </span>
+                  </div>
 
-    <div class="flex flex-col items-center gap-2">
-      <IconCheck class="w-10 h-10 text-zinc-100 opacity-80" />
-      <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
-        Assistido
-      </span>
-    </div>
+                  <!-- 1. Adicione 'relative' no container pai -->
+                  <div class="relative flex flex-col items-center gap-2">
 
-  </div>
-</div>
+                    <IconAddToList @click.stop="openListas" class="w-10 h-10 text-zinc-100 opacity-80 cursor-pointer" />
+
+                    <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+                      Salvar na Lista
+                    </span>
+
+                    <Transition name="fade-slide">
+                      <div v-if="activeList" ref="target" class="absolute top-full left-1/2 -translate-x-1/2 z-[60] mt-2 w-56 bg-[#0f0f0f]/95 border
+                        border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+
+                        <div class="flex flex-col gap-3">
+                          <p class="text-[10px] text-zinc-500 uppercase font-black border-b border-white/5 pb-1">
+                            Salvar em:
+                          </p>
+
+                          <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
+                            <label v-for="(lista, index) in userListas" :key="lista.id"
+                              class="flex items-center gap-2 cursor-pointer group">
+                              <input type="checkbox" :checked="lista.movie_exists" @click.prevent="toggleMovie(index)"
+                                class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
+                              <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo }}</span>
+                            </label>
+                          </div>
+
+                          <button @click="activeList = false"
+                            class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black py-2 rounded-md transition-all">
+                            Concluir
+                          </button>
+                        </div>
+                      </div>
+                    </Transition>
+                  </div>
+                  <div class="flex flex-col items-center gap-2">
+                    <button @click="toggleWatchedLista"
+                      class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500 group"
+                      :class="isMovieWatched?.attached
+                        ? 'bg-[#00FCFF] border-[#00FCFF] shadow-[0_0_15px_rgba(0,252,255,0.4)]'
+                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'">
+                      <IconCheck class="w-6 h-6 transition-all duration-300" :class="isMovieWatched?.attached
+                        ? 'text-black scale-110'
+                        : 'text-zinc-100 opacity-60 group-hover:opacity-100'" />
+                    </button>
+
+                    <span class="text-[10px] lg:text-xs text-center max-w-[80px] transition-colors duration-300"
+                      :class="isMovieWatched?.attached ? 'text-[#00FCFF] font-bold' : 'text-zinc-100 opacity-80'">
+                      {{ isMovieWatched?.attached ? 'Assistido' : 'Marcar visto' }}
+                    </span>
+                  </div>
+
+                </div>
+              </div>
             </div>
             <div class="flex flex-col ">
-              <div class="shrink-0 ml-auto"><img :src="movie.poster_path_br"
-                  class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10">
+              <div class="shrink-0 ml-auto">
+                <MoviePoster v-if="movie.poster_path_br" :path="getImageUrl(movie.poster_path_br)"
+                  class="-mt-1 w-40 sm:w-70 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10" />
               </div>
 
 
@@ -281,43 +615,49 @@ const dataAssistido = ref(getTodayDate());
             <div v-if="abaAtiva === 'generos'" class="flex flex-wrap gap-2">
               <span v-for="(genero, index) in movie.generos" :key="index"
                 class="bg-white/10 border border-white/20 rounded-lg py-1 px-2 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all h-fit"">
-                <p class=" text-white text-[10px] uppercase tracking-wider font-bold text-center"> {{ genero }}</p>
+                <p class=" text-white text-[10px] uppercase tracking-wider font-bold text-center"> {{ genero.nome_pt }}
+                </p>
               </span>
             </div>
 
             <div v-if="abaAtiva === 'detalhes'" class="text-zinc-400 text-sm space-y-2">
               <p><span class="text-zinc-100 font-bold">Título Original:</span> {{ movie.titulo_original }}</p>
-              <p><span class="text-zinc-100 font-bold">Idioma:</span> {{ movie.lingua_origem }}</p>
-              <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{ movie.estudios }}</p>
+              <p><span class="text-zinc-100 font-bold">Idioma:</span> {{ new Intl.DisplayNames(['pt-BR'], {
+                type:
+                  'language'
+              }).of(movie.lingua_origem) }}</p>
+              <p><span class="text-zinc-100 font-bold">Produtoras:</span> {{movie.estudios?.map(estudio =>
+                estudio.nome).join(', ') || 'Estudio desconhecido'}}</p>
               <p><span class="text-zinc-100 font-bold">Nota IMDb</span> {{ movie.rating }}</p>
             </div>
             <p class="mt-5 text-zinc-100 font-bold"><a class="underline"
-                href="https://www.imdb.com/pt/title/tt31193180/">Mais em TMDb</a></p>
+                :href="`https://www.imdb.com/title/${movie.imdb_id}/`" target="_blank" rel="noopener noreferrer">Mais em
+                IMDb</a></p>
           </div>
         </div>
-        <div class="lg:max-w-5xl mx-auto">
+        <div v-if="collection && collection.length" class="lg:max-w-5xl mx-auto">
           <h1 class="max-w-13/14 mx-auto mt-8 text-zinc-100 font-black text-lg uppercase drop-shadow-md">
-            Filmes com a mesma pegada
+            Coleção
           </h1>
 
           <div class="flex overflow-x-auto snap-x snap-mandatory gap-3 mt-3 px-4 pb-4 
            lg:grid lg:grid-cols-6 lg:gap-5 lg:px-2 lg:overflow-visible lg:pb-0">
-            <div v-for="movie in movies.slice(0, 6)" :key="movie.id"
+            <div v-for="m in collection" :key="m.id"
               class="movie-card flex flex-col items-center min-w-[120px] sm:min-w-[150px] lg:min-w-0 snap-start">
               <RouterLink :to="{
                 name: 'MovieView',
                 params: {
                   lang: $i18n.locale,
-                  slug: $i18n.locale === 'br' ? movie.slug_br : movie.slug_en
+                  slug: getMovieParam(m)
                 }
               }" class="w-full">
-                <img :src="movie.poster_thumb_br"
-                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105">
+                <MoviePoster v-if="m.poster_thumb_br" :path="getImageUrl(m.poster_thumb_br)"
+                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-1 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105" />
               </RouterLink>
 
               <div class="w-full flex flex-col">
                 <p class="text-center text-[10px] sm:text-xs font-bold text-zinc-100 truncate leading-tight">
-                  {{ movie.titulo }}
+                  {{ m.titulo_br || m.titulo_original }}
                 </p>
 
                 <div class="flex items-center justify-between mt-1 px-0.5">
@@ -331,173 +671,78 @@ const dataAssistido = ref(getTodayDate());
 
           </div>
         </div>
-        <div class="max-w-[95%] mx-auto mb-20 lg:max-w-5xl">
-        <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
-            Listas Relacionadas
+        <div class="lg:max-w-5xl mx-auto">
+          <h1 class="max-w-13/14 mx-auto mt-8 text-zinc-100 font-black text-lg uppercase drop-shadow-md">
+            Filmes com a mesma pegada
           </h1>
-        <div class="overflow-x-auto snap-x snap-mandatory  ">
-          
 
-          <div class="flex lg:grid lg:grid-cols-4 gap-y-12 gap-x-6">
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Comédia Romântica
+          <!-- Container com Scroll Horizontal -->
+          <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pt-5 pb-4 custom-scrollbar">
+            <div v-for="movieRel in moviesRelacionados" :key="movieRel.id"
+              class="movie-card flex flex-col items-center min-w-[130px] sm:min-w-[160px] lg:min-w-[150px] snap-start">
+              <RouterLink :to="{
+                name: 'MovieView',
+                params: {
+                  lang: $i18n.locale,
+                  slug: getMovieParam(movieRel)
+                }
+              }" class="w-full">
+                <MoviePoster v-if="movieRel.poster_thumb_br" :path="getImageUrl(movieRel.poster_thumb_br)"
+                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105" />
+              </RouterLink>
+
+              <div class="w-full flex flex-col">
+                <p class="text-center text-[10px] sm:text-xs font-bold text-zinc-100 truncate leading-tight">
+                  {{ movieRel.titulo_br || movieRel.titulo_original }}
                 </p>
 
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
+                <div class="flex items-center justify-center mt-1 px-1">
+                  <IconAddReview class="w-4 h-4 text-[#97A7CB] hover:text-[#00FCFF]" />
+                  <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
+                    IMDb {{ movieRel.rating }}
+                  </span>
                 </div>
-
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
               </div>
-            </RouterLink>
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Adrenalina pura
-                </p>
-
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-                </div>
-
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-              </div>
-            </RouterLink>
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Adrenalina pura
-                </p>
-
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-                </div>
-
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-              </div>
-            </RouterLink>
-            <RouterLink :to="{
-              name: 'ListView',
-              params: {
-                id: 1
-              }
-            }" class="w-full">
-              <div class="group cursor-pointer">
-                <p
-                  class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-3 group-hover:text-[#00FCFF] transition-colors">
-                  Comédia Romântica
-                </p>
-
-                <div class="flex items-center justify-center pl-1">
-                  <div class="relative z-40 w-28 sm:w-28 lg:w-32 transition-transform group-hover:-translate-y-2">
-                    <img src="/w500_48h40o6Q97hZaqH0g7bOiXOrImX.jpg"
-                      class="w-full h-auto ring-2 ring-[#7075AB] rounded-sm shadow-xl">
-                  </div>
-
-                  <div
-                    class="relative z-30 -ml-2 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-90 transition-transform group-hover:-translate-y-1">
-                    <img src="/w500_hSvhZRkbYD9crC4nqy8uCk9EdFH.jpg"
-                      class="w-full h-auto ring-1 ring-white/20 rounded-sm shadow-lg">
-                  </div>
-
-                  <div class="relative z-20 -ml-4 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-80">
-                    <img src="/w500_iGpMm603GUKH2SiXB2S5m4sZ17t.jpg"
-                      class="w-full h-auto ring-1 ring-white/10 rounded-sm shadow-md">
-                  </div>
-
-                  <div class="relative z-10 -ml-5 sm:-ml-14 lg:-ml-16 w-28 sm:w-28 lg:w-32 opacity-70">
-                    <img src="/w500_49b7CTeJqugnpBboT6D5xGy3h4H.jpg"
-                      class="w-full h-auto ring-1 ring-white/5 rounded-sm shadow-sm">
-                  </div>
-
-                </div>
-
-                <p class="text-zinc-500 text-[9px] text-center mt-4 uppercase">12 filmes nesta lista</p>
-              </div>
-            </RouterLink>
+            </div>
           </div>
         </div>
-</div>
+        <div v-if="listas" class="max-w-[95%] mx-auto mb-20 lg:max-w-5xl">
+          <h1 class="mt-8 mb-6 text-zinc-100 font-black text-lg uppercase drop-shadow-md border-b border-white/10 pb-2">
+            Listas Relacionadas
+          </h1>
+
+          <!-- Container com Scroll Horizontal -->
+          <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pb-4 custom-scrollbar">
+            <div v-for="lista in listas" :key="lista.id" class="snap-start min-w-[280px] sm:min-w-[320px]">
+              <RouterLink :to="{
+                name: 'ListView',
+                params: { id: lista.id, slug: lista.slug }
+              }" class="w-full">
+                <div class="group cursor-pointer">
+                  <p
+                    class="text-white text-[10px] lg:text-xs uppercase tracking-widest font-bold text-center mb-4 group-hover:text-[#00FCFF] transition-colors">
+                    {{ lista.titulo }}
+                  </p>
+
+                  <div class="flex items-center justify-center pl-6">
+                    <template v-for="(style, index) in movieStyles" :key="index">
+                      <div v-if="lista.movies[index]" class="relative w-24 sm:w-28 transition-transform"
+                        :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+                        <MoviePoster v-if="lista.movies[index].poster_thumb_br"
+                          :path="getImageUrl(lista.movies[index].poster_thumb_br)" class="w-full h-auto rounded-sm"
+                          :class="[style.ring, index === 0 ? 'shadow-xl' : 'shadow-lg']" />
+                      </div>
+                    </template>
+                  </div>
+
+                  <p class="text-zinc-500 text-[9px] text-center mt-6 uppercase">
+                    {{ lista.movies.length }} filmes nesta lista
+                  </p>
+                </div>
+              </RouterLink>
+            </div>
+          </div>
+        </div>
 
 
 
@@ -508,7 +753,7 @@ const dataAssistido = ref(getTodayDate());
           </h1>
 
           <div class="flex flex-col gap-8">
-            <div v-for="review in reviews.slice(0, limite)" :key="review.id" class="flex gap-4 items-start group">
+            <div v-for="review in reviews" :key="review.id" class="flex gap-4 items-start group">
 
               <div class="shrink-0">
                 <div
@@ -520,31 +765,32 @@ const dataAssistido = ref(getTodayDate());
               <div class="flex-1 flex flex-col gap-1">
                 <div class="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3">
                   <p class="text-zinc-100 text-md font-light">
-                    Review de <span class="font-extrabold text-[#00FCFF]">{{ review.autor }}</span>
+                    Review de <span class="font-extrabold text-[#00FCFF]">{{ review.user.name }}</span>
                   </p>
 
                   <div class="flex">
-                    <IconStar v-for="i in 5" :key="i" :class="i <= review.nota ? 'text-[#00FCFF]' : 'text-zinc-700'"
+                    <IconStar v-for="i in 5" :key="i" :class="i <= review.rating ? 'text-[#00FCFF]' : 'text-zinc-700'"
                       class="w-3 h-3 lg:w-4 lg:h-4" />
                   </div>
                 </div>
 
                 <div class="mt-1">
                   <p class="text-zinc-400 text-sm lg:text-base leading-relaxed">
-                    {{ review.texto }}
+                    {{ review.comentario }}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div v-if="limite < reviews.length" class="mt-10 flex justify-center">
+          <div v-if="reviews && 5 < reviews.length" class="mt-10 flex justify-center">
             <button @click="mostrarMais"
               class="text-zinc-400 hover:text-[#00FCFF] text-sm font-bold uppercase tracking-widest transition-all border-b border-zinc-800 hover:border-[#00FCFF] pb-1">
               Mostrar mais reviews
             </button>
           </div>
         </div>
+
       </div>
       <div v-else class="text-white">
         Filme não encontrado.
@@ -568,5 +814,35 @@ const dataAssistido = ref(getTodayDate());
     display: none;
     /* Chrome, Safari and Opera */
   }
+}
+
+/* Estilização para Chrome, Edge e Safari */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+  /* Altura da barra horizontal */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  /* Fundo da trilha quase invisível */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  /* Cor da barra em si (bem discreta) */
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 252, 255, 0.4);
+  /* Ganha destaque (e sua cor tema) no hover */
+}
+
+/* Suporte para Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) rgba(255, 255, 255, 0.02);
 }
 </style>
