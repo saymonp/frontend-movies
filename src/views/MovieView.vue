@@ -468,7 +468,7 @@ watch(userReview, (newReview) => {
               <p class="text-zinc-400 leading-relaxed mb-2">{{ movie.duracao }} mins</p>
               <div class="mt-2 hidden lg:block">
                 <p class="text-zinc-400 leading-relaxed">
-                  {{ locale === 'br' ? movie.descricao_br : movie.descricao_en }}
+                  {{ (locale === 'br' ? movie.descricao_br : movie.descricao_en) ?? 'Descrição indisponível' }}
                 </p>
               </div>
               <button @click="isCardReviewVisible = true"
