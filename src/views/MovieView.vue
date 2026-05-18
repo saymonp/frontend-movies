@@ -38,7 +38,6 @@ const abaAtiva = ref('generos');
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 const movieStore = useMovieStore();
-const loggedIn = ref(true);
 const listaStore = useListaStore();
 const reviewStore = useReviewStore();
 const userListas = ref<ListasUser[]>();
@@ -46,8 +45,8 @@ const isSearchingUserListas = ref(false);
 const activeReviewId = ref<number | null>(null);
 const activeList = ref(false);
 const target = ref(null);
-const isMovieAddWatchLater = ref<{ id: number, attached: boolean, isDefault: boolean }>();
-const isMovieWatched = ref<{ id: number, attached: boolean, isDefault: boolean }>();
+const isMovieAddWatchLater = ref<{ id: number, attached: boolean, isDefault: boolean, index: number }>();
+const isMovieWatched = ref<{ id: number, attached: boolean, isDefault: boolean, index: number }>();
 const isProcessing = ref(false); // Nova ref para a mensagem de instantes
 
 const props = defineProps<{
@@ -95,7 +94,10 @@ async function loadFullMovie(retryCount = 0) {
 
     // Filme pronto
     movie.value = movieData;
-    // ... restante da lógica de atribuição (collection, reviews, etc)
+    collection.value = response.collection;
+    reviews.value = response.reviews;
+    moviesRelacionados.value = response.related;
+    listas.value = response.lists;
 
     isProcessing.value = false; // Desativa pois o filme carregou
 
@@ -119,14 +121,16 @@ async function loadAllData() {
       const movieId = parseInt(props.slug);
 
       const listas = await listaStore.indexUserListas(movieId);
+
       userListas.value = listas;
 
-      // 2. Usa um único loop para encontrar as listas padrão
-      listas.forEach(l => {
+      // 2. Encontrar as listas padrão
+      listas.forEach((l, index) => {
         const statusObj = {
           id: l.id,
           attached: l.movie_exists,
-          isDefault: l.is_default
+          isDefault: l.is_default,
+          index: index
         };
 
         if (l.slug === "watched" && l.is_default === true) {
@@ -197,7 +201,8 @@ const getUserListas = async () => {
     if (!movie.value?.id) {
       throw new Error('Filme não encontrado');
     }
-    if (!userListas.value) {
+    if (!userListas.value && isAuthenticated.value) {
+
       userListas.value = await listaStore.indexUserListas(movie.value?.id);
     }
   } catch (error) {
@@ -223,6 +228,12 @@ const toggleWatchedLista = async () => {
   }
   const response = await listaStore.toggleAddToList({ lista_id: isMovieWatched.value?.id, movie_id: parseInt(props.slug) });
   isMovieWatched.value.attached = response.attached;
+
+  const listaIndex = isMovieWatched.value.index;
+  const listaAlvo = userListas.value?.[listaIndex];
+  if (listaAlvo) {
+    listaAlvo.movie_exists = response.attached;
+  }
 }
 const toggleWatchLaterLista = async () => {
   if (!isMovieAddWatchLater.value) {
@@ -230,6 +241,12 @@ const toggleWatchLaterLista = async () => {
   }
   const response = await listaStore.toggleAddToList({ lista_id: isMovieAddWatchLater.value?.id, movie_id: parseInt(props.slug) });
   isMovieAddWatchLater.value.attached = response.attached;
+  
+  const listaIndex = isMovieAddWatchLater.value.index;
+  const listaAlvo = userListas.value?.[listaIndex];
+  if (listaAlvo) {
+    listaAlvo.movie_exists = response.attached;
+  }
 }
 
 const toggleMovie = async (listaIndex: number) => {
@@ -248,6 +265,12 @@ const toggleMovie = async (listaIndex: number) => {
     });
 
     lista.movie_exists = response.attached;
+    if (lista.id === isMovieAddWatchLater.value?.id) {
+      isMovieAddWatchLater.value.attached = response.attached;
+    }
+    if (lista.id === isMovieWatched.value?.id) {
+      isMovieWatched.value.attached = response.attached;
+    }
 
   } catch (error) {
     console.error("Erro ao alternar filme na lista:", error);
@@ -471,7 +494,7 @@ watch(userReview, (newReview) => {
                   {{ (locale === 'br' ? movie.descricao_br : movie.descricao_en) ?? 'Descrição indisponível' }}
                 </p>
               </div>
-              <button @click="isCardReviewVisible = true"
+              <button v-if="isAuthenticated" @click="isCardReviewVisible = true"
                 class="mt-2 w-fit lg:basis-auto bg-white/5 border border-white/20 text-white rounded-lg py-1 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 Fazer Review
               </button>
@@ -488,10 +511,10 @@ watch(userReview, (newReview) => {
                 </span>
               </div>
               <!-- PC -->
-              <div class="hidden lg:flex lg:w-full mt-8 lg:justify-around">
+              <div v-if="isAuthenticated" class="hidden lg:flex lg:w-full mt-8 lg:justify-around">
                 <div class="flex justify-around w-full max-w-2xl mx-auto items-center">
 
-                  <div class="flex flex-col items-center gap-2">
+                  <div v-if="isMovieAddWatchLater" class="flex flex-col items-center gap-2">
                     <button @click="toggleWatchLaterLista"
                       class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500"
                       :class="isMovieAddWatchLater?.attached
@@ -507,7 +530,6 @@ watch(userReview, (newReview) => {
                     </span>
                   </div>
 
-                  <!-- 1. Adicione 'relative' no container pai -->
                   <div class="relative flex flex-col items-center gap-2">
 
                     <IconAddToList @click.stop="openListas" class="w-10 h-10 text-zinc-100 opacity-80 cursor-pointer" />
@@ -520,7 +542,7 @@ watch(userReview, (newReview) => {
                       <div v-if="activeList" ref="target" class="absolute top-full left-1/2 -translate-x-1/2 z-[60] mt-2 w-56 bg-[#0f0f0f]/95 border
                         border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
 
-                        <div class="flex flex-col gap-3">
+                        <div v-if="userListas && userListas?.length > 0" class="flex flex-col gap-3">
                           <p class="text-[10px] text-zinc-500 uppercase font-black border-b border-white/5 pb-1">
                             Salvar em:
                           </p>
@@ -542,7 +564,7 @@ watch(userReview, (newReview) => {
                       </div>
                     </Transition>
                   </div>
-                  <div class="flex flex-col items-center gap-2">
+                  <div v-if="isMovieWatched" class="flex flex-col items-center gap-2">
                     <button @click="toggleWatchedLista"
                       class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500 group"
                       :class="isMovieWatched?.attached
@@ -573,19 +595,73 @@ watch(userReview, (newReview) => {
 
           </div>
           <!-- Mobile -->
-          <div class="block lg:hidden">
-            <div class="grid grid-cols-3 gap-4 mx-auto lg:mx-0 w-fit lg:w-full max-w-md mt-9 lg:mt-6">
-              <div class="flex flex-col items-center gap-2">
-                <IconWatchLater class="w-7 h-7 lg:w-10 text-zinc-100" />
-                <span class="text-zinc-100 text-xs lg:text-sm text-center">Assistir mais Tarde</span>
+          <div v-if="isAuthenticated" class="block lg:hidden">
+            <div class="grid grid-cols-3 gap-12 mx-auto lg:mx-0 w-fit lg:w-full max-w-md mt-9 lg:mt-6">
+              <div v-if="isMovieAddWatchLater" class="flex flex-col items-center gap-2">
+                <button @click="toggleWatchLaterLista"
+                  class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500"
+                  :class="isMovieAddWatchLater?.attached
+                    ? 'bg-[#00FCFF] border-[#00FCFF] shadow-[0_0_15px_rgba(0,252,255,0.4)]'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'">
+                  <IconWatchLater class="w-6 h-6 transition-colors"
+                    :class="isMovieAddWatchLater?.attached ? 'text-black' : 'text-zinc-100'" />
+                </button>
+
+                <span class="text-[10px] lg:text-xs text-center max-w-[80px] transition-colors"
+                  :class="isMovieAddWatchLater?.attached ? 'text-[#00FCFF] font-bold' : 'text-zinc-400'">
+                  {{ isMovieAddWatchLater?.attached ? 'Na Lista' : 'Ver Depois' }}
+                </span>
               </div>
-              <div class="flex flex-col items-center gap-2">
-                <IconAddToList class="w-7 h-7 lg:w-10 text-zinc-100" />
-                <span class="text-zinc-100 text-xs lg:text-sm text-center">Salvar na Lista</span>
+
+              <div v-if="userListas?.length" class="relative flex flex-col items-center gap-2">
+
+                <IconAddToList @click.stop="openListas" class="w-10 h-10 text-zinc-100 opacity-80 cursor-pointer" />
+
+                <span class="text-zinc-100 text-[10px] lg:text-xs text-center max-w-[80px]">
+                  Salvar na Lista
+                </span>
+
+                <Transition name="fade-slide">
+                  <div v-if="activeList" ref="target" class="absolute top-12 left-1/2 -translate-x-1/2 z-[60] mt-2 w-56 bg-[#0f0f0f]/95 border
+                        border-white/10 rounded-xl p-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+
+                    <div class="flex flex-col gap-3">
+                      <p class="text-[10px] text-zinc-500 uppercase font-black border-b border-white/5 pb-1">
+                        Salvar em:
+                      </p>
+
+                      <div class="flex flex-col gap-2 max-h-32 overflow-y-auto pr-1">
+                        <label v-for="(lista, index) in userListas" :key="lista.id"
+                          class="flex items-center gap-2 cursor-pointer group">
+                          <input type="checkbox" :checked="lista.movie_exists" @click.prevent="toggleMovie(index)"
+                            class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
+                          <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo }}</span>
+                        </label>
+                      </div>
+
+                      <button @click="activeList = false"
+                        class="w-full bg-white/10 hover:bg-[#00FCFF] text-white hover:text-black text-[9px] font-black py-2 rounded-md transition-all">
+                        Concluir
+                      </button>
+                    </div>
+                  </div>
+                </Transition>
               </div>
-              <div class="flex flex-col items-center gap-2">
-                <IconCheck class="w-7 h-7 lg:w-10 text-zinc-100" />
-                <span class="text-zinc-100 text-xs lg:text-sm text-center">Assistido</span>
+              <div v-if="isMovieWatched" class="flex flex-col items-center gap-2">
+                <button @click="toggleWatchedLista"
+                  class="relative w-12 h-12 flex items-center justify-center rounded-full border transition-all duration-500 group"
+                  :class="isMovieWatched?.attached
+                    ? 'bg-[#00FCFF] border-[#00FCFF] shadow-[0_0_15px_rgba(0,252,255,0.4)]'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'">
+                  <IconCheck class="w-6 h-6 transition-all duration-300" :class="isMovieWatched?.attached
+                    ? 'text-black scale-110'
+                    : 'text-zinc-100 opacity-60 group-hover:opacity-100'" />
+                </button>
+
+                <span class="text-[10px] lg:text-xs text-center max-w-[80px] transition-colors duration-300"
+                  :class="isMovieWatched?.attached ? 'text-[#00FCFF] font-bold' : 'text-zinc-100 opacity-80'">
+                  {{ isMovieWatched?.attached ? 'Assistido' : 'Marcar visto' }}
+                </span>
               </div>
             </div>
           </div>

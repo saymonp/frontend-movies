@@ -348,7 +348,7 @@ const getMovieParam = (movie: any) => {
                             </span>
 
                             <!-- Input da Tag -->
-                            <input v-model="novaTag" @keydown.enter.prevent="adicionarTag" type="text"
+                            <input v-model="novaTag" @keyup.enter.prevent="adicionarTag" type="text" enterkeyhint="done"
                                 placeholder="Adicione uma tag e aperte Enter..."
                                 class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs p-1 min-w-[150px]" />
                         </div>
@@ -422,7 +422,7 @@ const getMovieParam = (movie: any) => {
                                 class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
                                 <div v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id)" class="flex p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
                                     transition-colors group">
-                                    <MoviePoster v-if="movie.poster_thumb_br"  :path="getImageUrl(movie.poster_thumb_br)"
+                                    <MoviePoster v-if="movie.poster_thumb_br" :path="getImageUrl(movie.poster_thumb_br)"
                                         class="w-10 h-14 object-cover rounded-md shadow-md" />
                                     <div class="ml-3 flex-1">
                                         <p

@@ -29,10 +29,6 @@ const isSearching = ref(false);
 const moviesList = ref<MovieWithDirectors[]>([]);
 const novaTag = ref('');
 
-// Objeto para guardar o estado original (antes da edição)
-const originalData = ref('');
-
-
 const getInitialState = (): CreateLista => ({
     titulo: '',
     comentario: '',
@@ -62,6 +58,7 @@ const criarLista = async () => {
     isSearching.value = true;
     try {
         listaData.value.slug = generateSlug(listaData.value.titulo);
+        console.log(listaData.value);
         const newList = await listaStore.createLista(listaData.value);
         const link = `/lista/${newList.id}-${newList.slug}`;
         router.push(link);
@@ -73,10 +70,6 @@ const criarLista = async () => {
 
 
 }
-// Para limpar o formulário após o sucesso:
-const resetForm = () => {
-    listaData.value = getInitialState();
-};
 
 const adicionarTag = () => {
     const valor = novaTag.value.trim();
@@ -169,22 +162,6 @@ onClickOutside(target, () => {
     moviesList.value = [];
 });
 
-const getMovieParam = (movie: any) => {
-    // Pega o slug de acordo com o idioma
-    const slug = (i18n as any).locale === 'br' ? movie.slug_pt : movie.slug_en;
-
-    // Se não houver slug (nulo ou vazio), retorna apenas o ID
-    if (!slug || slug.trim() === '') {
-        return String(movie.id);
-    }
-
-    // Retorna o formato 235-nome-do-filme
-    return `${movie.id}-${slug}`;
-};
-onClickOutside(target, () => {
-    searchQuery.value = '';
-    moviesList.value = [];
-});
 </script>
 <template>
     <Navbar />
@@ -192,20 +169,13 @@ onClickOutside(target, () => {
         <div class="max-w-4xl mx-auto px-4 relative">
 
             <div class="flex flex-col items-center mb-12 relative z-10">
-                <div class="relative w-full flex items-center justify-center mb-6">
+                <div class="relative w-full flex flex-col lg:flex-row items-center justify-center mb-6 gap-3 lg:gap-0">
                     <input v-model="listaData.titulo" type="text"
-                        class="text-zinc-100 font-black text-4xl lg:text-5xl bg-transparent border-none outline-none focus:ring-0 text-center w-full placeholder:text-zinc-700"
+                        class="text-zinc-100 font-black text-2xl lg:text-4xl bg-white/5 border-black border-none outline-none focus:ring-0 text-center w-full placeholder:text-zinc-700"
                         placeholder="Título da lista">
 
-                    <button @click="criarLista" :disabled="!listaData.titulo || listaData.titulo.trim() === ''" :class="[
-                        !listaData.titulo || listaData.titulo.trim() === ''
-                            ? 'bg-zinc-800 border-zinc-700 opacity-50 cursor-not-allowed text-zinc-500'
-                            : 'bg-[#00FCFF]/10 border-[#00FCFF]/30 hover:bg-[#00FCFF]/20 cursor-pointer text-[#00FCFF]'
-                    ]" class="absolute -right-4 hidden lg:block bg-[#00FCFF]/10 border border-[#00FCFF]/30 rounded-xl py-2 px-4 hover:bg-[#00FCFF]/20 cursor-pointer transition-all shadow-[0_0_20px_rgba(0,252,255,0.1)]">
-                        <p class="text-[#00FCFF] text-[10px] uppercase tracking-widest font-black">Criar Lista</p>
-                    </button>
-                </div>
 
+                </div>
                 <textarea v-model="listaData.comentario"
                     class="w-full max-w-2xl text-zinc-400 font-medium text-base bg-transparent border-none outline-none focus:ring-0 text-center min-h-[80px] resize-none placeholder:text-zinc-800"
                     placeholder="Adicione uma descrição para esta lista..."></textarea>
@@ -221,11 +191,23 @@ onClickOutside(target, () => {
                     </div>
 
                     <div class="relative w-full max-w-xs">
-                        <input v-model="novaTag" @keydown.enter.prevent="adicionarTag" type="text"
+                        <input v-model="novaTag" @keyup.enter.prevent="adicionarTag" type="text" enterkeyhint="done"
                             placeholder="Adicionar tag..."
                             class="w-full bg-white/5 border border-white/5 rounded-full px-4 py-1.5 text-zinc-100 text-[11px] text-center outline-none focus:border-[#00FCFF]/50 transition-all" />
                     </div>
                 </div>
+            </div>
+            <div class="m-1">
+                <button @click="criarLista" :disabled="!listaData.titulo || listaData.titulo.trim() === ''" :class="[
+                    !listaData.titulo || listaData.titulo.trim() === ''
+                        ? 'bg-zinc-800 border-zinc-700 opacity-50 cursor-not-allowed text-zinc-500'
+                        : 'bg-[#00FCFF]/10 border-[#00FCFF]/30 hover:bg-[#00FCFF]/20 cursor-pointer text-[#00FCFF]'
+                ]"
+                    class="w-full lg:w-auto lg:justify-center bg-[#00FCFF]/10 border border-[#00FCFF]/30 rounded-xl py-3 lg:py-2 px-6 lg:px-4 hover:bg-[#00FCFF]/20 cursor-pointer transition-all shadow-[0_0_20px_rgba(0,252,255,0.1)]">
+                    <p
+                        class="text-[#00FCFF] text-[11px] lg:text-[10px] uppercase tracking-widest font-black text-center">
+                        Criar Lista</p>
+                </button>
             </div>
 
             <div

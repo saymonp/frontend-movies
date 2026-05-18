@@ -22,6 +22,8 @@ import MoviePoster from '@/components/MoviePoster.vue';
 import { getImageUrl } from '@/utils/imageHelper';
 import type { CreateReview } from '@/types/Review';
 import { useReviewStore } from '@/stores/review';
+import MovieIndexSkeleton from '@/components/MovieIndexSkeleton.vue'
+import ListaIndexSkeleton from '@/components/ListaIndexSkeleton.vue'
 
 const authStore = useAuthStore();
 const movieStore = useMovieStore();
@@ -171,7 +173,8 @@ async function loadMovies(filters: MovieFilters) {
                 id: response.id,
                 tmdb: response.tmdb_id,
                 titulo_br: response.temp_result.title, // Mudado de title_br para titulo_br
-                poster_thumb_br: "https://image.tmdb.org/t/p/w500" + response.temp_result.poster_path,
+                poster_thumb_br: response.poster_thumb_br,
+                poster_thumb_us: response.poster_thumb_us,
                 rating: response.temp_result.vote_average,
                 year: response.temp_result.release_date?.split('-')[0],
                 is_importing: true,
@@ -473,6 +476,7 @@ const saveQuickReview = async (movieId: number) => {
                         :isSearching="isSearching"
                         :maxLikes="listas.data.length ? Math.max(...listas.data.map((lista: { likes_count: any; }) => lista.likes_count)) : 0" />
                 </div>
+                <MovieIndexSkeleton :isSearching="isSearching" :searchMode="searchMode"/>
                 <TransitionGroup v-if="searchMode == 'movies'" tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
                     <div v-if="movies && (movies as any).data"
@@ -572,6 +576,7 @@ const saveQuickReview = async (movieId: number) => {
                     </div>
                 </TransitionGroup>
                 <!-- LISTAGEM DE LISTAS -->
+                <ListaIndexSkeleton :isSearching="isSearching" :searchMode="searchMode"/>
                 <TransitionGroup v-if="searchMode == 'lists'" tag="section" name="list"
                     class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-4 gap-6 max-w-3xl mx-auto pt-2.5">
                     <RouterLink v-for="lista in listas?.data" :key="lista.id" :to="{
