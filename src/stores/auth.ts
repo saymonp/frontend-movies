@@ -54,6 +54,17 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       delete api.defaults.headers.common['Authorization'];
-    }
-  },
+    },
+    async deleteAccount() {
+      const response = await api.delete('/me/delete');
+      if (response.status === 200) {
+        this.token = null;
+        this.user = null;
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        delete api.defaults.headers.common['Authorization'];
+      }
+      return response.data;
+    },
+  }
 });

@@ -22,6 +22,8 @@ import MoviePoster from '@/components/MoviePoster.vue';
 import { getImageUrl } from '@/utils/imageHelper';
 import type { CreateReview } from '@/types/Review';
 import { useReviewStore } from '@/stores/review';
+import MovieIndexSkeleton from '@/components/MovieIndexSkeleton.vue'
+import ListaIndexSkeleton from '@/components/ListaIndexSkeleton.vue'
 
 const authStore = useAuthStore();
 const movieStore = useMovieStore();
@@ -40,7 +42,7 @@ const diretores = ref<DiretorResponse[]>([]);
 const idiomasDisponiveis = ref<string[]>([]);
 const hasLoadedListas = ref(false);
 const searchMode = ref('movies')
-
+const isCriarConta = ref(false);
 const userListas = ref<ListasUser[]>();
 const isSearchingUserListas = ref(false);
 
@@ -171,7 +173,8 @@ async function loadMovies(filters: MovieFilters) {
                 id: response.id,
                 tmdb: response.tmdb_id,
                 titulo_br: response.temp_result.title, // Mudado de title_br para titulo_br
-                poster_thumb_br: "https://image.tmdb.org/t/p/w500" + response.temp_result.poster_path,
+                poster_thumb_br: response.poster_thumb_br,
+                poster_thumb_us: response.poster_thumb_us,
                 rating: response.temp_result.vote_average,
                 year: response.temp_result.release_date?.split('-')[0],
                 is_importing: true,
@@ -394,7 +397,7 @@ const saveQuickReview = async (movieId: number) => {
 
 <template>
     <div class="bg-zinc-50 dark:bg-zinc-900">
-        <Navbar :loggedIn="isAuthenticated" />
+        <Navbar v-model:isCriarConta="isCriarConta" />
         <div class="bg-hero">
 
             <div class="relative z-10 w-full h-auto">
@@ -420,15 +423,24 @@ const saveQuickReview = async (movieId: number) => {
                             class="text-[#00FCFF] text-xl text-center font-bold mt-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                             Crie listas para salvar seus filmes favoritos.
                         </p>
-                        <RouterLink to="/perfil">
+                        <div v-if="isAuthenticated">
+                        <RouterLink  to="/perfil">
                             <button class="mt-6 bg-[#00FCFF] text-black font-bold py-3 px-10 rounded-md 
                 transition-all duration-300
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
                 hover:shadow-[0_0_30px_rgba(0,252,255,1)]
                 hover:scale-105 active:scale-95">
-                                {{ isAuthenticated ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
+                                Acesse suas Listas
                             </button>
                         </RouterLink>
+                        </div>
+                        <button v-else @click="isCriarConta = !isCriarConta" class="mt-6 bg-[#00FCFF] text-black font-bold py-3 px-10 rounded-md 
+                transition-all duration-300
+                shadow-[0_0_15px_rgba(0,252,255,0.8)]
+                hover:shadow-[0_0_30px_rgba(0,252,255,1)]
+                hover:scale-105 active:scale-95">
+                            Comece agora — É Grátis
+                        </button>
                     </div>
                 </div>
 
@@ -473,6 +485,7 @@ const saveQuickReview = async (movieId: number) => {
                         :isSearching="isSearching"
                         :maxLikes="listas.data.length ? Math.max(...listas.data.map((lista: { likes_count: any; }) => lista.likes_count)) : 0" />
                 </div>
+                <MovieIndexSkeleton :isSearching="isSearching" :searchMode="searchMode" />
                 <TransitionGroup v-if="searchMode == 'movies'" tag="section" name="list"
                     class="grid grid-cols-2 sm:grid-cols-4 max-w-3xl mt-3 gap-5 p-2.5 mx-auto">
                     <div v-if="movies && (movies as any).data"
@@ -572,102 +585,86 @@ const saveQuickReview = async (movieId: number) => {
                     </div>
                 </TransitionGroup>
                 <!-- LISTAGEM DE LISTAS -->
+                <ListaIndexSkeleton :isSearching="isSearching" :searchMode="searchMode" />
                 <TransitionGroup v-if="searchMode == 'lists'" tag="section" name="list"
-                    class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-4 gap-6 max-w-3xl mx-auto pt-2.5">
+                    class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 max-w-3xl mx-auto pt-2.5 px-2">
+
                     <RouterLink v-for="lista in listas?.data" :key="lista.id" :to="{
                         name: 'ListView',
                         params: {
                             id: lista.id,
                             slug: lista.slug
                         }
-                    }" class="group">
+                    }" class="group w-full">
                         <div
-                            class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md hover:border-[#d919ff]/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(217,25,255,0.15)]">
+                            class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-md hover:border-[#d919ff]/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_40px_rgba(217,25,255,0.15)] flex flex-col h-full">
 
-                            <!-- CAPAS -->
                             <div v-if="lista.movies && lista.movies.length > 0"
-                                class="relative h-40 flex items-center justify-center overflow-hidden px-4 pt-5 ">
+                                class="relative h-36 sm:h-40 flex items-center justify-center overflow-hidden px-2 sm:px-0 pt-2">
 
                                 <template v-for="(style, index) in movieStyles" :key="index">
                                     <div v-if="lista.movies[index]"
-                                        class="relative w-28 sm:w-28 lg:w-32 transition-transform"
+                                        class="relative w-20 sm:w-24 lg:w-22 transition-transform flex-shrink-0"
                                         :class="[style.zIndex, style.ml, style.opacity, style.hover]">
+
                                         <MoviePoster :path="getImageUrl(lista.movies[index].poster_thumb_br)"
-                                            class="rounded-xl transition-transform max-w-[80px]" :class="[
+                                            class="w-full h-auto rounded-xl transition-transform shadow-md max-w-none sm:max-w-[76px] mx-auto"
+                                            :class="[
                                                 style.ring,
-                                                index === 0 ? 'shadow-2xl scale-105' : 'shadow-lg opacity-90'
+                                                index === 0 ? 'shadow-2xl scale-105' : 'opacity-90'
                                             ]" />
-
                                     </div>
-
                                 </template>
-                                <!-- 2. Placeholder (Caso a lista esteja vazia) -->
 
-                                <!-- Overlay -->
                                 <div
                                     class="absolute inset-0 bg-gradient-to-t from-[#020036] via-transparent to-transparent">
                                 </div>
                             </div>
+
                             <div v-else
-                                class="flex flex-col items-center justify-center w-full min-h-[160px] bg-white/5 border-2 border-dashed border-white/10 rounded-xl">
+                                class="flex flex-col items-center justify-center w-full min-h-[144px] sm:min-h-[160px] bg-white/5 border-2 border-dashed border-white/10 rounded-xl">
                                 <IconNoMovies />
                                 <span class="text-white/30 text-xs font-medium">Lista vazia</span>
-
                             </div>
-                            <!-- CONTEÚDO -->
-                            <div class="p-3">
 
-                                <!-- Título -->
-                                <h4
-                                    class="text-zinc-100 font-black text-base line-clamp-2 group-hover:text-[#d919ff] transition-colors">
-                                    {{ lista.titulo }}
-                                </h4>
+                            <div class="p-3 flex flex-col flex-1 justify-between">
+                                <div>
+                                    <h4
+                                        class="text-zinc-100 font-black text-sm sm:text-base line-clamp-2 group-hover:text-[#d919ff] transition-colors leading-tight">
+                                        {{ lista.titulo }}
+                                    </h4>
 
-                                <!-- Descrição -->
-                                <p v-if="lista.comentario" class="text-zinc-500 text-sm mt-1 line-clamp-1">
-                                    {{ lista.comentario }}
-                                </p>
-
-                                <!-- Tags -->
-                                <!--
-                                <div v-if="lista.tags?.length" class="flex flex-wrap gap-2 mt-2">
-                                    <span v-for="tag in lista.tags.slice(0, 3)" :key="tag.id"
-                                        class="px-2 py-1 rounded-full bg-[#d919ff]/10 border border-[#d919ff]/20 text-[#d919ff] text-[7px] uppercase tracking-widest font-black">
-                                        {{ tag.nome }}
-                                    </span>
+                                    <p v-if="lista.comentario"
+                                        class="text-zinc-500 text-[11px] sm:text-sm mt-1 line-clamp-1">
+                                        {{ lista.comentario }}
+                                    </p>
                                 </div>
-                                -->
 
-                                <!-- Footer -->
-                                <div class="flex items-center justify-between mt-2">
+                                <div class="flex items-center justify-between mt-3 gap-1">
 
-                                    <!-- Likes -->
-                                    <div class="flex items-center gap-2">
-
-                                        <!-- Ícone curtido -->
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center border transition-all"
+                                    <div class="flex items-center gap-1.5">
+                                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border transition-all"
                                             :class="lista.is_liked
                                                 ? 'bg-[#ff0077]/20 border-[#ff0077]/40 text-[#ff0077]'
                                                 : 'bg-white/5 border-white/10 text-zinc-500'">
-                                            <IconLike class='w-5 h-5' />
+                                            <IconLike class='w-4 h-4 sm:w-5 sm:h-5' />
                                         </div>
 
                                         <div class="flex flex-col leading-none">
-                                            <span class="text-zinc-100 text-xs font-black">
+                                            <span class="text-zinc-100 text-[11px] sm:text-xs font-black">
                                                 {{ lista.likes_count || 0 }}
                                             </span>
-
-                                            <span class="text-zinc-500 text-[9px] uppercase tracking-widest">
+                                            <span
+                                                class="text-zinc-500 text-[8px] sm:text-[9px] uppercase tracking-widest">
                                                 Likes
                                             </span>
                                         </div>
                                     </div>
 
-                                    <!-- Quantidade de filmes -->
                                     <div
-                                        class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 py-1">
-                                        <IconMovie class="text-zinc-300 w-4 h-4" />
-                                        <span class="text-zinc-300 text-xs font-bold">
+                                        class="flex items-center gap-1 bg-white/5 border border-white/10 rounded-full px-2 sm:px-3 py-1 flex-shrink-0">
+                                        <IconMovie class="text-zinc-300 w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                        <span class="text-zinc-300 text-[10px] sm:text-xs font-bold">
                                             {{ lista.movies.length }}
                                         </span>
                                     </div>

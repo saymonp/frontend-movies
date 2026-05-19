@@ -279,6 +279,8 @@ export interface DinamicMovieInsertionResponse {
   message: string;
   temp_result: TempMovieResult;
   status: "importing" | string;
+  poster_thumb_br: string;
+  poster_thumb_us: string;
 }
 
 export interface TempMovieResult {

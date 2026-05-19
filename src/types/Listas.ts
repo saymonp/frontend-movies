@@ -158,11 +158,16 @@ export interface MovieDirector {
 
 export interface MovieWithDirectors {
     id: number;
+    tmdb_id?: number;
     titulo_original: string;
     titulo_br?: string;
     titulo_en?: string;
     rating?: number;
-    release_date?: string
+    year?: string;
+    slug_pt?: string;
+    slug_en?: string;
+    is_importing: boolean;
+    release_date?: string;
     poster_thumb_br?: string;
     poster_thumb_us?: string;
     diretores?: MovieDirector[];

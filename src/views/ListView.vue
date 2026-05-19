@@ -176,7 +176,6 @@ const toggleEditMode = async () => {
             tags: updateData.value.tags,
             publica: updateData.value.publica
         });
-
         // CHECAGEM: Se os dados forem idênticos ao original, apenas fecha
         if (currentData === originalData.value) {
             console.log("Nada mudou, não vou chamar a API.");
@@ -215,10 +214,17 @@ async function loadMovies() {
         if (response && !Array.isArray(response) && 'temp_result' in response) {
             const movie = (response as any);
             moviesList.value = [{
-                titulo_original: movie.temp_result.original_title,
-                titulo_br: movie.temp_result.title,
                 id: movie.id,
-                release_date: movie.temp_result.release_date,
+                tmdb_id: movie.tmdb_id,
+                titulo_br: movie.temp_result.title, // Mudado de title_br para titulo_br
+                titulo_original: movie.temp_result.title,
+                poster_thumb_br: movie.poster_thumb_br,
+                poster_thumb_us: movie.poster_thumb_us,
+                rating: movie.temp_result.vote_average,
+                year: movie.temp_result.release_date?.split('-')[0],
+                is_importing: true,
+                slug_pt: 'temp-movie',
+                slug_en: 'temp-movie'
             }];
         } else {
             moviesList.value = response;
@@ -348,7 +354,7 @@ const getMovieParam = (movie: any) => {
                             </span>
 
                             <!-- Input da Tag -->
-                            <input v-model="novaTag" @keydown.enter.prevent="adicionarTag" type="text"
+                            <input v-model="novaTag" @keyup.enter.prevent="adicionarTag" type="text" enterkeyhint="done"
                                 placeholder="Adicione uma tag e aperte Enter..."
                                 class="flex-1 bg-transparent border-none outline-none text-zinc-100 text-xs p-1 min-w-[150px]" />
                         </div>
@@ -395,7 +401,7 @@ const getMovieParam = (movie: any) => {
                                 <span
                                     class="text-zinc-500 text-[10px] font-bold uppercase group-hover:text-zinc-300 transition-colors">Pública</span>
                                 <div class="relative">
-                                    <input v-if="lista" type="checkbox" v-model="lista.publica" class="peer hidden">
+                                    <input v-if="lista" type="checkbox" v-model="updateData.publica" class="peer hidden">
                                     <div
                                         class="w-8 h-4 bg-zinc-800 rounded-full border border-white/10 peer-checked:bg-[#00FCFF]/20 peer-checked:border-[#00FCFF]/50 transition-all">
                                     </div>
@@ -422,7 +428,7 @@ const getMovieParam = (movie: any) => {
                                 class="z-100 absolute left-0 top-full w-full mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] max-h-60 overflow-y-auto">
                                 <div v-for="movie in moviesList" :key="movie.id" @click="addMovie(movie.id)" class="flex p-4 border-b border-white/5 hover:bg-[#00FCFF]/10 cursor-pointer
                                     transition-colors group">
-                                    <MoviePoster v-if="movie.poster_thumb_br"  :path="getImageUrl(movie.poster_thumb_br)"
+                                    <MoviePoster v-if="movie.poster_thumb_br" :path="getImageUrl(movie.poster_thumb_br)"
                                         class="w-10 h-14 object-cover rounded-md shadow-md" />
                                     <div class="ml-3 flex-1">
                                         <p

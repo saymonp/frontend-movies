@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, h } from 'vue';
 import Navbar from '@/components/Navbar.vue';
 import IconStar from '@/components/icons/IconStar.vue';
 import IconEditList from '@/components/icons/IconList.vue';
@@ -14,7 +14,11 @@ import { onClickOutside } from '@vueuse/core';
 import IconNoMovies from '@/components/icons/IconNoMovies.vue';
 import MoviePoster from '@/components/MoviePoster.vue';
 import { getImageUrl } from '@/utils/imageHelper';
+import IconNavHam from '@/components/icons/IconNavHam.vue'
+import { useToast } from "vue-toastification";
+import {  useRouter } from 'vue-router';
 
+const toast = useToast();
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 const listaStore = useListaStore();
@@ -24,6 +28,16 @@ const listas = ref<ListaPaginada>();
 const reviews = ref<ReviewPaginada>();
 const reviewSelecionada = ref<ReviewSummary>();
 const target = ref(null);
+const menuAberto = ref(false);
+const router = useRouter();
+
+const toggleMenu = (event: Event) => {
+    event.preventDefault();
+    menuAberto.value = !menuAberto.value;
+};
+onClickOutside(target, () => {
+    menuAberto.value = false;
+});
 
 const filterListas = ref<ListaFilters>({
   page: 1
@@ -79,7 +93,39 @@ async function loadReviews() {
     isSearching.value = false;
   }
 };
-
+async function deletarConta() {
+  toast.warning({
+    component: {
+      render() {
+        return h('div', { class: 'flex flex-col gap-2' }, [
+          h('p', 'Tem certeza? Sua conta e todas as informações serão permanentemente deletadas.'),
+          h('button', {
+            class: 'mt-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1.5 px-3 rounded transition-colors align-self-start cursor-pointer',
+            onClick: async () => {
+              // 1. Fecha todos os toasts para limpar a tela
+              toast.clear();
+              
+              // 2. Executa a ação de deletar
+              try {
+                isSearching.value = true;
+                await authStore.deleteAccount();
+                toast.success("Conta deletada com sucesso.");
+              } catch (error) {
+                toast.error("Erro ao deletar conta.");
+              } finally {
+                isSearching.value = false;
+                router.push('/');
+              }
+            }
+          }, 'Sim, deletar minha conta')
+        ]);
+      }
+    }
+  }, {
+    timeout: 8000, // (8 segundos)
+    closeOnClick: false, // Impede que o toast feche se o usuário clicar sem querer fora do botão
+  });
+}
 onMounted(() => {
   try {
     loadListas();
@@ -175,8 +221,8 @@ const reviewsCount = computed(() => {
         <div class="w-20 h-20 rounded-full border-2 border-[#00FCFF] overflow-hidden">
           <img src="/image.png" class="object-cover w-full h-full">
         </div>
-
-        <div class="flex flex-col gap-2">
+        <div class="flex justify-between items-start w-full">
+        <div class="flex-1 flex flex-col gap-2">
           <h2 class="text-xl font-black text-white uppercase tracking-tighter">{{ user?.name }}</h2>
           <div class="flex gap-4">
             <div class="text-center">
@@ -192,6 +238,35 @@ const reviewsCount = computed(() => {
               <p class="text-zinc-500 text-[10px] uppercase font-bold">Reviews</p>
             </div>
           </div>
+         
+        </div>
+         <div v-if="isAuthenticated" class="relative flex-none">
+                    <button @click="toggleMenu"
+                        class="cursor-pointer block p-2.5 text-white no-underline ml-2.5 hover:text-[#00FCFF] transition-colors focus:outline-none">
+                        <IconNavHam class="rotate-90 w-7 text-zinc-100" />
+                    </button>
+
+                    <Transition enter-active-class="transition duration-100 ease-out"
+                        enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100"
+                        leave-active-class="transition duration-75 ease-in"
+                        leave-from-class="transform scale-100 opacity-100"
+                        leave-to-class="transform scale-95 opacity-0">
+                        <div v-if="menuAberto" ref="target"
+                            class="absolute right-0 mt-2 w-48 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-2 z-[200]">
+
+                            <button @click="deletarConta"
+                                class="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                                Deletar Conta
+                            </button>
+                <div v-if="user?.roles.includes('admin')">
+                    <RouterLink to="/administrador"
+                        class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                        <a class="font-bold text-zinc-100">Administrador</a>
+                    </RouterLink>
+                  </div>
+                </div>
+                </Transition>
+              </div>
         </div>
       </div>
 

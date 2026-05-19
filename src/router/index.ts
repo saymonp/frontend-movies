@@ -64,7 +64,17 @@ const router = createRouter({
       component: () => import('../views/AdminView.vue'),
       // Marcamos que esta rota exige autenticação E nível de admin
       meta: { requiresAuth: true, requiresAdmin: true }
-    }
+    },
+    {
+      path: '/termos',
+      name: 'Termos',
+      component: () => import('../views/Termos.vue')
+    },
+    {
+      path: '/privacidade',
+      name: 'Privacidade',
+      component: () => import('../views/Privacidade.vue')
+    },
   ],
   scrollBehavior(to, from, savedPosition) {
     // Se o usuário clicar em "Voltar", ele mantém a posição anterior (opcional)
