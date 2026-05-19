@@ -24,6 +24,7 @@ import type { ListasUser } from '@/types/Listas';
 import { onClickOutside } from '@vueuse/core';
 import MoviePoster from '@/components/MoviePoster.vue';
 import { getImageUrl } from '@/utils/imageHelper';
+import MovieBackdrop from '@/components/MovieBackdrop.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -241,7 +242,7 @@ const toggleWatchLaterLista = async () => {
   }
   const response = await listaStore.toggleAddToList({ lista_id: isMovieAddWatchLater.value?.id, movie_id: parseInt(props.slug) });
   isMovieAddWatchLater.value.attached = response.attached;
-  
+
   const listaIndex = isMovieAddWatchLater.value.index;
   const listaAlvo = userListas.value?.[listaIndex];
   if (listaAlvo) {
@@ -463,12 +464,8 @@ watch(userReview, (newReview) => {
           <div
             class="relative w-full h-auto mx-auto max-w-[1440px] h-auto lg:max-w-[400%] lg:max-h-[450px] object-cover object-top mask-[linear-gradient(to_bottom,black_55%,transparent_100%)] sm:mask-[linear-gradient(to_bottom,black_70%,transparent_100%)]">
 
-
-
-
-            <MoviePoster v-if="movie.backdrop_path" :path="getImageUrl(movie.backdrop_path)"
-              class="relative w-full h-full object-cover opacity-73" />
-
+            <MovieBackdrop :path="movie.backdrop_path ? getImageUrl(movie.backdrop_path) : null"
+              class="w-full h-full object-cover opacity-75" />
           </div>
         </div>
 
@@ -499,7 +496,7 @@ watch(userReview, (newReview) => {
                 Fazer Review
               </button>
               <!-- Estrelas -->
-              <div class="mt-4 flex lg:basis-full lg:items-center">
+              <div v-if="isAuthenticated" class="mt-4 flex lg:basis-full lg:items-center">
                 <button v-for="star in 5" :key="star" type="button" @click="selectRatingOutForm(star)"
                   @mouseenter="hoverRating = star" @mouseleave="hoverRating = 0"
                   class="p-1 transition-all active:scale-125 cursor-pointer">
@@ -739,7 +736,7 @@ watch(userReview, (newReview) => {
                 <div class="flex items-center justify-between mt-1 px-0.5">
                   <IconAddReview class="w-4 h-4 text-[#97A7CB] hover:text-[#00FCFF]" />
                   <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
-                    {{ movie.rating }}
+                    {{ movie.rating  || ""}}
                   </span>
                 </div>
               </div>
@@ -752,10 +749,11 @@ watch(userReview, (newReview) => {
             Filmes com a mesma pegada
           </h1>
 
-          <!-- Container com Scroll Horizontal -->
           <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 mt-3 px-4 pt-5 pb-4 custom-scrollbar">
+
             <div v-for="movieRel in moviesRelacionados" :key="movieRel.id"
-              class="movie-card flex flex-col items-center min-w-[130px] sm:min-w-[160px] lg:min-w-[150px] snap-start">
+              class="movie-card flex flex-col items-center w-[130px] sm:w-[150px] lg:w-[160px] flex-shrink-0 snap-start">
+
               <RouterLink :to="{
                 name: 'MovieView',
                 params: {
@@ -764,7 +762,7 @@ watch(userReview, (newReview) => {
                 }
               }" class="w-full">
                 <MoviePoster v-if="movieRel.poster_thumb_br" :path="getImageUrl(movieRel.poster_thumb_br)"
-                  class="w-full h-auto ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105" />
+                  class="w-full aspect-[2/3] object-cover ring-1 sm:ring-2 ring-[#7075AB] rounded-sm mb-2 shadow-md transition-all hover:ring-[#00FCFF] hover:scale-105" />
               </RouterLink>
 
               <div class="w-full flex flex-col">
@@ -772,7 +770,7 @@ watch(userReview, (newReview) => {
                   {{ movieRel.titulo_br || movieRel.titulo_original }}
                 </p>
 
-                <div class="flex items-center justify-center mt-1 px-1">
+                <div class="flex items-center justify-center mt-1 gap-1 px-1">
                   <IconAddReview class="w-4 h-4 text-[#97A7CB] hover:text-[#00FCFF]" />
                   <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
                     IMDb {{ movieRel.rating }}
@@ -780,6 +778,7 @@ watch(userReview, (newReview) => {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
         <div v-if="listas" class="max-w-[95%] mx-auto mb-20 lg:max-w-5xl">
