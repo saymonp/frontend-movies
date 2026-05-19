@@ -176,7 +176,6 @@ const toggleEditMode = async () => {
             tags: updateData.value.tags,
             publica: updateData.value.publica
         });
-
         // CHECAGEM: Se os dados forem idênticos ao original, apenas fecha
         if (currentData === originalData.value) {
             console.log("Nada mudou, não vou chamar a API.");
@@ -402,7 +401,7 @@ const getMovieParam = (movie: any) => {
                                 <span
                                     class="text-zinc-500 text-[10px] font-bold uppercase group-hover:text-zinc-300 transition-colors">Pública</span>
                                 <div class="relative">
-                                    <input v-if="lista" type="checkbox" v-model="lista.publica" class="peer hidden">
+                                    <input v-if="lista" type="checkbox" v-model="updateData.publica" class="peer hidden">
                                     <div
                                         class="w-8 h-4 bg-zinc-800 rounded-full border border-white/10 peer-checked:bg-[#00FCFF]/20 peer-checked:border-[#00FCFF]/50 transition-all">
                                     </div>
