@@ -16,11 +16,13 @@ const toast = useToast();
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 const isLoginVisible = ref(false);
-const isCriarConta = ref(false);
+//const isCriarConta = ref(false);
 const menuAberto = ref(false);
 const isLoading = ref(false);
 const errorMessage = ref('');
 const target = ref(null);
+
+const isCriarConta = defineModel<boolean>('isCriarConta', { default: false });
 
 // Dados dos formulários
 const loginData = reactive({

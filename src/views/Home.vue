@@ -42,7 +42,7 @@ const diretores = ref<DiretorResponse[]>([]);
 const idiomasDisponiveis = ref<string[]>([]);
 const hasLoadedListas = ref(false);
 const searchMode = ref('movies')
-
+const isCriarConta = ref(false);
 const userListas = ref<ListasUser[]>();
 const isSearchingUserListas = ref(false);
 
@@ -397,7 +397,7 @@ const saveQuickReview = async (movieId: number) => {
 
 <template>
     <div class="bg-zinc-50 dark:bg-zinc-900">
-        <Navbar :loggedIn="isAuthenticated" />
+        <Navbar v-model:isCriarConta="isCriarConta" />
         <div class="bg-hero">
 
             <div class="relative z-10 w-full h-auto">
@@ -423,15 +423,24 @@ const saveQuickReview = async (movieId: number) => {
                             class="text-[#00FCFF] text-xl text-center font-bold mt-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                             Crie listas para salvar seus filmes favoritos.
                         </p>
-                        <RouterLink to="/perfil">
+                        <div v-if="isAuthenticated">
+                        <RouterLink  to="/perfil">
                             <button class="mt-6 bg-[#00FCFF] text-black font-bold py-3 px-10 rounded-md 
                 transition-all duration-300
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
                 hover:shadow-[0_0_30px_rgba(0,252,255,1)]
                 hover:scale-105 active:scale-95">
-                                {{ isAuthenticated ? "Acesse suas Listas" : "Comece agora — É Grátis" }}
+                                "Acesse suas Listas
                             </button>
                         </RouterLink>
+                        </div>
+                        <button v-else @click="isCriarConta = !isCriarConta" class="mt-6 bg-[#00FCFF] text-black font-bold py-3 px-10 rounded-md 
+                transition-all duration-300
+                shadow-[0_0_15px_rgba(0,252,255,0.8)]
+                hover:shadow-[0_0_30px_rgba(0,252,255,1)]
+                hover:scale-105 active:scale-95">
+                            Comece agora — É Grátis
+                        </button>
                     </div>
                 </div>
 
@@ -564,7 +573,7 @@ const saveQuickReview = async (movieId: number) => {
                                                     @click.prevent="toggleMovie(index, movie.id)"
                                                     class="w-3.5 h-3.5 rounded border-white/20 bg-white/5 accent-[#00FCFF]">
                                                 <span class="text-zinc-300 text-[11px] truncate">{{ lista.titulo
-                                                }}</span>
+                                                    }}</span>
                                             </label>
                                         </div>
                                         <button @click="activeListId = null"
