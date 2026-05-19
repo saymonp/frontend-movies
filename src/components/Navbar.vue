@@ -6,9 +6,10 @@ import IconAdd from '@/components/icons/IconAdd.vue'
 import IconFilmeiroFooter from '@/components/icons/IconFilmeiroFooter.vue';
 import IconProfile from './icons/IconProfile.vue';
 import IconNavHam from './icons/IconNavHam.vue';
-
+import { useToast } from "vue-toastification";
 import { storeToRefs } from 'pinia';
 
+const toast = useToast();
 const authStore = useAuthStore();
 const { isAuthenticated, user } = storeToRefs(authStore);
 const isLoginVisible = ref(false);
@@ -19,7 +20,7 @@ const errorMessage = ref('');
 
 // Dados dos formulários
 const loginData = reactive({
-    email: '', 
+    email: '',
     password: ''
 });
 
@@ -52,7 +53,7 @@ const handleLogin = async () => {
         loginData.email = '';
         loginData.password = '';
     } catch (error: any) {
-        errorMessage.value = error.response?.data?.message || 'Erro ao entrar. Verifique suas credenciais.';
+        toast.error(errorMessage.value = error.response?.data?.message || 'Erro ao entrar. Verifique suas credenciais.');
     } finally {
         isLoading.value = false;
     }
@@ -74,7 +75,8 @@ const handleRegister = async () => {
 
         isCriarConta.value = false;
     } catch (error: any) {
-        errorMessage.value = error.response?.data?.message || 'Erro ao criar conta.';
+        toast.error(errorMessage.value = error.response?.data?.message || 'Erro ao criar conta.');
+
     } finally {
         isLoading.value = false;
     }
@@ -212,9 +214,10 @@ const loginGoogle = () => {
                                 class="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
                                 Sair
                             </button>
-                <li v-if="user?.roles.includes('admin')"><RouterLink to="/administrador" class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
-                        <a class="font-bold text-zinc-100"
-                            :isLoginVisible="isLoginVisible">Administrador</a>
+                <li v-if="user?.roles.includes('admin')">
+                    <RouterLink to="/administrador"
+                        class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                        <a class="font-bold text-zinc-100" :isLoginVisible="isLoginVisible">Administrador</a>
                     </RouterLink>
                 </li>
                 <li>
