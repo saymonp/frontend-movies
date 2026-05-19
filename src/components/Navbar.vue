@@ -99,9 +99,19 @@ const logout = () => {
 
 // Login Social
 const loginGoogle = () => {
-    window.location.href = import.meta.env.VITE_GOOGLE_AUTH_URL;
-};
+    const baseUrl = import.meta.env.VITE_GOOGLE_AUTH_URL;
 
+    const params = new URLSearchParams({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        redirect_uri: import.meta.env.VITE_GOOGLE_REDIRECT_URI,
+        response_type: 'code', // Indica que o backend vai receber um Authorization Code
+        scope: 'openid email profile', // Dados mínimos (LGPD ok)
+        access_type: 'offline', // Opcional: se precisar de refresh_token
+        prompt: 'select_account' // Força o Google a mostrar a tela de escolher conta
+    });
+    // Redireciona para: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
+    window.location.href = `${baseUrl}?${params.toString()}`;
+};
 onClickOutside(target, () => {
     isCriarConta.value = false;
     //isLoginVisible.value = false;
@@ -164,22 +174,20 @@ onClickOutside(target, () => {
             <input v-model="registerData.password" type="password" placeholder="Senha"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
             <div class="flex flex-col gap-4 mt-4">
-    <label class="flex items-start gap-3 cursor-pointer group">
-        <input 
-            type="checkbox" 
-            v-model="registerData.aceitou_termos" 
-            required
-            class="mt-1 accent-[#00FCFF] rounded border-zinc-700 bg-zinc-800 text-black focus:ring-[#00FCFF]"
-        />
-        <span class="text-xs text-zinc-300 leading-tight">
-            Li e estou de acordo com os 
-            <a href="/termos" target="_blank" class="text-[#00FCFF] hover:underline font-bold">Termos de Uso</a> 
-            e com a 
-            <a href="/privacidade" target="_blank" class="text-[#00FCFF] hover:underline font-bold">Política de Privacidade</a>. *
-        </span>
-    </label>
+                <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="checkbox" v-model="registerData.aceitou_termos" required
+                        class="mt-1 accent-[#00FCFF] rounded border-zinc-700 bg-zinc-800 text-black focus:ring-[#00FCFF]" />
+                    <span class="text-xs text-zinc-300 leading-tight">
+                        Li e estou de acordo com os
+                        <a href="/termos" target="_blank" class="text-[#00FCFF] hover:underline font-bold">Termos de
+                            Uso</a>
+                        e com a
+                        <a href="/privacidade" target="_blank" class="text-[#00FCFF] hover:underline font-bold">Política
+                            de Privacidade</a>. *
+                    </span>
+                </label>
             </div>
-                <button @click="handleRegister" :disabled="isLoading"
+            <button @click="handleRegister" :disabled="isLoading"
                 class="w-full bg-white/5 border border-white/20 text-white rounded-lg py-2 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 {{ isLoading ? 'Criando...' : 'Criar Conta' }}
             </button>
