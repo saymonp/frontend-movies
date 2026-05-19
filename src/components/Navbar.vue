@@ -104,7 +104,7 @@ const loginGoogle = () => {
 
 onClickOutside(target, () => {
     isCriarConta.value = false;
-    isLoginVisible.value = false;
+    //isLoginVisible.value = false;
     menuAberto.value = false;
 });
 </script>
