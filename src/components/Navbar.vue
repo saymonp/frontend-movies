@@ -34,7 +34,9 @@ const registerData = reactive({
     name: '',
     email: '',
     password: '',
-    password_confirmation: ''
+    password_confirmation: '',
+    aceitou_termos: false,
+    termos_versao: 1.0
 });
 
 const toggleMenu = (event: Event) => {
@@ -76,7 +78,9 @@ const handleRegister = async () => {
             name: registerData.name,
             email: registerData.email,
             password: registerData.password,
-            password_confirmation: registerData.password
+            password_confirmation: registerData.password,
+            aceitou_termos: registerData.aceitou_termos,
+            termos_versao: registerData.termos_versao
         });
 
         isCriarConta.value = false;
@@ -152,14 +156,30 @@ onClickOutside(target, () => {
                 Crie sua conta no Filmeiro para salvar suas listas.
             </p>
 
-            <input v-model="registerData.name" type="text" placeholder="Nome Completo"
+            <input v-model="registerData.name" type="text" placeholder="Nome de Usuário"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
 
             <input v-model="registerData.email" type="email" placeholder="E-mail"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
             <input v-model="registerData.password" type="password" placeholder="Senha"
                 class="w-full bg-white/15 border border-white/10 p-2 rounded text-white outline-none focus:border-[#00FCFF]">
-            <button @click="handleRegister" :disabled="isLoading"
+            <div class="flex flex-col gap-4 mt-4">
+    <label class="flex items-start gap-3 cursor-pointer group">
+        <input 
+            type="checkbox" 
+            v-model="registerData.aceitou_termos" 
+            required
+            class="mt-1 accent-[#00FCFF] rounded border-zinc-700 bg-zinc-800 text-black focus:ring-[#00FCFF]"
+        />
+        <span class="text-xs text-zinc-300 leading-tight">
+            Li e estou de acordo com os 
+            <a href="/termos" target="_blank" class="text-[#00FCFF] hover:underline font-bold">Termos de Uso</a> 
+            e com a 
+            <a href="/privacidade" target="_blank" class="text-[#00FCFF] hover:underline font-bold">Política de Privacidade</a>. *
+        </span>
+    </label>
+            </div>
+                <button @click="handleRegister" :disabled="isLoading"
                 class="w-full bg-white/5 border border-white/20 text-white rounded-lg py-2 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 {{ isLoading ? 'Criando...' : 'Criar Conta' }}
             </button>

@@ -430,7 +430,7 @@ const saveQuickReview = async (movieId: number) => {
                 shadow-[0_0_15px_rgba(0,252,255,0.8)]
                 hover:shadow-[0_0_30px_rgba(0,252,255,1)]
                 hover:scale-105 active:scale-95">
-                                "Acesse suas Listas
+                                Acesse suas Listas
                             </button>
                         </RouterLink>
                         </div>
