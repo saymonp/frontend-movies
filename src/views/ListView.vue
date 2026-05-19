@@ -215,10 +215,17 @@ async function loadMovies() {
         if (response && !Array.isArray(response) && 'temp_result' in response) {
             const movie = (response as any);
             moviesList.value = [{
-                titulo_original: movie.temp_result.original_title,
-                titulo_br: movie.temp_result.title,
                 id: movie.id,
-                release_date: movie.temp_result.release_date,
+                tmdb_id: movie.tmdb_id,
+                titulo_br: movie.temp_result.title, // Mudado de title_br para titulo_br
+                titulo_original: movie.temp_result.title,
+                poster_thumb_br: movie.poster_thumb_br,
+                poster_thumb_us: movie.poster_thumb_us,
+                rating: movie.temp_result.vote_average,
+                year: movie.temp_result.release_date?.split('-')[0],
+                is_importing: true,
+                slug_pt: 'temp-movie',
+                slug_en: 'temp-movie'
             }];
         } else {
             moviesList.value = response;
