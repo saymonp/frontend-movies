@@ -24,6 +24,8 @@ import type { CreateReview } from '@/types/Review';
 import { useReviewStore } from '@/stores/review';
 import MovieIndexSkeleton from '@/components/MovieIndexSkeleton.vue'
 import ListaIndexSkeleton from '@/components/ListaIndexSkeleton.vue'
+import IconChevronRight from '@/components/icons/IconChevronRight.vue'
+import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 
 const authStore = useAuthStore();
 const movieStore = useMovieStore();
@@ -478,6 +480,8 @@ const saveQuickReview = async (movieId: number) => {
                             Listas
                         </button>
                     </div>
+                            
+
                     <SearchBarHome v-if="searchMode == 'movies'" v-model:filterMovies="filterMovies" :generos="generos"
                         :diretores="diretores" :idiomas="idiomasDisponiveis" :isSearching="isSearching"
                         v-model:filterValue="filterValue" @search="loadMovies(filterMovies)" />

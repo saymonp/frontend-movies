@@ -17,6 +17,8 @@ import { getImageUrl } from '@/utils/imageHelper';
 import IconNavHam from '@/components/icons/IconNavHam.vue'
 import { useToast } from "vue-toastification";
 import {  useRouter } from 'vue-router';
+import IconChevronRight from '@/components/icons/IconChevronRight.vue'
+import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 
 const toast = useToast();
 const authStore = useAuthStore();
