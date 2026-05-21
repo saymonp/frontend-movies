@@ -16,7 +16,7 @@ import MoviePoster from '@/components/MoviePoster.vue';
 import { getImageUrl } from '@/utils/imageHelper';
 import IconNavHam from '@/components/icons/IconNavHam.vue'
 import { useToast } from "vue-toastification";
-import {  useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import IconChevronRight from '@/components/icons/IconChevronRight.vue'
 import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 
@@ -34,11 +34,11 @@ const menuAberto = ref(false);
 const router = useRouter();
 
 const toggleMenu = (event: Event) => {
-    event.preventDefault();
-    menuAberto.value = !menuAberto.value;
+  event.preventDefault();
+  menuAberto.value = !menuAberto.value;
 };
 onClickOutside(target, () => {
-    menuAberto.value = false;
+  menuAberto.value = false;
 });
 
 const filterListas = ref<ListaFilters>({
@@ -47,18 +47,17 @@ const filterListas = ref<ListaFilters>({
 const filterReviews = ref({
   page: 1
 });
-// Dados fictícios para o exemplo
-const stats = ref({ watched: 128, reviews: 42 });
 
-
-// Controle do Modal de Edição
-const isEditModalVisible = ref(false);
-
-const abrirDetalheReview = (review: any) => {
-  reviewSelecionada.value = { ...review };
-  isEditModalVisible.value = true;
+//const reviewSelecionada = ref<any>(null);
+const abrirDetalheReview = (review: ReviewSummary) => {
+  console.log(review);
+  reviewSelecionada.value = review;
+  console.log(reviewSelecionada.value);
 };
 
+const fecharDetalheReview = () => {
+  reviewSelecionada.value = undefined;
+};
 
 async function loadListas() {
   if (isSearching.value) return;
@@ -106,7 +105,7 @@ async function deletarConta() {
             onClick: async () => {
               // 1. Fecha todos os toasts para limpar a tela
               toast.clear();
-              
+
               // 2. Executa a ação de deletar
               try {
                 isSearching.value = true;
@@ -178,22 +177,25 @@ const handleLike = async (reviewId: number) => {
   }
 };
 
-const handleExcluir = async (reviewId: number) => {
+const handleExcluir = async () => {
   isSearching.value = true;
   try {
-
-    const response = await reviewStore.deleteReview(reviewId);
-
-    if (response.status == 200 && reviews.value) {
-      reviews.value.data = reviews.value?.data.filter(reviews => reviews.id !== reviewId);
-      isEditModalVisible.value = false;
+    if (!reviewSelecionada.value?.id) {
+      throw new Error('Review não encontrada');
+    }
+    const response = await reviewStore.deleteReview(reviewSelecionada.value.id);
+    console.log(response.status, response.data, response.message);
+    if (response.message === 'Review removida' && reviews.value) {
+      console.log("entrou");
+      reviews.value.data = reviews.value?.data.filter(reviews => reviews.id !== reviewSelecionada.value?.id);
+      reviewSelecionada.value = undefined;
     }
   } catch (error) {
     console.error("Erro na operação:", error);
   } finally {
     isSearching.value = false;
   }
-};
+}
 
 // Conta filmes na lista padrão "watched"
 const watchedCount = computed(() => {
@@ -224,51 +226,50 @@ const reviewsCount = computed(() => {
           <img src="/image.png" class="object-cover w-full h-full">
         </div>
         <div class="flex justify-between items-start w-full">
-        <div class="flex-1 flex flex-col gap-2">
-          <h2 class="text-xl font-black text-white uppercase tracking-tighter">{{ user?.name }}</h2>
-          <div class="flex gap-4">
-            <div class="text-center">
-              <p class="text-[#00FCFF] font-black text-lg">
-                {{ isSearching && !listas?.data.length ? '...' : watchedCount }}
-              </p>
-              <p class="text-zinc-500 text-[10px] uppercase font-bold">Assistidos</p>
-            </div>
-            <div class="text-center border-l border-white/10 pl-4">
-              <p class="text-[#00FCFF] font-black text-lg">
-                {{ isSearching && !reviews?.data.length ? '...' : reviewsCount }}
-              </p>
-              <p class="text-zinc-500 text-[10px] uppercase font-bold">Reviews</p>
-            </div>
-          </div>
-         
-        </div>
-         <div v-if="isAuthenticated" class="relative flex-none">
-                    <button @click="toggleMenu"
-                        class="cursor-pointer block p-2.5 text-white no-underline ml-2.5 hover:text-[#00FCFF] transition-colors focus:outline-none">
-                        <IconNavHam class="rotate-90 w-7 text-zinc-100" />
-                    </button>
-
-                    <Transition enter-active-class="transition duration-100 ease-out"
-                        enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100"
-                        leave-active-class="transition duration-75 ease-in"
-                        leave-from-class="transform scale-100 opacity-100"
-                        leave-to-class="transform scale-95 opacity-0">
-                        <div v-if="menuAberto" ref="target"
-                            class="absolute right-0 mt-2 w-48 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-2 z-[200]">
-
-                            <button @click="deletarConta"
-                                class="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
-                                Deletar Conta
-                            </button>
-                <div v-if="user?.roles.includes('admin')">
-                    <RouterLink to="/administrador"
-                        class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
-                        <a class="font-bold text-zinc-100">Administrador</a>
-                    </RouterLink>
-                  </div>
-                </div>
-                </Transition>
+          <div class="flex-1 flex flex-col gap-2">
+            <h2 class="text-xl font-black text-white uppercase tracking-tighter">{{ user?.name }}</h2>
+            <div class="flex gap-4">
+              <div class="text-center">
+                <p class="text-[#00FCFF] font-black text-lg">
+                  {{ isSearching && !listas?.data.length ? '...' : watchedCount }}
+                </p>
+                <p class="text-zinc-500 text-[10px] uppercase font-bold">Assistidos</p>
               </div>
+              <div class="text-center border-l border-white/10 pl-4">
+                <p class="text-[#00FCFF] font-black text-lg">
+                  {{ isSearching && !reviews?.data.length ? '...' : reviewsCount }}
+                </p>
+                <p class="text-zinc-500 text-[10px] uppercase font-bold">Reviews</p>
+              </div>
+            </div>
+
+          </div>
+          <div v-if="isAuthenticated" class="relative flex-none">
+            <button @click="toggleMenu"
+              class="cursor-pointer block p-2.5 text-white no-underline ml-2.5 hover:text-[#00FCFF] transition-colors focus:outline-none">
+              <IconNavHam class="rotate-90 w-7 text-zinc-100" />
+            </button>
+
+            <Transition enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0" enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in" leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0">
+              <div v-if="menuAberto" ref="target"
+                class="absolute right-0 mt-2 w-48 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-2 z-[200]">
+
+                <button @click="deletarConta"
+                  class="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                  Deletar Conta
+                </button>
+                <div v-if="user?.roles.includes('admin')">
+                  <RouterLink to="/administrador"
+                    class="block cursor-pointer p-2.5 text-white no-underline ml-2.5 hover:text-teal-400">
+                    <a class="font-bold text-zinc-100">Administrador</a>
+                  </RouterLink>
+                </div>
+              </div>
+            </Transition>
+          </div>
         </div>
       </div>
 
@@ -348,17 +349,17 @@ const reviewsCount = computed(() => {
       <div class="mt-10">
         <h3 class="text-zinc-100 font-bold uppercase text-sm tracking-widest mb-6 border-b border-white/10 pb-2">Minhas
           Reviews</h3>
-
+        <ReviewDetalhe ref="target" v-if="reviewSelecionada" :is-open="!!reviewSelecionada" :review="reviewSelecionada"
+          @close="fecharDetalheReview" @like="handleLike" @excluir="handleExcluir" />
         <div v-for="review in reviews?.data" :key="review.id" class="flex flex-col gap-4">
-          <ReviewDetalhe ref="target" :is-open="isEditModalVisible" :review="review" @close="isEditModalVisible = false"
-            @like="handleLike" @excluir="handleExcluir" />
-          <div @click="abrirDetalheReview(review.id)"
+
+          <div @click="abrirDetalheReview(review)"
             class="flex gap-4 bg-white/5 p-3 rounded-xl border border-white/5 hover:border-[#00FCFF]/30 cursor-pointer transition-all group">
 
             <MoviePoster v-if="review" :path="getImageUrl(review.movie.poster_thumb_br)"
               class="w-12 h-18 object-cover rounded-md shadow-lg" />
 
-            <div class="flex-1 flex flex-col">
+            <div @click="abrirDetalheReview(review)" class="flex-1 flex flex-col">
               <div class="flex justify-between items-start">
                 <h4 class="text-white font-bold text-sm">{{ review.movie.titulo_br || review.movie.titulo_original }}
                 </h4>

@@ -20,28 +20,29 @@ const close = () => emit('close');
     <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-white/2 backdrop-blur-[1px]" @click="close"></div>
 
-<div class="relative bg-[#121214]/80 backdrop-blur-xl border border-white/10 w-full max-w-2xl rounded-2xl overflow-hidden shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)]">
+      <div class="relative bg-[#121214]/80 backdrop-blur-xl border border-white/10 w-full max-w-2xl max-h-[calc(100vh-2rem)] rounded-2xl overflow-hidden flex flex-col shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)]">
         
         <button @click="close" class="absolute top-4 right-4 text-zinc-500 hover:text-white z-10 transition-colors">
           <IconClose class="w-6 h-6" />
         </button>
 
-        <div class="flex flex-col md:flex-row">
-          <div class="w-full md:w-1/3 bg-black/40 p-6 flex flex-col items-center gap-4 border-r border-white/5">
+        <div class="flex flex-col md:flex-row overflow-y-auto md:overflow-hidden h-full">
+          
+          <div class="w-full md:w-1/3 bg-black/40 p-4 md:p-6 flex flex-row md:flex-col items-center justify-start md:justify-center gap-4 border-b md:border-b-0 md:border-r border-white/5 pr-12 md:pr-6">
             <MoviePoster 
               :path="getImageUrl(review.movie.poster_thumb_br)" 
-              class="w-full h-auto rounded-lg shadow-2xl border border-white/10"
+              class="w-12 h-18 md:w-full md:h-auto rounded-lg shadow-2xl border border-white/10 flex-shrink-0"
               alt="Poster"
             />
-            <div class="text-center">
+            <div class="text-left md:text-center min-w-0">
               <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Filme</p>
-              <h4 class="text-white font-bold text-sm leading-tight">
+              <h4 class="text-white font-bold text-sm leading-tight truncate md:whitespace-normal">
                 {{ review.movie.titulo_br || review.movie.titulo_original }}
               </h4>
             </div>
           </div>
 
-          <div class="flex-1 p-8 flex flex-col bg-white/[0.02]">
+          <div class="flex-1 p-6 md:p-8 flex flex-col bg-white/[0.02] overflow-y-auto">
             <div class="flex items-center gap-3 mb-6">
               <img src="/image.png" class="w-10 h-10 rounded-full border border-[#00FCFF]/30 shadow-[0_0_10px_rgba(0,252,255,0.2)]">
               <div>
@@ -62,14 +63,14 @@ const close = () => emit('close');
               </span>
             </div>
 
-            <div class="flex-1">
+            <div class="flex-1 min-h-[100px]">
                <h3 class="text-zinc-100 font-bold text-lg mb-2 italic">"{{ review.titulo || 'Sem título' }}"</h3>
                <p class="text-zinc-400 text-sm leading-relaxed whitespace-pre-wrap">
                  {{ review.comentario }}
                </p>
             </div>
 
-            <div class="mt-8 pt-4 border-t border-white/5 flex items-center justify-between">
+            <div class="mt-8 pt-4 border-t border-white/5 flex items-center justify-between dynamic-footer">
               <div class="flex items-center gap-2">
                 <div 
                   @click="$emit('like', review.id)"
@@ -90,6 +91,7 @@ const close = () => emit('close');
               </button>
             </div>
           </div>
+
         </div>
       </div>
     </div>
