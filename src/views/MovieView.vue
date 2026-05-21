@@ -25,6 +25,7 @@ import { onClickOutside } from '@vueuse/core';
 import MoviePoster from '@/components/MoviePoster.vue';
 import { getImageUrl } from '@/utils/imageHelper';
 import MovieBackdrop from '@/components/MovieBackdrop.vue';
+import IconLike from '@/components/icons/IconLike.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -363,6 +364,20 @@ watch(userReview, (newReview) => {
     formReview.titulo = newReview.titulo;
   }
 }, { immediate: true });
+
+const likeReview = async (id: number, index: number) => {
+  try {
+    const review = reviews.value?.[index];
+
+    if (review) {
+      const likeResponse = await reviewStore.likeReview(id);
+
+      review.is_liked = likeResponse.is_liked;
+      review.likes_count = likeResponse.likes_count;
+    }
+  } catch (error) {
+    console.error("Erro na operação:", error);
+}}
 </script>
 
 <template>
@@ -736,7 +751,7 @@ watch(userReview, (newReview) => {
                 <div class="flex items-center justify-between mt-1 px-0.5">
                   <IconAddReview class="w-4 h-4 text-[#97A7CB] hover:text-[#00FCFF]" />
                   <span class="text-[8px] sm:text-[10px] font-black text-zinc-400">
-                    {{ movie.rating  || ""}}
+                    {{ movie.rating || "" }}
                   </span>
                 </div>
               </div>
@@ -828,7 +843,7 @@ watch(userReview, (newReview) => {
           </h1>
 
           <div class="flex flex-col gap-8">
-            <div v-for="review in reviews" :key="review.id" class="flex gap-4 items-start group">
+            <div v-for="(review, index) in reviews" :key="review.id" class="flex gap-4 items-start group">
 
               <div class="shrink-0">
                 <div
@@ -853,6 +868,24 @@ watch(userReview, (newReview) => {
                   <p class="text-zinc-400 text-sm lg:text-base leading-relaxed">
                     {{ review.comentario }}
                   </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <div @click="likeReview(review.id, index)"
+                  class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border transition-all"
+                  :class="review.is_liked
+                    ? 'bg-[#ff0077]/20 border-[#ff0077]/40 text-[#ff0077]'
+                    : 'bg-white/5 border-white/10 text-zinc-500'">
+                  <IconLike class='hover:text-red-500 w-4 h-4 sm:w-5 sm:h-5' />
+                </div>
+
+                <div class="flex flex-col leading-none">
+                  <span class="text-zinc-100 text-[11px] sm:text-xs font-black">
+                    {{ review.likes_count || 0 }}
+                  </span>
+                  <span class="text-zinc-500 text-[8px] sm:text-[9px] uppercase tracking-widest">
+                    Likes
+                  </span>
                 </div>
               </div>
             </div>

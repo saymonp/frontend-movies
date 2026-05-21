@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { Review, ReviewSummary } from '@/types/Review'; // Ajuste o path conforme seu projeto
+import { getImageUrl } from '@/utils/imageHelper';
+import MoviePoster from '@/components/MoviePoster.vue';
+import IconLike from '@/components/icons/IconLike.vue';
 
 defineProps<{
   isOpen: boolean;
@@ -10,13 +13,6 @@ const emit = defineEmits(['close', 'like', 'excluir']);
 
 const close = () => emit('close');
 
-// Função de imagem que você já tem
-const getImageUrl = (path: string) => {
-  if (!path) return '/placeholder.png';
-  let cleanPath = path.replace(/\\/g, '/');
-  cleanPath = cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath;
-  return `${import.meta.env.VITE_IMAGE_BASE_URL}${cleanPath}`;
-};
 </script>
 
 <template>
@@ -32,11 +28,11 @@ const getImageUrl = (path: string) => {
 
         <div class="flex flex-col md:flex-row">
           <div class="w-full md:w-1/3 bg-black/40 p-6 flex flex-col items-center gap-4 border-r border-white/5">
-            <img 
-              :src="getImageUrl(review.movie.poster_thumb_br || review.movie.poster_thumb_us)" 
+            <MoviePoster 
+              :path="getImageUrl(review.movie.poster_thumb_br)" 
               class="w-full h-auto rounded-lg shadow-2xl border border-white/10"
               alt="Poster"
-            >
+            />
             <div class="text-center">
               <p class="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Filme</p>
               <h4 class="text-white font-bold text-sm leading-tight">
@@ -47,7 +43,7 @@ const getImageUrl = (path: string) => {
 
           <div class="flex-1 p-8 flex flex-col bg-white/[0.02]">
             <div class="flex items-center gap-3 mb-6">
-              <img :src="review.user.avatar || '/default-avatar.png'" class="w-10 h-10 rounded-full border border-[#00FCFF]/30 shadow-[0_0_10px_rgba(0,252,255,0.2)]">
+              <img src="/image.png" class="w-10 h-10 rounded-full border border-[#00FCFF]/30 shadow-[0_0_10px_rgba(0,252,255,0.2)]">
               <div>
                 <p class="text-white font-bold text-sm leading-none">{{ review.user.name }}</p>
                 <p class="text-zinc-500 text-[10px] uppercase mt-1">Reviewer</p>
