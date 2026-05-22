@@ -75,6 +75,16 @@ const router = createRouter({
       name: 'Privacidade',
       component: () => import('../views/Privacidade.vue')
     },
+    {
+      path: '/recuperar-senha',
+      name: 'SolicitarRecuperarSenha',
+      component: () => import('../views/solicitarRecuperarSenhaView.vue')
+    },
+    {
+      path: '/reset-password',
+      name: 'RedefinirSenha',
+      component: () => import('../views/RedefinirSenhaView.vue')
+    },
   ],
   scrollBehavior(to, from, savedPosition) {
     // Se o usuário clicar em "Voltar", ele mantém a posição anterior (opcional)

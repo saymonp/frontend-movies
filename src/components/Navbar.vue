@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import { useAuthStore } from '@/stores/auth'; // Importe seu store
+import { useAuthStore } from '@/stores/auth';
 import IconList from '@/components/icons/IconList.vue'
 import IconAdd from '@/components/icons/IconAdd.vue'
 import IconFilmeiroFooter from '@/components/icons/IconFilmeiroFooter.vue';
@@ -146,7 +146,9 @@ onClickOutside(target, () => {
             <button @click="loginGoogle" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
                 Ou entrar com Google
             </button>
-
+            <button @click="$router.push('/recuperar-senha')" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
+                Esqueceu a senha?
+            </button>
             <button @click="isLoginVisible = false"
                 class="cursor-pointer mt-4 text-xs text-zinc-400 hover:text-white transition-colors">
                 FECHAR

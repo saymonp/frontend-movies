@@ -66,5 +66,16 @@ export const useAuthStore = defineStore('auth', {
       }
       return response.data;
     },
+    async solicitarRecuperacao(data: { email: string }) {
+      const response = await api.post('/recover-password-request', data);
+
+      return response.data;
+    },
+    async redefinirSenha(data: { email: string, token: string, new_password: string }) {
+      const response = await api.post('/reset-password', data);
+
+      this.setToken(response.data.access_token);
+      this.setUser(response.data.user);
+    },
   }
 });
