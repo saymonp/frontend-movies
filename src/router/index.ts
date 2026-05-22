@@ -78,7 +78,7 @@ const router = createRouter({
     {
       path: '/recuperar-senha',
       name: 'SolicitarRecuperarSenha',
-      component: () => import('../views/solicitarRecuperarSenhaView.vue')
+      component: () => import('../views/SolicitarRecuperarSenhaView.vue')
     },
     {
       path: '/reset-password',
