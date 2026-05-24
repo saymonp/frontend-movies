@@ -4,8 +4,8 @@
       
       <div class="flex flex-col items-center md:items-start">
         <div class="flex items-center gap-2 mb-2">
-          <LogoFilmeiro class="w-8 h-8 text-[#00FCFF] drop-shadow-[0_0_8px_rgba(0,252,255,0.5)]" />
-          <span class="text-white font-black text-xl tracking-tighter">FILMEIRO</span>
+          <InconVertigoFooter class="w-12 h-12 text-[#00FCFF] drop-shadow-[0_0_8px_rgba(0,252,255,0.5)]" />
+          <span class="text-white font-black text-xl tracking-tighter">VERTIGO</span>
         </div>
         <p class="text-zinc-500 text-[10px] uppercase tracking-[0.2em]">O seu guia neon de cinema</p>
       </div>
@@ -36,12 +36,13 @@
 
     <div class="max-w-7xl mx-auto px-4 mt-8 pt-4 border-t border-white/5 flex justify-center">
       <p class="text-zinc-600 text-[9px] uppercase tracking-widest">
-        &copy; 2026 Filmeiro - Todos os direitos reservados.
+        &copy; 2026 VERTIGO - Todos os direitos reservados.
       </p>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
-import LogoFilmeiro from './icons/IconFilmeiroFooter.vue';
+import InconVertigoFooter from'@/components/icons/InconVertigoFooter.vue';
+
 </script>

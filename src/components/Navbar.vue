@@ -3,13 +3,13 @@ import { ref, reactive } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import IconList from '@/components/icons/IconList.vue'
 import IconAdd from '@/components/icons/IconAdd.vue'
-import IconFilmeiroFooter from '@/components/icons/IconFilmeiroFooter.vue';
 import IconProfile from './icons/IconProfile.vue';
 import IconNavHam from './icons/IconNavHam.vue';
 import { useToast } from "vue-toastification";
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { onClickOutside } from '@vueuse/core'
+import InconVertigoFooter from'@/components/icons/InconVertigoFooter.vue';
 
 const route = useRoute();
 const toast = useToast();
@@ -210,7 +210,7 @@ onClickOutside(target, () => {
     <header class="absolute w-full left-0 right-0 mx-auto z-11 flex flex-wrap items-center justify-between max-w-7xl">
         <a href="/" class="text-white no-underline text-2xl font-bold transition-all"
             :class="route.path === '/' ? 'invisible md:visible' : 'visible'">
-            <IconFilmeiroFooter class="w-30 text-zinc-100" />
+            <InconVertigoFooter class="w-30 text-zinc-100" />
         </a>
         <nav>
             <ul class="flex list-none p-0 m-0">

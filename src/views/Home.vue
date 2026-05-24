@@ -414,7 +414,7 @@ const saveQuickReview = async (movieId: number) => {
                         <img src="/Banner.jpg" class="relative w-full h-full object-cover opacity-73" />
                     </div>
 
-                    <img src="/LogoFilmeiro.svg" alt="Logo"
+                    <img src="/Vertigo.svg" alt="Logo"
                         class="sm:hidden absolute top-4/5 left-1/2 -translate-x-1/2 -translate-y-1/2 w-65 z-10" />
 
                     <div class="hidden sm:flex absolute bottom-10 left-0 w-full flex-col items-center z-20">
