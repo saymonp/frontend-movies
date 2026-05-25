@@ -1,6 +1,6 @@
-# filmeiro
+# Vertigo
 
-This template should help get you started developing with Vue 3 in Vite.
+Figma Template https://www.figma.com/design/i3VtVMKiytlzSAW8y6DPcH/Vertigo?node-id=0-1&t=pUc4vuOBr2vg4rLE-1
 
 ## Recommended IDE Setup
 
