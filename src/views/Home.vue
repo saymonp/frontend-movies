@@ -516,7 +516,8 @@ const saveQuickReview = async (movieId: number) => {
 
                                     <div class="flex items-center justify-between px-1 mt-2">
                                         <IconReviewStar @click.stop="toggleQuickReview(movie.id)"
-                                            class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" />
+                                            class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors" 
+                                            :class="{ 'visible': isAuthenticated, 'invisible': !isAuthenticated }"/>
 
                                         <span class="text-[9px] sm:text-[10px] font-black text-zinc-400">
                                             IMDb {{ movie.rating }}
@@ -524,7 +525,7 @@ const saveQuickReview = async (movieId: number) => {
 
                                         <IconAddToList @click.stop="toggleAddToList(movie.id)"
                                             class="w-6 h-6 text-[#97A7CB] hover:text-[#00FCFF] cursor-pointer transition-colors"
-                                            :class="{ 'text-[#00FCFF]': activeListId === movie.id }" />
+                                            :class="{ 'text-[#00FCFF]': activeListId === movie.id, 'visible': isAuthenticated, 'invisible': !isAuthenticated }" />
                                     </div>
                                 </div>
                             </div>
