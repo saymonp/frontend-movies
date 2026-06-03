@@ -1,6 +1,20 @@
 # Vertigo
 
-Figma Template https://www.figma.com/design/i3VtVMKiytlzSAW8y6DPcH/Vertigo?node-id=0-1&t=pUc4vuOBr2vg4rLE-1
+O **Vertigo** é uma plataforma web completa e de alta performance voltada para a gestão, catalogação e organização inteligente de acervos cinematográficos. 
+
+A aplicação foi projetada e desenvolvida de ponta a ponta por mim, cobrindo desde a etapa de design de interface (UI/UX) até a estruturação da arquitetura de software, comunicação assíncrona com APIs externas e implantação em ambiente conteinerizado de produção.
+
+---
+
+## Tecnologias e Ecossistema
+
+### Design & Front-End
+* **UI/UX Design:** Figma (Prototipação de alta fidelidade e arquitetura de componentes)
+* **Figma Template:** https://www.figma.com/design/i3VtVMKiytlzSAW8y6DPcH/Vertigo?node-id=0-1&t=pUc4vuOBr2vg4rLE-1
+* **Framework:** Vue.js / TypeScript (Interfaces Single Page Application reativas e estritamente tipadas)
+* **Estilização:** Tailwind CSS (Layouts modernos e 100% responsivos)
+
+---
 
 ## Recommended IDE Setup
 
