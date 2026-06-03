@@ -1,8 +1,8 @@
 # Vertigo
+> Catálogo inteligente de filmes automatizado.
+[Acesse o projeto em produção](https://vertigo.click)
 
-O **Vertigo** é uma plataforma web completa e de alta performance voltada para a gestão, catalogação e organização inteligente de acervos cinematográficos. 
-
-A aplicação foi projetada e desenvolvida de ponta a ponta por mim, cobrindo desde a etapa de design de interface (UI/UX) até a estruturação da arquitetura de software, comunicação assíncrona com APIs externas e implantação em ambiente conteinerizado de produção.
+A aplicação foi projetada e desenvolvida de ponta a ponta, cobrindo desde a etapa de design de interface (UI/UX) até a estruturação da arquitetura de software, comunicação assíncrona com APIs externas e implantação em ambiente conteinerizado de produção.
 
 ---
 
