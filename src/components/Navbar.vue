@@ -142,13 +142,14 @@ onClickOutside(target, () => {
                 {{ isLoading ? 'Entrando...' : 'Entrar' }}
             </button>
 
-            <!-- Botão Google -->
+            <!-- Botão Google 
             <button @click="loginGoogle" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
                 Ou entrar com Google
             </button>
-            <button @click="$router.push('/recuperar-senha')" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
+            -->
+            <p @click="$router.push('/recuperar-senha')" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
                 Esqueceu a senha?
-            </button>
+            </p>
             <button @click="isLoginVisible = false"
                 class="cursor-pointer mt-4 text-xs text-zinc-400 hover:text-white transition-colors">
                 FECHAR
@@ -193,10 +194,11 @@ onClickOutside(target, () => {
                 class="w-full bg-white/5 border border-white/20 text-white rounded-lg py-2 px-4 ring-1 ring-[#00FCFF]/50 hover:bg-[#00FCFF]/10 cursor-pointer transition-all">
                 {{ isLoading ? 'Criando...' : 'Criar Conta' }}
             </button>
-            <!-- Botão Google -->
+            <!-- Botão Google 
             <button @click="loginGoogle" class="mt-2 text-xs text-zinc-300 hover:text-white flex items-center gap-2">
                 Ou entrar com Google
             </button>
+            -->
             <button @click="isCriarConta = false"
                 class="cursor-pointer mt-4 text-xs text-zinc-400 hover:text-white transition-colors">
                 FECHAR
